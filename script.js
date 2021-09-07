@@ -1,5 +1,31 @@
 const API_URL = `https://en.wikipedia.org/w/api.php`
 
+function parseArticle(wikiText){
+    
+    let chapter = wikiText.split(/==* ([a-zA-Z ]*) ==*/)
+    chapter.unshift("Intro")
+    
+    let exhibition = []
+    for(let i = 0; i<chapter.length; i+=2){
+        
+        let wikiContent = chapter[i+1];
+        let imgArray = []    
+            // Hack: assume that images are on their own lines.
+        let result = wikiContent.matchAll(/(File:.*)(\]\])?\n/g);
+        result = [...result];
+        result = result.map(x => x[1]);
+        for(let imgTag of result){
+            let imgTagParts = imgTag.split("|")
+            let img = imgTagParts[0]
+            //let description = imgTagParts[imgTagParts.length-1]
+            imgArray.push(img)
+        }
+        
+        exhibition.push( {chapterName: chapter[i], images: imgArray} )
+    }
+    console.log(exhibition)
+}
+
 function fetchImage(filename, description){
     let output = document.getElementById("output");
     
@@ -31,7 +57,7 @@ function generate(){
     .then( response => {
         response.json().then(function(data) {
             let wikiContent = data.query.pages[0].revisions[0].slots.main.content;
-            
+            parseArticle(wikiContent)
             // Hack: assume that images are on their own lines.
             let result = wikiContent.matchAll(/(File:.*)(\]\])?\n/g);
             result = [...result];
