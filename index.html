@@ -1,12 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
 
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
+        <meta charset="UTF-8" />
         <title>The Everything Exhibition</title>
 
-        <link rel="stylesheet" type="text/css" href="style.css">
-        <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="style.css" />
+        <link
+            href="https://fonts.googleapis.com/css?family=Lobster"
+            rel="stylesheet"
+        />
 
         <script src="script.js"></script>
     </head>
@@ -15,7 +18,13 @@
 
         <p>Type in any topic to generate an exhibition!</p>
 
-        <input type="text" list="suggestions" id="topic" oninput="getSuggestions(this.value)" autocomplete="off">
+        <input
+            type="text"
+            list="suggestions"
+            id="topic"
+            oninput="getSuggestions(this.value)"
+            autocomplete="off"
+        />
         <datalist id="suggestions"></datalist>
         <button onclick="generate()">Generate!</button>
 

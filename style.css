@@ -10,7 +10,9 @@ body {
     overflow-y: scroll;
 }
 
-h1, p, form {
+h1,
+p,
+form {
     max-width: 60rem;
     margin: auto;
     text-align: center;
@@ -33,18 +35,21 @@ p {
     margin-bottom: 1.1rem;
 }
 
-input, select, button {
+input,
+select,
+button {
     height: 3rem;
     display: inline-block;
     margin-bottom: 1.1rem;
 }
 
-input[type=text] {
+input[type="text"] {
     width: 40rem;
     font-size: 1rem;
 }
 
-select, input[type=text] {
+select,
+input[type="text"] {
     padding: 0 0.5rem;
 }
 
