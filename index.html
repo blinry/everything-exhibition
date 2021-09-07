@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Wikidata Card Game Generator</title>
+
+        <link rel="stylesheet" type="text/css" href="style.css">
+        <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
+
+        <script src="script.js"></script>
+    </head>
+    <body>
+        <h1>Wikidata Card Game Generator</h1>
+
+        <p>새로운 카드 게임을 생성하려면 검색어를 입력해주세요!</p>
+        <p>Type in any topic to generate a new card game!</p>
+
+        <form onsubmit="return submitQuery(event)">
+            <select id="lang" name="lang" onchange="setLang(this.value)"></select>
+            <input type="text" list="suggestions" id="suggestion-input" oninput="getSuggestions(this.value)" autocomplete="off">
+            <datalist id="suggestions"></datalist>
+        </form>
+
+        <div id="buttons"></div>
+
+        <p id="status"></p>
+
+        <div id="cards">
+        </div>
+    </body>
+</html>
