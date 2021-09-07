@@ -1,10 +1,7 @@
 * {
     margin: 0;
     padding: 0;
-
     font-family: sans-serif;
-    -webkit-print-color-adjust: exact !important;
-    color-adjust: exact !important;
 }
 
 body {
@@ -36,14 +33,10 @@ p {
     margin-bottom: 1.1rem;
 }
 
-input, select {
+input, select, button {
     height: 3rem;
     display: inline-block;
     margin-bottom: 1.1rem;
-}
-
-select {
-    width: 9rem;
 }
 
 input[type=text] {
@@ -55,7 +48,7 @@ select, input[type=text] {
     padding: 0 0.5rem;
 }
 
-input[type=submit] {
+button {
     padding: 0 1rem;
 }
 
@@ -68,137 +61,10 @@ a:hover {
     color: #262;
 }
 
-code {
-    font-family: monospace;
-}
-
-#subtitle {
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
-    color: #666;
-}
-
-.soft {
-    color: #999;
-    margin-right: 1rem;
-}
-
-a.id {
-    background: #484;
-    color: white;
-    padding: 0.2rem;
-    border-radius: 0.2rem;
-}
-
-a.id:hover {
-    background: #366d36;
-    color: white;
-    padding: 0.2rem;
-    border-radius: 0.2rem;
-}
-
-
-
-a:hover .card {
-    box-shadow: 0 0 0 3mm white, 2px 2px 20px 3mm rgba(0, 0, 0, 30%);
-}
-
-
-
-.qnr {
-    position: absolute;
-    font-size: 30%;
-    bottom: -2.85%;
-    right: 3.5%;
-}
-
-.header, .prop {
-    background-color: rgba(255,255,255,0.85);
-}
-
-.header {
-    height: 20%;
-    margin-top: 10%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-}
-
-.prop {
-    height: 8%;
-    margin-bottom: 4%;
-    display: flex;
-    justify-content: space-between;
-    padding: 2% 4%;
-    box-sizing: border-box;
-    font-size: 70%;
-    align-items: center;
-    line-height: 1em;
-}
-
-.prop div:first-child {
-    margin-right: 8%;
-}
-.prop div:nth-child(2) {
-    text-align: right;
-}
-
-.space {
-    base-height: 5%;
-    flex-grow: 2;
-}
-
-.title, .description {
-    text-align: center;
-}
-
-.description {
-    font-size: 60%;
-}
-
-#buttons{
-    margin: 0 auto;
-    display: flex;
-    justify-content: center;
-    padding-bottom: 2rem;
-    font-size: 1.5rem;
-    flex-wrap: wrap;
-}
-
-#buttons>a{
-    margin: 0.5rem;
-}
-
-
-#output{
+#output {
     white-space: pre-wrap;
 }
 
-img{
+img {
     width: 300px;
-}
-
-@media print {
-    body {
-        background: white;
-        margin: 0;
-    }
-
-    #cards {
-        display: block;
-    }
-
-    .card {
-        margin: 4mm;
-        display: inline-flex;
-        box-shadow: 0 0 0 3mm white, 0 0 0 3.2mm black;
-    }
-
-    @page {
-        margin: 10mm 7mm;
-    }
-
-    h1, p, form, #buttons {
-        display: none;
-    }
 }

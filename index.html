@@ -3,7 +3,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Wikidata Card Game Generator</title>
+        <title>The Everything Exhibition</title>
 
         <link rel="stylesheet" type="text/css" href="style.css">
         <link href="https://fonts.googleapis.com/css?family=Lobster" rel="stylesheet">
@@ -11,21 +11,14 @@
         <script src="script.js"></script>
     </head>
     <body>
-        <h1>Wikidata Card Game Generator</h1>
+        <h1>The Everything Exhibition</h1>
 
-        <p>새로운 카드 게임을 생성하려면 검색어를 입력해주세요!</p>
-        <p>Type in any topic to generate a new card game!</p>
+        <p>Type in any topic to generate an exhibition!</p>
 
-        <form onsubmit="return submitQuery(event)">
-            <select id="lang" name="lang" onchange="setLang(this.value)"></select>
-            <input type="text" list="suggestions" id="suggestion-input" oninput="getSuggestions(this.value)" autocomplete="off">
-            <datalist id="suggestions"></datalist>
-            <button onclick="generate()">Generate!</button>
-        </form>
+        <input type="text" list="suggestions" id="topic" oninput="getSuggestions(this.value)" autocomplete="off">
+        <datalist id="suggestions"></datalist>
+        <button onclick="generate()">Generate!</button>
 
-     
-
-        <div id="output">
-        </div>
+        <div id="output"></div>
     </body>
 </html>
