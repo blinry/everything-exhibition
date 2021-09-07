@@ -30,7 +30,6 @@ function generate(){
     window.fetch(`${API_URL}?action=query&format=json&prop=revisions&titles=${topic}&formatversion=2&rvprop=content&rvslots=*&origin=*`)
     .then( response => {
         response.json().then(function(data) {
-                console.log("go!")
             let wikiContent = data.query.pages[0].revisions[0].slots.main.content;
             
             // Hack: assume that images are on their own lines.
@@ -48,7 +47,6 @@ function generate(){
 }
 
 function getSuggestions(value){
-    console.log(value);
     window.fetch(`${API_URL}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`)
     .then( response => {
         response.json().then(function(data) {
@@ -58,7 +56,6 @@ function getSuggestions(value){
             for(let item of data[1]){
                 addOption(item)
             }
-            console.log(data);
         });
     } );
 }
@@ -73,7 +70,6 @@ function addOption(label){
 
 window.onload = function() {
     document.getElementById("topic").addEventListener("keyup", (e) => {
-        console.log(e)
         if (e.key === "Enter") {
             generate()
         }
