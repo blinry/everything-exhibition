@@ -1,7 +1,7 @@
 const API_URL = `https://en.wikipedia.org/w/api.php`
 
 function parseArticle(wikiText) {
-    let chapter = wikiText.split(/==* ([a-zA-Z ]*) ==*/)
+    let chapter = wikiText.split(/\n== *([a-zA-Z ]*) *==\n/g)
     chapter.unshift("Intro")
 
     let exhibition = []
@@ -15,17 +15,34 @@ function parseArticle(wikiText) {
         for (let imgTag of result) {
             let imgTagParts = imgTag.split("|")
             let img = imgTagParts[0]
-            //let description = imgTagParts[imgTagParts.length-1]
-            imgArray.push(img)
+            let description = imgTagParts[imgTagParts.length - 1]
+            imgArray.push({fileName: img, description: description})
         }
 
-        exhibition.push({chapterName: chapter[i], images: imgArray})
+        exhibition.push({name: chapter[i], images: imgArray})
     }
-    console.log(exhibition)
+    return exhibition
+}
+
+function render(exhibition) {
+    let output = document.getElementById("output")
+
+    for (let chapter of exhibition) {
+        let header = document.createElement("h2")
+        header.innerHTML = chapter.name
+        output.appendChild(header)
+        for (let img of chapter.images) {
+            fetchImage(img.fileName, img.description)
+        }
+    }
 }
 
 function fetchImage(filename, description) {
     let output = document.getElementById("output")
+
+    let img = document.createElement("img")
+    img.title = description
+    output.appendChild(img)
 
     window
         .fetch(
@@ -35,11 +52,7 @@ function fetchImage(filename, description) {
             response.json().then(function (data) {
                 let url = data.query.pages["-1"].imageinfo[0].url
 
-                let img = document.createElement("img")
                 img.src = url
-                img.title = description
-
-                output.appendChild(img)
             })
         })
 }
@@ -61,17 +74,9 @@ function generate() {
             response.json().then(function (data) {
                 let wikiContent =
                     data.query.pages[0].revisions[0].slots.main.content
-                parseArticle(wikiContent)
+                let exhibition = parseArticle(wikiContent)
+                render(exhibition)
                 // Hack: assume that images are on their own lines.
-                let result = wikiContent.matchAll(/(File:.*)(\]\])?\n/g)
-                result = [...result]
-                result = result.map((x) => x[1])
-                for (let imgTag of result) {
-                    let imgTagParts = imgTag.split("|")
-                    let img = imgTagParts[0]
-                    let description = imgTagParts[imgTagParts.length - 1]
-                    fetchImage(img, description)
-                }
             })
         })
 }
