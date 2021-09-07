@@ -21,26 +21,65 @@ function setLang(newLang){
     window.location = `/?${type}&lang=${newLang}`
 }
 
+function fetchImage(filename){
+    
+    let output = document.getElementById("output");
+    
+    window.fetch(`https://en.wikipedia.org/w/api.php?action=query&titles=${filename}&format=json&prop=imageinfo&iiprop=url&origin=*`)
+        
+    .then( response => {
+        response.json().then(function(data) {
+            let url = data.query.pages['-1'].imageinfo[0].url;
+            
+            let img = document.createElement("img");
+            img.src = url;
+            
+            output.appendChild(img);
+            
+        } );
+    } );
+}
+
+function generate(){
+    
+    let topic = document.getElementById("suggestion-input").value;
+    
+    window.fetch(`https://en.wikipedia.org/w/api.php?action=query&format=json&prop=revisions&titles=${topic}&formatversion=2&rvprop=content&rvslots=*&origin=*`)
+        
+    .then( response => {
+        response.json().then(function(data) {
+            let wikiContent = data.query.pages[0].revisions[0].slots.main.content;
+            let outputDiv = document.getElementById("output");
+            //output.innerHTML = wikiContent;
+            
+            let result = wikiContent.matchAll(/File:([^|\]]*)/g);
+            result = [...result];
+            result = result.map(x => x[0]);
+            console.log(result);
+            for(let img of result){
+                fetchImage(img);
+            }
+        });
+    } );
+}
+
 function getSuggestions(value){
     console.log(value);
-    let qid = value.match(/Q\d+/)
-    if( qid ){
-        window.location = `/?${qid[0]}&lang=${lang}`;
-    }else{
-        window.fetch(`https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&search=${value}&language=${lang}&uselang=${lang}&origin=*`)
-        .then( response => {
-            response.json().then(function(data) {
-                let datalist = document.getElementById("suggestions");
-                datalist.innerHTML = "";
+    window.fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`)
+        
+    .then( response => {
+        response.json().then(function(data) {
+            let datalist = document.getElementById("suggestions");
+            datalist.innerHTML = "";
 
-                for(let item of data.search){
-                    addOption(item.label, item.id, item.description)
-                }
-                console.log(data);
-            });
-        } );
-    }
-
+            for(let item of data[1]){
+                addOption(item)
+                
+                
+            }
+            console.log(data);
+        });
+    } );
 }
 
 function addButton(label, id){
@@ -53,15 +92,11 @@ function addButton(label, id){
     buttondiv.appendChild(btn)
 }
 
-function addOption(label, id, description){
+function addOption(label){
     let datalist = document.getElementById("suggestions");
     let option = document.createElement("option");
 
-    let descText = ""
-    if(description){
-        descText = `${description}, `
-    }
-    option.value = `${label} (${descText}${id})`
+    option.value = `${label}`
     datalist.appendChild(option)
 }
 

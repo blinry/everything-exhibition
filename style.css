@@ -97,72 +97,13 @@ a.id:hover {
     border-radius: 0.2rem;
 }
 
-#cards {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    overflow: visible;
-    margin-top: 3rem;
-}
 
-#cards a {
-    margin-bottom: 10mm;
-}
-
-.card {
-    width: calc(63mm - 6.4mm);
-    height: calc(88mm - 6.4mm);
-
-    background-size: cover;
-    background-position: center;
-
-    border-radius: 2mm;
-    box-shadow: 0 0 0 3mm white, 2px 2px 10px 3mm rgba(0, 0, 0, 50%);
-
-    margin: 3mm;
-
-    display: flex;
-    position: relative;
-    flex-direction: column;
-
-    page-break-inside: avoid;
-
-    transition: box-shadow 0.1s ease-in-out;
-}
 
 a:hover .card {
     box-shadow: 0 0 0 3mm white, 2px 2px 20px 3mm rgba(0, 0, 0, 30%);
 }
 
-#cards a {
-    transform: scale(1) rotate(0deg);
-    transition: transform 0.1s ease-in-out;
-}
 
-#cards a:hover {
-    transform: scale(1.2) rotate(0deg);
-}
-
-#cards a:nth-child(2n):hover {
-    transform: scale(1.2) rotate(-1deg);
-}
-
-#cards a:nth-child(3n):hover {
-    transform: scale(1.2) rotate(2deg);
-}
-
-#cards a:nth-child(4n):hover {
-    transform: scale(1.2) rotate(-3deg);
-}
-
-#cards a:nth-child(5n):hover {
-    transform: scale(1.2) rotate(4deg);
-}
-
-
-#cards a:hover {
-    z-index: 1;
-}
 
 .qnr {
     position: absolute;
@@ -228,9 +169,13 @@ a:hover .card {
     margin: 0.5rem;
 }
 
-#cards a {
-    text-decoration: none;
-    color: black;
+
+#output{
+    white-space: pre-wrap;
+}
+
+img{
+    width: 300px;
 }
 
 @media print {

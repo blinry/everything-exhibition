@@ -20,13 +20,12 @@
             <select id="lang" name="lang" onchange="setLang(this.value)"></select>
             <input type="text" list="suggestions" id="suggestion-input" oninput="getSuggestions(this.value)" autocomplete="off">
             <datalist id="suggestions"></datalist>
+            <button onclick="generate()">Generate!</button>
         </form>
 
-        <div id="buttons"></div>
+     
 
-        <p id="status"></p>
-
-        <div id="cards">
+        <div id="output">
         </div>
     </body>
 </html>
