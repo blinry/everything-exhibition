@@ -21,7 +21,7 @@ function setLang(newLang){
     window.location = `/?${type}&lang=${newLang}`
 }
 
-function fetchImage(filename){
+function fetchImage(filename, description){
     
     let output = document.getElementById("output");
     
@@ -33,6 +33,7 @@ function fetchImage(filename){
             
             let img = document.createElement("img");
             img.src = url;
+            img.title = description
             
             output.appendChild(img);
             
@@ -52,12 +53,16 @@ function generate(){
             let outputDiv = document.getElementById("output");
             //output.innerHTML = wikiContent;
             
-            let result = wikiContent.matchAll(/File:([^|\]]*)/g);
+            // Hack: assume that images are on their own lines.
+            let result = wikiContent.matchAll(/(File:.*)(\]\])?\n/g);
             result = [...result];
-            result = result.map(x => x[0]);
-            console.log(result);
-            for(let img of result){
-                fetchImage(img);
+            result = result.map(x => x[1]);
+            //console.log(result)
+            for(let imgTag of result){
+                let imgTagParts = imgTag.split("|")
+                let img = imgTagParts[0]
+                let description = imgTagParts[imgTagParts.length-1]
+                fetchImage(img, description);
             }
         });
     } );
