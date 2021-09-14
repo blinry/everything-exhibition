@@ -1,25 +1,23 @@
+const wtf = require("wtf_wikipedia")
+
 const API_URL = `https://en.wikipedia.org/w/api.php`
 
 function parseArticle(wikiText) {
-    let chapter = wikiText.split(/\n== *([a-zA-Z ]*) *==\n/g)
-    chapter.unshift("Intro")
+    const article = wtf(wikiText).json()
+    console.log(article)
 
     let exhibition = []
-    for (let i = 0; i < chapter.length; i += 2) {
-        let wikiContent = chapter[i + 1]
-        let imgArray = []
-        // Hack: assume that images are on their own lines.
-        let result = wikiContent.matchAll(/(File:.*)(\]\])?\n/g)
-        result = [...result]
-        result = result.map((x) => x[1])
-        for (let imgTag of result) {
-            let imgTagParts = imgTag.split("|")
-            let img = imgTagParts[0]
-            let description = imgTagParts[imgTagParts.length - 1]
-            imgArray.push({fileName: img, description: description})
+    for (const section of article.sections) {
+        if (!section.images) {
+            continue
         }
 
-        exhibition.push({name: chapter[i], images: imgArray})
+        let imgArray = []
+        for (const image of section.images) {
+            imgArray.push({fileName: image.file, description: image.caption})
+        }
+
+        exhibition.push({name: section.title, images: imgArray})
     }
     return exhibition
 }
@@ -112,4 +110,10 @@ window.onload = function () {
             generate()
         }
     })
+    document
+        .getElementById("generate-button")
+        .addEventListener("click", (e) => generate())
+    document
+        .getElementById("topic")
+        .addEventListener("input", (e) => getSuggestions(e.target.value))
 }

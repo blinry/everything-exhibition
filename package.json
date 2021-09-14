@@ -16,6 +16,10 @@
     },
     "homepage": "https://github.com/blinry/everything-exhibition#readme",
     "dependencies": {
-        "prettier": "^2.4.0"
+        "prettier": "^2.4.0",
+        "wtf_wikipedia": "^9.0.1"
+    },
+    "devDependencies": {
+        "parcel": "^2.0.0-rc.0"
     }
 }

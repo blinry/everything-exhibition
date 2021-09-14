@@ -11,7 +11,7 @@
             rel="stylesheet"
         />
 
-        <script src="script.js"></script>
+        <script src="script.js" type="module"></script>
     </head>
     <body>
         <h1>The Everything Exhibition</h1>
@@ -22,11 +22,10 @@
             type="text"
             list="suggestions"
             id="topic"
-            oninput="getSuggestions(this.value)"
             autocomplete="off"
         />
         <datalist id="suggestions"></datalist>
-        <button onclick="generate()">Generate!</button>
+        <button id="generate-button"">Generate!</button>
 
         <div id="output"></div>
     </body>
