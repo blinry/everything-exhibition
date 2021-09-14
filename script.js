@@ -5,6 +5,15 @@ let scene
 let renderer
 let controls
 let camera
+let clock
+
+let moveForward = false
+let moveBackward = false
+let moveLeft = false
+let moveRight = false
+let canJump = false
+const velocity = new THREE.Vector3()
+const direction = new THREE.Vector3()
 
 function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
@@ -45,9 +54,6 @@ function render(exhibition) {
 
 function render3DExhibition(exhibition) {
     for (let chapter of exhibition) {
-        let header = document.createElement("h2")
-        header.innerHTML = chapter.name
-        output.appendChild(header)
         for (let img of chapter.images) {
             window
                 .fetch(
@@ -134,13 +140,40 @@ function addOption(label) {
 }
 
 function animate() {
+    const delta = clock.getDelta()
+
+    velocity.x -= velocity.x * 10.0 * delta
+    velocity.z -= velocity.z * 10.0 * delta
+
+    velocity.y -= 9.8 * 100.0 * delta
+
+    direction.z = Number(moveForward) - Number(moveBackward)
+    direction.x = Number(moveRight) - Number(moveLeft)
+    direction.normalize()
+
+    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta
+    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta
+
+    controls.moveRight(-velocity.x * delta)
+    controls.moveForward(-velocity.z * delta)
+
+    controls.getObject().position.y += velocity.y * delta
+
+    if (controls.getObject().position.y < 10) {
+        velocity.y = 0
+        controls.getObject().position.y = 10
+
+        canJump = true
+    }
+
     requestAnimationFrame(animate)
 
-    controls.update()
     renderer.render(scene, camera)
 }
 
 function setupScene() {
+    clock = new THREE.Clock()
+
     scene = new THREE.Scene()
     scene.background = new THREE.Color(0xa3c3f7)
 
@@ -155,12 +188,68 @@ function setupScene() {
     renderer.setSize(window.innerWidth, window.innerHeight)
     document.body.appendChild(renderer.domElement)
 
-    camera.position.y = 0
-    camera.position.x = 0
-    camera.position.z = 5
-    controls = new THREE.OrbitControls(camera, renderer.domElement)
-    controls.target = new THREE.Vector3(0, 0, 0)
-    controls.update()
+    controls = new THREE.PointerLockControls(camera, document.body)
+    controls.movementSpeed = 150
+    controls.lookSpeed = 0.1
+    renderer.domElement.addEventListener("click", function () {
+        controls.lock()
+    })
+
+    const onKeyDown = function (event) {
+        switch (event.code) {
+            case "ArrowUp":
+            case "KeyW":
+                moveForward = true
+                break
+
+            case "ArrowLeft":
+            case "KeyA":
+                moveLeft = true
+                break
+
+            case "ArrowDown":
+            case "KeyS":
+                moveBackward = true
+                break
+
+            case "ArrowRight":
+            case "KeyD":
+                moveRight = true
+                break
+
+            case "Space":
+                if (canJump === true) velocity.y += 350
+                canJump = false
+                break
+        }
+    }
+
+    const onKeyUp = function (event) {
+        switch (event.code) {
+            case "ArrowUp":
+            case "KeyW":
+                moveForward = false
+                break
+
+            case "ArrowLeft":
+            case "KeyA":
+                moveLeft = false
+                break
+
+            case "ArrowDown":
+            case "KeyS":
+                moveBackward = false
+                break
+
+            case "ArrowRight":
+            case "KeyD":
+                moveRight = false
+                break
+        }
+    }
+
+    document.addEventListener("keydown", onKeyDown)
+    document.addEventListener("keyup", onKeyUp)
 
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.x = 4
@@ -180,7 +269,6 @@ function setupScene() {
 
 function addImage(url) {
     var texture = new THREE.TextureLoader().load(url, (texture) => {
-        console.log(texture)
         let ratio = texture.image.width / texture.image.height
         var planeGeometry = new THREE.PlaneGeometry(30 * ratio, 30)
         var planeMaterial = new THREE.MeshLambertMaterial({map: texture})
@@ -190,6 +278,7 @@ function addImage(url) {
         plane.position.z = Math.random() * -200
 
         scene.add(plane)
+        console.log("added image")
     })
 }
 
