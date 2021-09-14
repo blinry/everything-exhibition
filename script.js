@@ -64,11 +64,29 @@ function render3DExhibition(exhibition) {
                     response.json().then(function (data) {
                         let url = data.query.pages["-1"].imageinfo[0].url
 
-                        addImage(url)
+                        img.fileURL = url
+                        addPicture(img)
+
+                        console.log(img.description)
                     })
                 })
         }
     }
+}
+
+function addPicture(img) {
+    createImagePlane(img.fileURL).then((plane) => {
+        plane.position.x = Math.random() * 200 - 100
+        plane.position.z = -Math.random() * 200
+        plane.position.y = 10
+        plane.rotation.y = Math.random() * Math.PI*2
+        scene.add(plane)
+        createTextPlane(img.description).then((textPlane) => {
+            textPlane.position.z =  1
+            textPlane.position.y = - 10
+            plane.add(textPlane)
+        })
+    })
 }
 
 function fetchImage(filename, description) {
@@ -186,7 +204,7 @@ function setupScene() {
     )
 
     renderer = new THREE.WebGLRenderer()
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setSize(1280, 720)
     document.body.appendChild(renderer.domElement)
 
     controls = new THREE.PointerLockControls(camera, document.body)
@@ -268,24 +286,30 @@ function setupScene() {
     ground.rotateX(Math.PI)
 }
 
-function addImage(url) {
-    var texture = new THREE.TextureLoader().load(url, (texture) => {
-        let ratio = texture.image.width / texture.image.height
-        var planeGeometry = new THREE.PlaneGeometry(30 * ratio, 30)
-        var planeMaterial = new THREE.MeshLambertMaterial({map: texture})
+function createImagePlane(url, height = 30) {
+    return new Promise((resolve) => {
+        var texture = new THREE.TextureLoader().load(url, (texture) => {
+            let ratio = texture.image.width / texture.image.height
+            var planeGeometry = new THREE.PlaneGeometry(height * ratio, height)
+            var planeMaterial = new THREE.MeshLambertMaterial({map: texture, side: THREE.DoubleSide})
 
-        var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-        plane.position.x = Math.random() * 400 - 200
-        plane.position.z = Math.random() * -200
-
-        scene.add(plane)
-        console.log("added image")
+            var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+            resolve(plane)
+        })
     })
 }
 
-function addDiv() {
-    html2canvas(document.getElementById("headerline")).then(function (canvas) {
-        addImage(canvas.toDataURL())
+function createTextPlane(text, height = 2) {
+    return new Promise((resolve) => {
+        let div = document.createElement("div")
+        div.innerHTML = text
+        div.style.maxWidth = "300px"
+        document.body.appendChild(div)
+        html2canvas(div).then(function (canvas) {
+            createImagePlane(canvas.toDataURL(), height).then((plane) => {
+                resolve(plane)
+            })
+        })
     })
 }
 
@@ -305,6 +329,4 @@ window.onload = function () {
     setupScene()
 
     animate()
-
-    addDiv()
 }
