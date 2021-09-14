@@ -1,4 +1,5 @@
 const wtf = require("wtf_wikipedia")
+import html2canvas from "html2canvas"
 
 const API_URL = `https://en.wikipedia.org/w/api.php`
 let scene
@@ -282,6 +283,12 @@ function addImage(url) {
     })
 }
 
+function addDiv() {
+    html2canvas(document.getElementById("headerline")).then(function (canvas) {
+        addImage(canvas.toDataURL())
+    })
+}
+
 window.onload = function () {
     document.getElementById("topic").addEventListener("keyup", (e) => {
         if (e.key === "Enter") {
@@ -298,4 +305,6 @@ window.onload = function () {
     setupScene()
 
     animate()
+
+    addDiv()
 }
