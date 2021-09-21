@@ -4,7 +4,7 @@ import html2canvas from "html2canvas"
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
-const CHAPTER_RADIUS = 120
+const CHAPTER_RADIUS = 160
 const IMAGE_RADIUS = 40
 
 const API_URL = `https://en.wikipedia.org/w/api.php`
@@ -135,13 +135,10 @@ function render3DExhibition(exhibition) {
             imageGroup.add(text)
         })
 
-        let promiseArr = generateImageData(chapter)
-        console.log(promiseArr)
-        Promise.all(promiseArr).then((objArr) => {
-            console.log(objArr)
-            /*let numberOfImages = objArr.length
-            for (let [j, picture] of objArr.entries()) {
-                
+        generateImageData(chapter).then(promiseArr => {
+            let numberOfImages = promiseArr.length
+            promiseArr.forEach((picturePromise, j) => {
+                picturePromise.then(picture => {
                 let imageAngle =
                     numberOfImages > 1
                         ? (-j * Math.PI) / (numberOfImages - 1)
@@ -157,7 +154,8 @@ function render3DExhibition(exhibition) {
                 picture.lookAt(new THREE.Vector3(0, 0, 0))
                 picture.position.y = 10
                 imageGroup.add(picture)
-            }*/
+                })
+            })
         })
 
         /*for (let [j, img] of chapter.images.entries()) {
@@ -222,6 +220,8 @@ function generateImageData(chapter) {
                     }
                     return addPicture(img)
                 })
+
+                picPromises.unshift(createTextPlane(chapter.paragraph[0], 20))
 
                 resolve(picPromises)
             })
@@ -467,6 +467,7 @@ function createTextPlane(text, height = 2) {
         div.innerHTML = text
         div.style.maxWidth = "300px"
         div.style.display = "inline-block"
+        div.style.padding = "3px"
         document.body.appendChild(div)
         html2canvas(div, {logging: false}).then(function (canvas) {
             createImagePlane(canvas.toDataURL(), height).then((plane) => {
