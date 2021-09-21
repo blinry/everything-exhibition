@@ -24,22 +24,35 @@ function parseArticle(wikiText) {
     console.log(article)
 
     let exhibition = []
+
+    let currentSectionName
+    let currentSectionImages = []
+
     for (const section of article.sections) {
+        if (section.depth === 0) {
+            if (currentSectionName) {
+                exhibition.push({
+                    name: currentSectionName,
+                    images: currentSectionImages,
+                })
+            }
+            currentSectionName = section.title
+            currentSectionImages = []
+        }
+
         if (!section.images) {
             continue
         }
 
-        let imgArray = []
         for (const image of section.images) {
-            imgArray.push({
+            currentSectionImages.push({
                 fileName: image.file,
                 description: image.caption,
                 fileURL: image.url,
             })
         }
-
-        exhibition.push({name: section.title, images: imgArray})
     }
+    exhibition.push({name: currentSectionName, images: currentSectionImages})
     return exhibition
 }
 
@@ -56,8 +69,53 @@ function render(exhibition) {
     }
 }
 
+function clearObjects(obj) {
+    while (obj.children.length > 0) {
+        clearObjects(obj.children[0])
+        obj.remove(obj.children[0])
+    }
+    if (obj.geometry) obj.geometry.dispose()
+
+    if (obj.material) {
+        Object.keys(obj.material).forEach((prop) => {
+            if (!obj.material[prop]) return
+            if (
+                obj.material[prop] !== null &&
+                typeof obj.material[prop].dispose === "function"
+            )
+                obj.material[prop].dispose()
+        })
+        obj.material.dispose()
+    }
+}
+
 function render3DExhibition(exhibition) {
-    for (let chapter of exhibition) {
+    clearObjects(scene)
+    setupFloor()
+
+    for (let [i, chapter] of exhibition.entries()) {
+        let numberOfChapters = exhibition.length
+        let chapterRadius = 120
+        let chapterMidpoint = new THREE.Vector3(
+            chapterRadius,
+            0,
+            0
+        ).applyAxisAngle(
+            new THREE.Vector3(0, 1, 0),
+            (i * Math.PI * 2) / numberOfChapters
+        )
+
+        createTextPlane(chapter.name).then((text) => {
+            text.position.x = chapterMidpoint.x
+            text.position.y = 40
+            text.position.z = chapterMidpoint.z
+            text.scale.x = 3
+            text.scale.y = 3
+            text.scale.z = 3
+            text.lookAt(new THREE.Vector3(0, 0, 0))
+            scene.add(text)
+        })
+
         for (let img of chapter.images) {
             window
                 .fetch(
@@ -68,7 +126,13 @@ function render3DExhibition(exhibition) {
                         let url = data.query.pages["-1"].imageinfo[0].url
 
                         img.fileURL = url
-                        addPicture(img)
+                        addPicture(img).then((picture) => {
+                            picture.position.x = chapterMidpoint.x
+                            picture.position.y = 10
+                            picture.position.z = chapterMidpoint.z
+                            picture.lookAt(new THREE.Vector3(0, 0, 0))
+                            scene.add(picture)
+                        })
 
                         console.log(img.description)
                     })
@@ -78,16 +142,19 @@ function render3DExhibition(exhibition) {
 }
 
 function addPicture(img) {
-    createImagePlane(img.fileURL).then((plane) => {
-        plane.position.x = Math.random() * 200 - 100
-        plane.position.z = -Math.random() * 200
-        plane.position.y = 10
-        plane.rotation.y = Math.random() * Math.PI*2
-        scene.add(plane)
-        createTextPlane(img.description).then((textPlane) => {
-            textPlane.position.z =  1
-            textPlane.position.y = - 10
-            plane.add(textPlane)
+    return new Promise((resolve) => {
+        createImagePlane(img.fileURL).then((plane) => {
+            //plane.position.x = Math.random() * 200 - 100
+            //plane.position.z = -Math.random() * 200
+            //plane.position.y = 10
+            //plane.rotation.y = Math.random() * Math.PI*2
+            //plane.lookAt(new THREE.Vector3(0,0,0))
+            createTextPlane(img.description).then((textPlane) => {
+                textPlane.position.z = 1
+                textPlane.position.y = -10
+                plane.add(textPlane)
+                resolve(plane)
+            })
         })
     })
 }
@@ -201,12 +268,12 @@ function setupScene() {
 
     camera = new THREE.PerspectiveCamera(
         75,
-        CANVAS_WIDTH/CANVAS_HEIGHT,
+        CANVAS_WIDTH / CANVAS_HEIGHT,
         0.1,
         1000
     )
 
-    renderer = new THREE.WebGLRenderer({ antialias: true})
+    renderer = new THREE.WebGLRenderer({antialias: true})
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
@@ -272,7 +339,9 @@ function setupScene() {
 
     document.addEventListener("keydown", onKeyDown)
     document.addEventListener("keyup", onKeyUp)
+}
 
+function setupFloor() {
     const light = new THREE.DirectionalLight(0xffffff, 1)
     light.position.x = 4
     light.castShadow = true
@@ -294,7 +363,10 @@ function createImagePlane(url, height = 30) {
         var texture = new THREE.TextureLoader().load(url, (texture) => {
             let ratio = texture.image.width / texture.image.height
             var planeGeometry = new THREE.PlaneGeometry(height * ratio, height)
-            var planeMaterial = new THREE.MeshLambertMaterial({map: texture, side: THREE.DoubleSide})
+            var planeMaterial = new THREE.MeshLambertMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+            })
 
             var plane = new THREE.Mesh(planeGeometry, planeMaterial)
             resolve(plane)
@@ -307,6 +379,7 @@ function createTextPlane(text, height = 2) {
         let div = document.createElement("div")
         div.innerHTML = text
         div.style.maxWidth = "300px"
+        div.style.display = "inline-block"
         document.body.appendChild(div)
         html2canvas(div).then(function (canvas) {
             createImagePlane(canvas.toDataURL(), height).then((plane) => {
