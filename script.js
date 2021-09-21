@@ -4,6 +4,9 @@ import html2canvas from "html2canvas"
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
+const CHAPTER_RADIUS = 120
+const IMAGE_RADIUS = 40
+
 const API_URL = `https://en.wikipedia.org/w/api.php`
 let scene
 let renderer
@@ -95,28 +98,43 @@ function render3DExhibition(exhibition) {
 
     for (let [i, chapter] of exhibition.entries()) {
         let numberOfChapters = exhibition.length
-        let chapterRadius = 120
         let chapterMidpoint = new THREE.Vector3(
-            chapterRadius,
             0,
-            0
+            0,
+            -CHAPTER_RADIUS
         ).applyAxisAngle(
             new THREE.Vector3(0, 1, 0),
-            (i * Math.PI * 2) / numberOfChapters
+            -(i * Math.PI * 2) / numberOfChapters
         )
 
+        let numberOfImages = chapter.images.length
+        let imageGroup = new THREE.Group()
+        scene.add(imageGroup)
+        imageGroup.position.x = chapterMidpoint.x
+        imageGroup.position.y = chapterMidpoint.y
+        imageGroup.position.z = chapterMidpoint.z
+        imageGroup.lookAt(new THREE.Vector3(0, 0, 0))
+
         createTextPlane(chapter.name).then((text) => {
-            text.position.x = chapterMidpoint.x
+            text.position.x = 0
             text.position.y = 40
-            text.position.z = chapterMidpoint.z
+            text.position.z = 0
             text.scale.x = 3
             text.scale.y = 3
             text.scale.z = 3
-            text.lookAt(new THREE.Vector3(0, 0, 0))
-            scene.add(text)
+            imageGroup.add(text)
         })
 
-        for (let img of chapter.images) {
+        for (let [j, img] of chapter.images.entries()) {
+            let imagePosition = new THREE.Vector3(
+                -IMAGE_RADIUS,
+                0,
+                0
+            ).applyAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                (-j * Math.PI) / numberOfImages
+            )
+
             window
                 .fetch(
                     `${API_URL}?action=query&titles=${img.fileName}&format=json&prop=imageinfo&iiprop=url&origin=*`
@@ -127,11 +145,11 @@ function render3DExhibition(exhibition) {
 
                         img.fileURL = url
                         addPicture(img).then((picture) => {
-                            picture.position.x = chapterMidpoint.x
+                            picture.position.x = imagePosition.x
                             picture.position.y = 10
-                            picture.position.z = chapterMidpoint.z
+                            picture.position.z = imagePosition.z
                             picture.lookAt(new THREE.Vector3(0, 0, 0))
-                            scene.add(picture)
+                            imageGroup.add(picture)
                         })
 
                         console.log(img.description)
@@ -144,11 +162,6 @@ function render3DExhibition(exhibition) {
 function addPicture(img) {
     return new Promise((resolve) => {
         createImagePlane(img.fileURL).then((plane) => {
-            //plane.position.x = Math.random() * 200 - 100
-            //plane.position.z = -Math.random() * 200
-            //plane.position.y = 10
-            //plane.rotation.y = Math.random() * Math.PI*2
-            //plane.lookAt(new THREE.Vector3(0,0,0))
             createTextPlane(img.description).then((textPlane) => {
                 textPlane.position.z = 1
                 textPlane.position.y = -10
@@ -350,12 +363,16 @@ function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff) // soft white light
     scene.add(ambient)
 
-    const geometry = new THREE.ConeGeometry(100, 100, 128)
+    const geometry = new THREE.CylinderGeometry(
+        CHAPTER_RADIUS + IMAGE_RADIUS,
+        CHAPTER_RADIUS + IMAGE_RADIUS,
+        10,
+        128
+    )
     const material = new THREE.MeshStandardMaterial({color: 0x188c1c})
     const ground = new THREE.Mesh(geometry, material)
     scene.add(ground)
-    ground.position.y = -55
-    ground.rotateX(Math.PI)
+    ground.position.y = -20
 }
 
 function createImagePlane(url, height = 30) {
