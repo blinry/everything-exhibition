@@ -1,6 +1,9 @@
 const wtf = require("wtf_wikipedia")
 import html2canvas from "html2canvas"
 
+const CANVAS_WIDTH = 1280
+const CANVAS_HEIGHT = 720
+
 const API_URL = `https://en.wikipedia.org/w/api.php`
 let scene
 let renderer
@@ -198,13 +201,13 @@ function setupScene() {
 
     camera = new THREE.PerspectiveCamera(
         75,
-        window.innerWidth / window.innerHeight,
+        CANVAS_WIDTH/CANVAS_HEIGHT,
         0.1,
         1000
     )
 
-    renderer = new THREE.WebGLRenderer()
-    renderer.setSize(1280, 720)
+    renderer = new THREE.WebGLRenderer({ antialias: true})
+    renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
     controls = new THREE.PointerLockControls(camera, document.body)
