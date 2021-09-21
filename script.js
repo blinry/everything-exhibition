@@ -126,14 +126,15 @@ function render3DExhibition(exhibition) {
         })
 
         for (let [j, img] of chapter.images.entries()) {
+            let imageAngle =
+                numberOfImages > 1
+                    ? (-j * Math.PI) / (numberOfImages - 1)
+                    : -Math.PI / 2
             let imagePosition = new THREE.Vector3(
                 -IMAGE_RADIUS,
                 0,
                 0
-            ).applyAxisAngle(
-                new THREE.Vector3(0, 1, 0),
-                (-j * Math.PI) / numberOfImages
-            )
+            ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
 
             window
                 .fetch(
@@ -146,9 +147,9 @@ function render3DExhibition(exhibition) {
                         img.fileURL = url
                         addPicture(img).then((picture) => {
                             picture.position.x = imagePosition.x
-                            picture.position.y = 10
                             picture.position.z = imagePosition.z
                             picture.lookAt(new THREE.Vector3(0, 0, 0))
+                            picture.position.y = 10
                             imageGroup.add(picture)
                         })
 
