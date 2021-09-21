@@ -30,6 +30,7 @@ function parseArticle(wikiText) {
 
     let currentSectionName
     let currentSectionImages = []
+    let currentParagraph = []
 
     for (const section of article.sections) {
         if (section.depth === 0) {
@@ -37,10 +38,16 @@ function parseArticle(wikiText) {
                 exhibition.push({
                     name: currentSectionName,
                     images: currentSectionImages,
+                    paragraph: currentParagraph,
                 })
             }
             currentSectionName = section.title
             currentSectionImages = []
+            currentParagraph = []
+        }
+
+        if (section?.paragraphs?.[0]?.sentences?.[0]?.text) {
+            currentParagraph.push(section.paragraphs[0].sentences[0].text)
         }
 
         if (!section.images) {
@@ -55,7 +62,11 @@ function parseArticle(wikiText) {
             })
         }
     }
-    exhibition.push({name: currentSectionName, images: currentSectionImages})
+    exhibition.push({
+        name: currentSectionName,
+        images: currentSectionImages,
+        paragraph: currentParagraph,
+    })
     return exhibition
 }
 
@@ -107,7 +118,6 @@ function render3DExhibition(exhibition) {
             -(i * Math.PI * 2) / numberOfChapters
         )
 
-        let numberOfImages = chapter.images.length
         let imageGroup = new THREE.Group()
         scene.add(imageGroup)
         imageGroup.position.x = chapterMidpoint.x
@@ -125,7 +135,32 @@ function render3DExhibition(exhibition) {
             imageGroup.add(text)
         })
 
-        for (let [j, img] of chapter.images.entries()) {
+        let promiseArr = generateImageData(chapter)
+        console.log(promiseArr)
+        Promise.all(promiseArr).then((objArr) => {
+            console.log(objArr)
+            /*let numberOfImages = objArr.length
+            for (let [j, picture] of objArr.entries()) {
+                
+                let imageAngle =
+                    numberOfImages > 1
+                        ? (-j * Math.PI) / (numberOfImages - 1)
+                        : -Math.PI / 2
+                let imagePosition = new THREE.Vector3(
+                    -IMAGE_RADIUS,
+                    0,
+                    0
+                ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
+                
+                picture.position.x = imagePosition.x
+                picture.position.z = imagePosition.z
+                picture.lookAt(new THREE.Vector3(0, 0, 0))
+                picture.position.y = 10
+                imageGroup.add(picture)
+            }*/
+        })
+
+        /*for (let [j, img] of chapter.images.entries()) {
             let imageAngle =
                 numberOfImages > 1
                     ? (-j * Math.PI) / (numberOfImages - 1)
@@ -156,8 +191,42 @@ function render3DExhibition(exhibition) {
                         console.log(img.description)
                     })
                 })
-        }
+        }*/
     }
+}
+
+function generateImageData(chapter) {
+    let imageData = []
+
+    let imagePromises = []
+
+    return new Promise((resolve) => {
+        //for regular images
+        for (let [j, img] of chapter.images.entries()) {
+            let p = window.fetch(
+                `${API_URL}?action=query&titles=${img.fileName}&format=json&prop=imageinfo&iiprop=url&origin=*`
+            )
+            imagePromises.push(p)
+        }
+
+        Promise.all(imagePromises).then((responseArr) => {
+            let jsonPromises = responseArr.map((response) => {
+                return response.json()
+            })
+            Promise.all(jsonPromises).then(function (dataArr) {
+                let picPromises = dataArr.map((data, idx) => {
+                    let url = data.query.pages["-1"].imageinfo[0].url
+                    let img = {
+                        fileURL: url,
+                        description: chapter.images[idx].description,
+                    }
+                    return addPicture(img)
+                })
+
+                resolve(picPromises)
+            })
+        })
+    })
 }
 
 function addPicture(img) {
@@ -399,7 +468,7 @@ function createTextPlane(text, height = 2) {
         div.style.maxWidth = "300px"
         div.style.display = "inline-block"
         document.body.appendChild(div)
-        html2canvas(div).then(function (canvas) {
+        html2canvas(div, {logging: false}).then(function (canvas) {
             createImagePlane(canvas.toDataURL(), height).then((plane) => {
                 resolve(plane)
             })
