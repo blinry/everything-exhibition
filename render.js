@@ -1,5 +1,4 @@
 import html2canvas from "html2canvas"
-import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
@@ -43,7 +42,7 @@ function clearObjects(obj) {
     }
 }
 
-function render3DExhibition(exhibition) {
+export function render(exhibition) {
     clearObjects(scene)
     setupFloor()
 
@@ -119,46 +118,7 @@ function addPicture(img) {
     })
 }
 
-function generate() {
-    let topic = document.getElementById("topic").value
-
-    let topicDiv = document.getElementById("topic")
-    topicDiv.blur()
-
-    let outputDiv = document.getElementById("output")
-    outputDiv.innerHTML = ""
-
-    generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
-        render3DExhibition(exhibition)
-    )
-}
-
-function getSuggestions(value) {
-    window
-        .fetch(
-            `${API_URL}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
-        )
-        .then((response) => {
-            response.json().then(function (data) {
-                let datalist = document.getElementById("suggestions")
-                datalist.innerHTML = ""
-
-                for (let item of data[1]) {
-                    addOption(item)
-                }
-            })
-        })
-}
-
-function addOption(label) {
-    let datalist = document.getElementById("suggestions")
-    let option = document.createElement("option")
-
-    option.value = `${label}`
-    datalist.appendChild(option)
-}
-
-function animate() {
+export function animate() {
     const delta = clock.getDelta()
 
     if (delta > 0.1) {
@@ -197,7 +157,7 @@ function animate() {
     renderer.render(scene, camera)
 }
 
-function setupScene() {
+export function setup() {
     clock = new THREE.Clock()
 
     scene = new THREE.Scene()
@@ -293,6 +253,9 @@ function setupScene() {
 
     document.addEventListener("keydown", onKeyDown)
     document.addEventListener("keyup", onKeyUp)
+
+    onWindowResize()
+    window.addEventListener("resize", onWindowResize)
 }
 
 function setupFloor() {
@@ -356,24 +319,4 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
-}
-
-window.onload = function () {
-    document.getElementById("topic").addEventListener("keyup", (e) => {
-        if (e.key === "Enter") {
-            generate()
-        }
-    })
-    document
-        .getElementById("generate-button")
-        .addEventListener("click", (e) => generate())
-    document
-        .getElementById("topic")
-        .addEventListener("input", (e) => getSuggestions(e.target.value))
-
-    setupScene()
-    onWindowResize()
-    window.addEventListener("resize", onWindowResize)
-
-    animate()
 }
