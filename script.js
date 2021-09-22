@@ -135,25 +135,25 @@ function render3DExhibition(exhibition) {
             imageGroup.add(text)
         })
 
-        generateImageData(chapter).then(promiseArr => {
+        generateImageData(chapter).then((promiseArr) => {
             let numberOfImages = promiseArr.length
             promiseArr.forEach((picturePromise, j) => {
-                picturePromise.then(picture => {
-                let imageAngle =
-                    numberOfImages > 1
-                        ? (-j * Math.PI) / (numberOfImages - 1)
-                        : -Math.PI / 2
-                let imagePosition = new THREE.Vector3(
-                    -IMAGE_RADIUS,
-                    0,
-                    0
-                ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
-                
-                picture.position.x = imagePosition.x
-                picture.position.z = imagePosition.z
-                picture.lookAt(new THREE.Vector3(0, 0, 0))
-                picture.position.y = 10
-                imageGroup.add(picture)
+                picturePromise.then((picture) => {
+                    let imageAngle =
+                        numberOfImages > 1
+                            ? (-j * Math.PI) / (numberOfImages - 1)
+                            : -Math.PI / 2
+                    let imagePosition = new THREE.Vector3(
+                        -IMAGE_RADIUS,
+                        0,
+                        0
+                    ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
+
+                    picture.position.x = imagePosition.x
+                    picture.position.z = imagePosition.z
+                    picture.lookAt(new THREE.Vector3(0, 0, 0))
+                    picture.position.y = 10
+                    imageGroup.add(picture)
                 })
             })
         })
