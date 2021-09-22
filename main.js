@@ -26,26 +26,31 @@ function addOption(label) {
     datalist.appendChild(option)
 }
 
+function startGeneration() {
+    let topic = document.getElementById("topic").value
+
+    let topicDiv = document.getElementById("topic")
+    topicDiv.blur()
+
+    let outputDiv = document.getElementById("output")
+    outputDiv.innerHTML = ""
+
+    generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
+        render(exhibition)
+    )
+}
+
 window.onload = function () {
     document.getElementById("topic").addEventListener("keyup", (e) => {
         if (e.key === "Enter") {
-            document
-                .getElementById("generate-button")
-                .addEventListener("click", (e) => {
-                    let topic = document.getElementById("topic").value
-
-                    let topicDiv = document.getElementById("topic")
-                    topicDiv.blur()
-
-                    let outputDiv = document.getElementById("output")
-                    outputDiv.innerHTML = ""
-
-                    generateExhibitionDescriptionFromWikipedia(topic).then(
-                        (exhibition) => render(exhibition)
-                    )
-                })
+            startGeneration()
         }
     })
+    document
+        .getElementById("generate-button")
+        .addEventListener("click", (e) => {
+            startGeneration()
+        })
     document
         .getElementById("topic")
         .addEventListener("input", (e) => getSuggestions(e.target.value))
