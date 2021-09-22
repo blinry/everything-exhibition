@@ -48,9 +48,11 @@ async function parseArticle(wikiText) {
                 `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&origin=*`
             )
             let data = await response.json()
-            return {
-                url: data.query.pages["-1"].imageinfo[0].url,
-                description: image.caption,
+            for (let pageNumber in data.query.pages) {
+                return {
+                    url: data.query.pages[pageNumber].imageinfo[0].url,
+                    description: image.caption,
+                }
             }
         })
         let newImages = await Promise.all(newImagePromises)
