@@ -157,39 +157,6 @@ function render3DExhibition(exhibition) {
                 })
             })
         })
-
-        /*for (let [j, img] of chapter.images.entries()) {
-            let imageAngle =
-                numberOfImages > 1
-                    ? (-j * Math.PI) / (numberOfImages - 1)
-                    : -Math.PI / 2
-            let imagePosition = new THREE.Vector3(
-                -IMAGE_RADIUS,
-                0,
-                0
-            ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
-
-            window
-                .fetch(
-                    `${API_URL}?action=query&titles=${img.fileName}&format=json&prop=imageinfo&iiprop=url&origin=*`
-                )
-                .then((response) => {
-                    response.json().then(function (data) {
-                        let url = data.query.pages["-1"].imageinfo[0].url
-
-                        img.fileURL = url
-                        addPicture(img).then((picture) => {
-                            picture.position.x = imagePosition.x
-                            picture.position.z = imagePosition.z
-                            picture.lookAt(new THREE.Vector3(0, 0, 0))
-                            picture.position.y = 10
-                            imageGroup.add(picture)
-                        })
-
-                        console.log(img.description)
-                    })
-                })
-        }*/
     }
 }
 
