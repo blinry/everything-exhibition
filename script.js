@@ -1,5 +1,5 @@
-const wtf = require("wtf_wikipedia")
 import html2canvas from "html2canvas"
+import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
@@ -7,7 +7,6 @@ const CANVAS_HEIGHT = 720
 const CHAPTER_RADIUS = 160
 const IMAGE_RADIUS = 40
 
-const API_URL = `https://en.wikipedia.org/w/api.php`
 let scene
 let renderer
 let controls
@@ -23,67 +22,6 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 400
 let movementSpeed = defaultMovementSpeed
-
-function parseArticle(wikiText) {
-    const article = wtf(wikiText).json()
-    console.log(article)
-
-    let exhibition = []
-
-    let currentSectionName
-    let currentSectionImages = []
-    let currentParagraph = []
-
-    for (const section of article.sections) {
-        if (section.depth === 0) {
-            if (currentSectionName) {
-                exhibition.push({
-                    name: currentSectionName,
-                    images: currentSectionImages,
-                    paragraph: currentParagraph,
-                })
-            }
-            currentSectionName = section.title
-            currentSectionImages = []
-            currentParagraph = []
-        }
-
-        if (section?.paragraphs?.[0]?.sentences?.[0]?.text) {
-            currentParagraph.push(section.paragraphs[0].sentences[0].text)
-        }
-
-        if (!section.images) {
-            continue
-        }
-
-        for (const image of section.images) {
-            currentSectionImages.push({
-                fileName: image.file,
-                description: image.caption,
-                fileURL: image.url,
-            })
-        }
-    }
-    exhibition.push({
-        name: currentSectionName,
-        images: currentSectionImages,
-        paragraph: currentParagraph,
-    })
-    return exhibition
-}
-
-function render(exhibition) {
-    let output = document.getElementById("output")
-
-    for (let chapter of exhibition) {
-        let header = document.createElement("h2")
-        header.innerHTML = chapter.name
-        output.appendChild(header)
-        for (let img of chapter.images) {
-            fetchImage(img.fileName, img.description)
-        }
-    }
-}
 
 function clearObjects(obj) {
     while (obj.children.length > 0) {
@@ -162,45 +100,15 @@ function render3DExhibition(exhibition) {
     }
 }
 
-function generateImageData(chapter) {
-    let imageData = []
-
-    let imagePromises = []
-
-    return new Promise((resolve) => {
-        //for regular images
-        for (let [j, img] of chapter.images.entries()) {
-            let p = window.fetch(
-                `${API_URL}?action=query&titles=${img.fileName}&format=json&prop=imageinfo&iiprop=url&origin=*`
-            )
-            imagePromises.push(p)
-        }
-
-        Promise.all(imagePromises).then((responseArr) => {
-            let jsonPromises = responseArr.map((response) => {
-                return response.json()
-            })
-            Promise.all(jsonPromises).then(function (dataArr) {
-                let picPromises = dataArr.map((data, idx) => {
-                    let url = data.query.pages["-1"].imageinfo[0].url
-                    let img = {
-                        fileURL: url,
-                        description: chapter.images[idx].description,
-                    }
-                    return addPicture(img)
-                })
-
-                picPromises.unshift(createTextPlane(chapter.paragraph[0], 20))
-
-                resolve(picPromises)
-            })
-        })
-    })
+async function generateImageData(chapter) {
+    let things = chapter.images.map((image) => addPicture(image))
+    things.unshift(createTextPlane(chapter.paragraph[0], 20))
+    return things
 }
 
 function addPicture(img) {
     return new Promise((resolve) => {
-        createImagePlane(img.fileURL).then((plane) => {
+        createImagePlane(img.url).then((plane) => {
             createTextPlane(img.description).then((textPlane) => {
                 textPlane.position.z = 1
                 textPlane.position.y = -10
@@ -209,26 +117,6 @@ function addPicture(img) {
             })
         })
     })
-}
-
-function fetchImage(filename, description) {
-    let output = document.getElementById("output")
-
-    let img = document.createElement("img")
-    img.title = description
-    output.appendChild(img)
-
-    window
-        .fetch(
-            `${API_URL}?action=query&titles=${filename}&format=json&prop=imageinfo&iiprop=url&origin=*`
-        )
-        .then((response) => {
-            response.json().then(function (data) {
-                let url = data.query.pages["-1"].imageinfo[0].url
-
-                img.src = url
-            })
-        })
 }
 
 function generate() {
@@ -240,18 +128,9 @@ function generate() {
     let outputDiv = document.getElementById("output")
     outputDiv.innerHTML = ""
 
-    window
-        .fetch(
-            `${API_URL}?action=query&format=json&prop=revisions&titles=${topic}&formatversion=2&rvprop=content&rvslots=*&origin=*`
-        )
-        .then((response) => {
-            response.json().then(function (data) {
-                let wikiContent =
-                    data.query.pages[0].revisions[0].slots.main.content
-                let exhibition = parseArticle(wikiContent)
-                render3DExhibition(exhibition)
-            })
-        })
+    generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
+        render3DExhibition(exhibition)
+    )
 }
 
 function getSuggestions(value) {
@@ -374,7 +253,6 @@ function setupScene() {
 
             case "ShiftLeft":
             case "ShiftRight":
-                console.log("shift down")
                 movementSpeed = 3 * defaultMovementSpeed
                 break
         }
