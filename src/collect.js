@@ -19,7 +19,7 @@ async function parseArticle(wikiText) {
 
     let currentSectionName
     let currentSectionImages = []
-    let currentParagraph = []
+    let currentParagraphs = []
 
     for (const section of article.sections) {
         if (section.depth === 0) {
@@ -27,16 +27,26 @@ async function parseArticle(wikiText) {
                 exhibition.push({
                     name: currentSectionName,
                     images: currentSectionImages,
-                    paragraph: currentParagraph,
+                    paragraphs: currentParagraphs,
                 })
             }
             currentSectionName = section.title
             currentSectionImages = []
-            currentParagraph = []
+            currentParagraphs = []
         }
 
-        if (section?.paragraphs?.[0]?.sentences?.[0]?.text) {
-            currentParagraph.push(section.paragraphs[0].sentences[0].text)
+        if (section.paragraphs) {
+            for (let paragraph of section.paragraphs) {
+                if (paragraph.sentences) {
+                    currentParagraphs.push(
+                        paragraph.sentences
+                            .map((sentence) => {
+                                return sentence.text
+                            })
+                            .join("<br><br>")
+                    )
+                }
+            }
         }
 
         if (!section.images) {
@@ -48,9 +58,9 @@ async function parseArticle(wikiText) {
                 `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&origin=*`
             )
             let data = await response.json()
-            for (let pageNumber in data.query.pages) {
+            if (data?.query?.pages?.["-1"]?.imageinfo?.[0]?.url) {
                 return {
-                    url: data.query.pages[pageNumber].imageinfo[0].url,
+                    url: data.query.pages["-1"].imageinfo[0].url,
                     description: image.caption,
                 }
             }
@@ -62,7 +72,7 @@ async function parseArticle(wikiText) {
     exhibition.push({
         name: currentSectionName,
         images: currentSectionImages,
-        paragraph: currentParagraph,
+        paragraphs: currentParagraphs,
     })
     console.log(exhibition)
     return exhibition

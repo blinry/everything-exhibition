@@ -5,8 +5,8 @@ import html2canvas from "html2canvas"
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
-const CHAPTER_RADIUS = 160
-const IMAGE_RADIUS = 40
+const CHAPTER_RADIUS = 400
+const IMAGE_RADIUS = 80
 
 let scene
 let renderer
@@ -70,9 +70,9 @@ export function render(exhibition) {
             text.position.x = 0
             text.position.y = 40
             text.position.z = 0
-            text.scale.x = 3
-            text.scale.y = 3
-            text.scale.z = 3
+            text.scale.x = 10
+            text.scale.y = 10
+            text.scale.z = 10
             imageGroup.add(text)
         })
 
@@ -103,7 +103,9 @@ export function render(exhibition) {
 
 async function generateImageData(chapter) {
     let things = chapter.images.map((image) => addPicture(image))
-    things.unshift(createTextPlane(chapter.paragraph[0], 20))
+    things.unshift(
+        ...chapter.paragraphs.map((paragraph) => createTextPlane(paragraph, 20))
+    )
     return things
 }
 
@@ -305,6 +307,7 @@ function createTextPlane(text, height = 2) {
         div.style.display = "inline-block"
         div.style.padding = "3px"
         div.style.position = "absolute"
+        div.style.textAlign = "left"
         div.style.top = "9000px"
         div.style.left = "0px"
         document.body.appendChild(div)
