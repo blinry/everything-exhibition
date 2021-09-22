@@ -21,6 +21,8 @@ let moveRight = false
 let canJump = false
 const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
+const defaultMovementSpeed = 400
+let movementSpeed = defaultMovementSpeed
 
 function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
@@ -248,7 +250,6 @@ function generate() {
                     data.query.pages[0].revisions[0].slots.main.content
                 let exhibition = parseArticle(wikiContent)
                 render3DExhibition(exhibition)
-                // Hack: assume that images are on their own lines.
             })
         })
 }
@@ -281,6 +282,12 @@ function addOption(label) {
 function animate() {
     const delta = clock.getDelta()
 
+    if (delta > 0.1) {
+        // Moving with a delta this big wouldn't look good. Do nothing.
+        requestAnimationFrame(animate)
+        return
+    }
+
     velocity.x -= velocity.x * 10.0 * delta
     velocity.z -= velocity.z * 10.0 * delta
 
@@ -290,8 +297,9 @@ function animate() {
     direction.x = Number(moveRight) - Number(moveLeft)
     direction.normalize()
 
-    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta
-    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta
+    if (moveForward || moveBackward)
+        velocity.z -= direction.z * movementSpeed * delta
+    if (moveLeft || moveRight) velocity.x -= direction.x * movementSpeed * delta
 
     controls.moveRight(-velocity.x * delta)
     controls.moveForward(-velocity.z * delta)
@@ -328,13 +336,16 @@ function setupScene() {
     document.body.appendChild(renderer.domElement)
 
     controls = new THREE.PointerLockControls(camera, document.body)
-    controls.movementSpeed = 150
-    controls.lookSpeed = 0.1
+
     renderer.domElement.addEventListener("click", function () {
         controls.lock()
     })
 
     const onKeyDown = function (event) {
+        if (document.getElementById("topic") === document.activeElement) {
+            return
+        }
+
         switch (event.code) {
             case "ArrowUp":
             case "KeyW":
@@ -360,10 +371,20 @@ function setupScene() {
                 if (canJump === true) velocity.y += 350
                 canJump = false
                 break
+
+            case "ShiftLeft":
+            case "ShiftRight":
+                console.log("shift down")
+                movementSpeed = 3 * defaultMovementSpeed
+                break
         }
     }
 
     const onKeyUp = function (event) {
+        if (document.getElementById("topic") === document.activeElement) {
+            return
+        }
+
         switch (event.code) {
             case "ArrowUp":
             case "KeyW":
@@ -383,6 +404,11 @@ function setupScene() {
             case "ArrowRight":
             case "KeyD":
                 moveRight = false
+                break
+
+            case "ShiftLeft":
+            case "ShiftRight":
+                movementSpeed = defaultMovementSpeed
                 break
         }
     }
@@ -435,13 +461,23 @@ function createTextPlane(text, height = 2) {
         div.style.maxWidth = "300px"
         div.style.display = "inline-block"
         div.style.padding = "3px"
+        div.style.position = "absolute"
+        div.style.top = "9000px"
+        div.style.left = "0px"
         document.body.appendChild(div)
         html2canvas(div, {logging: false}).then(function (canvas) {
             createImagePlane(canvas.toDataURL(), height).then((plane) => {
+                div.remove()
                 resolve(plane)
             })
         })
     })
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
 window.onload = function () {
@@ -458,6 +494,8 @@ window.onload = function () {
         .addEventListener("input", (e) => getSuggestions(e.target.value))
 
     setupScene()
+    onWindowResize()
+    window.addEventListener("resize", onWindowResize)
 
     animate()
 }
