@@ -1,3 +1,5 @@
+import * as THREE from "three"
+import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 import html2canvas from "html2canvas"
 
 const CANVAS_WIDTH = 1280
@@ -174,7 +176,7 @@ export function setup() {
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
-    controls = new THREE.PointerLockControls(camera, document.body)
+    controls = new PointerLockControls(camera, document.body)
 
     renderer.domElement.addEventListener("click", function () {
         controls.lock()
