@@ -1,3 +1,7 @@
+Array.prototype.sum = function () {
+    return this.reduce((partial_sum, a) => partial_sum + a, 0)
+}
+
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 import html2canvas from "html2canvas"
@@ -8,7 +12,7 @@ const CANVAS_HEIGHT = 720
 const CHAPTER_RADIUS = 400
 const IMAGE_RADIUS = 80
 
-const IMAGE_DISTANCE = 50
+const IMAGE_DISTANCE = 10
 
 let scene
 let renderer
@@ -25,8 +29,6 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 400
 let movementSpeed = defaultMovementSpeed
-
-window.i = []
 
 function clearObjects(obj) {
     while (obj.children.length > 0) {
@@ -64,7 +66,6 @@ export function render(exhibition) {
         )
 
         let imageGroup = new THREE.Group()
-        window.i.push(imageGroup)
         scene.add(imageGroup)
         imageGroup.position.x = chapterMidpoint.x
         imageGroup.position.y = chapterMidpoint.y
@@ -83,24 +84,9 @@ export function render(exhibition) {
 
         generateImageData(chapter).then((promiseArr) => {
             let numberOfImages = promiseArr.length
-            promiseArr.forEach((picturePromise, j) => {
-                picturePromise.then((picture) => {
-                    let imageAngle =
-                        numberOfImages > 1
-                            ? (-j * Math.PI) / (numberOfImages - 1)
-                            : -Math.PI / 2
-                    let imagePosition = new THREE.Vector3(
-                        -IMAGE_RADIUS,
-                        0,
-                        0
-                    ).applyAxisAngle(new THREE.Vector3(0, 1, 0), imageAngle)
-
-                    picture.position.x = imagePosition.x
-                    picture.position.z = imagePosition.z
-                    //picture.lookAt(new THREE.Vector3(0, 0, 0))
-                    picture.position.y = 10
-                    imageGroup.add(picture)
-                })
+            Promise.all(promiseArr).then((pictures) => {
+                imageGroup.add(...pictures)
+                distributeObjects(pictures)
             })
         })
     }
@@ -292,13 +278,16 @@ function createImagePlane(url, height = 30) {
     return new Promise((resolve) => {
         var texture = new THREE.TextureLoader().load(url, (texture) => {
             let ratio = texture.image.width / texture.image.height
-            var planeGeometry = new THREE.PlaneGeometry(height * ratio, height)
+            const width = height * ratio
+            var planeGeometry = new THREE.PlaneGeometry(width, height)
             var planeMaterial = new THREE.MeshLambertMaterial({
                 map: texture,
                 side: THREE.DoubleSide,
             })
 
             var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+            // Store the width in the Mesh object. This is a bit of a hack.
+            plane.myWidth = width
             resolve(plane)
         })
     })
@@ -332,7 +321,7 @@ function onWindowResize() {
 }
 
 function splitIntoEqualParts(lengths) {
-    let totalLength = lengths.reduce((partial_sum, a) => partial_sum + a, 0)
+    let totalLength = lengths.sum()
     let searchLength = totalLength / 3
 
     function findBestSplit(searchPoint) {
@@ -363,19 +352,13 @@ function splitIntoEqualParts(lengths) {
 }
 
 function calculateObjectWidths(objects) {
-    let widths = objects.map((obj) => {
-        let box = new THREE.Box3()
-        box = box.setFromObject(obj)
-        console.log(box)
-        let vec = new THREE.Vector3()
-        box.getSize(vec)
-        return vec.x
-    })
+    let widths = objects.map((obj) => obj.myWidth)
     return widths
 }
 
 function distributeObjects(objects) {
     let widths = calculateObjectWidths(objects)
+    console.log(widths)
     let partIdx = splitIntoEqualParts(widths)
 
     let parts = [
@@ -384,8 +367,48 @@ function distributeObjects(objects) {
         objects.slice(partIdx[1]),
     ]
 
-    parts[0].forEach((obj) => obj.rotateY(Math.PI / 2))
-    parts[2].forEach((obj) => obj.rotateY(-Math.PI / 2))
-}
+    let widthParts = [
+        widths.slice(0, partIdx[0]),
+        widths.slice(partIdx[0], partIdx[1]),
+        widths.slice(partIdx[1]),
+    ]
 
-window.l = distributeObjects
+    let wallWidths = widthParts.map(
+        (widths) => widths.sum() + (widths.length + 1) * IMAGE_DISTANCE
+    )
+
+    let roomWidth = Math.max(...wallWidths)
+
+    let wallCenters = [
+        new THREE.Vector3(-roomWidth / 2, 0, roomWidth / 2),
+        new THREE.Vector3(0, 0, -roomWidth),
+        new THREE.Vector3(+roomWidth / 2, 0, roomWidth / 2),
+    ]
+
+    let wallStarts = [
+        new THREE.Vector3(-roomWidth / 2, 0, 0),
+        new THREE.Vector3(-roomWidth / 2, 0, -roomWidth),
+        new THREE.Vector3(+roomWidth / 2, 0, -roomWidth),
+    ]
+
+    let wallDirections = [
+        new THREE.Vector3(0, 0, -1),
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, 1),
+    ]
+
+    parts.forEach((part, i) => {
+        let wallProgress = (roomWidth - wallWidths[i]) / 2
+        for (const [j, obj] of part.entries()) {
+            obj.position.x = wallStarts[i].x
+            obj.position.z = wallStarts[i].z
+            obj.translateOnAxis(
+                wallDirections[i],
+                wallProgress + IMAGE_DISTANCE + widthParts[i][j] / 2
+            )
+
+            wallProgress += IMAGE_DISTANCE + widthParts[i][j]
+            obj.rotateY((1 - i) * (Math.PI / 2))
+        }
+    })
+}
