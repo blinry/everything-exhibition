@@ -8,6 +8,8 @@ const CANVAS_HEIGHT = 720
 const CHAPTER_RADIUS = 400
 const IMAGE_RADIUS = 80
 
+const IMAGE_DISTANCE = 50
+
 let scene
 let renderer
 let controls
@@ -23,6 +25,8 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 400
 let movementSpeed = defaultMovementSpeed
+
+window.i = []
 
 function clearObjects(obj) {
     while (obj.children.length > 0) {
@@ -60,6 +64,7 @@ export function render(exhibition) {
         )
 
         let imageGroup = new THREE.Group()
+        window.i.push(imageGroup)
         scene.add(imageGroup)
         imageGroup.position.x = chapterMidpoint.x
         imageGroup.position.y = chapterMidpoint.y
@@ -92,7 +97,7 @@ export function render(exhibition) {
 
                     picture.position.x = imagePosition.x
                     picture.position.z = imagePosition.z
-                    picture.lookAt(new THREE.Vector3(0, 0, 0))
+                    //picture.lookAt(new THREE.Vector3(0, 0, 0))
                     picture.position.y = 10
                     imageGroup.add(picture)
                 })
@@ -354,11 +359,33 @@ function splitIntoEqualParts(lengths) {
     let firstSplit = findBestSplit(searchLength)
     let secondSplit = findBestSplit(2 * searchLength)
 
+    return [firstSplit, secondSplit]
+}
+
+function calculateObjectWidths(objects) {
+    let widths = objects.map((obj) => {
+        let box = new THREE.Box3()
+        box = box.setFromObject(obj)
+        console.log(box)
+        let vec = new THREE.Vector3()
+        box.getSize(vec)
+        return vec.x
+    })
+    return widths
+}
+
+function distributeObjects(objects) {
+    let widths = calculateObjectWidths(objects)
+    let partIdx = splitIntoEqualParts(widths)
+
     let parts = [
-        lengths.slice(0, firstSplit),
-        lengths.slice(firstSplit, secondSplit),
-        lengths.slice(secondSplit),
+        objects.slice(0, partIdx[0]),
+        objects.slice(partIdx[0], partIdx[1]),
+        objects.slice(partIdx[1]),
     ]
 
-    return parts
+    parts[0].forEach((obj) => obj.rotateY(Math.PI / 2))
+    parts[2].forEach((obj) => obj.rotateY(-Math.PI / 2))
 }
+
+window.l = distributeObjects
