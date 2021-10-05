@@ -325,3 +325,40 @@ function onWindowResize() {
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
 }
+
+function splitIntoEqualParts(lengths) {
+    let totalLength = lengths.reduce((partial_sum, a) => partial_sum + a, 0)
+    let searchLength = totalLength / 3
+
+    function findBestSplit(searchPoint) {
+        let lengthProgress = 0
+        for (const [i, l] of lengths.entries()) {
+            if (lengthProgress + l >= searchPoint) {
+                let startPoint = lengthProgress
+                let endPoint = lengthProgress + l
+
+                if (
+                    Math.abs(startPoint - searchPoint) <
+                    Math.abs(endPoint - searchPoint)
+                ) {
+                    return i
+                } else {
+                    return i + 1
+                }
+            }
+
+            lengthProgress += l
+        }
+    }
+
+    let firstSplit = findBestSplit(searchLength)
+    let secondSplit = findBestSplit(2 * searchLength)
+
+    let parts = [
+        lengths.slice(0, firstSplit),
+        lengths.slice(firstSplit, secondSplit),
+        lengths.slice(secondSplit),
+    ]
+
+    return parts
+}
