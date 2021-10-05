@@ -87,7 +87,7 @@ export function render(exhibition) {
             Promise.all(promiseArr).then((pictures) => {
                 if (pictures.length > 0) {
                     imageGroup.add(...pictures)
-                    distributeObjects(pictures)
+                    distributeObjects(pictures, imageGroup)
                 }
             })
         })
@@ -356,7 +356,7 @@ function calculateObjectWidths(objects) {
     return widths
 }
 
-function distributeObjects(objects) {
+function distributeObjects(objects, imageGroup) {
     let widths = calculateObjectWidths(objects)
     let partIdx = splitIntoEqualParts(widths)
 
@@ -379,9 +379,9 @@ function distributeObjects(objects) {
     let roomWidth = Math.max(...wallWidths)
 
     let wallCenters = [
-        new THREE.Vector3(-roomWidth / 2, 0, roomWidth / 2),
+        new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),
         new THREE.Vector3(0, 0, -roomWidth),
-        new THREE.Vector3(+roomWidth / 2, 0, roomWidth / 2),
+        new THREE.Vector3(+roomWidth / 2, 0, -roomWidth / 2),
     ]
 
     let wallStarts = [
@@ -396,11 +396,19 @@ function distributeObjects(objects) {
         new THREE.Vector3(0, 0, 1),
     ]
 
+    let wallNormals = [
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(-1, 0, 0),
+    ]
+
+    createWalls(wallCenters, wallDirections, roomWidth, imageGroup)
+
     parts.forEach((part, i) => {
         let wallProgress = (roomWidth - wallWidths[i]) / 2
         for (const [j, obj] of part.entries()) {
-            obj.position.x = wallStarts[i].x
-            obj.position.z = wallStarts[i].z
+            obj.position.x = wallStarts[i].x + wallNormals[i].x
+            obj.position.z = wallStarts[i].z + wallNormals[i].z
             obj.translateOnAxis(
                 wallDirections[i],
                 wallProgress + IMAGE_DISTANCE + widthParts[i][j] / 2
@@ -410,4 +418,20 @@ function distributeObjects(objects) {
             obj.rotateY((1 - i) * (Math.PI / 2))
         }
     })
+}
+
+function createWalls(wallCenters, wallDirections, roomWidth, imageGroup) {
+    for ([i, center] of wallCenters.entries()) {
+        var planeGeometry = new THREE.PlaneGeometry(roomWidth, 40)
+        var planeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xeeeeee,
+            side: THREE.DoubleSide,
+        })
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+        plane.position.x = center.x
+        plane.position.z = center.z
+        let rotationAngle = Math.atan2(wallDirections[i].z, wallDirections[i].x)
+        plane.rotateY(rotationAngle)
+        imageGroup.add(plane)
+    }
 }
