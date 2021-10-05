@@ -85,15 +85,20 @@ export function render(exhibition) {
         generateImageData(chapter).then((promiseArr) => {
             let numberOfImages = promiseArr.length
             Promise.all(promiseArr).then((pictures) => {
-                imageGroup.add(...pictures)
-                distributeObjects(pictures)
+                if (pictures.length > 0) {
+                    imageGroup.add(...pictures)
+                    distributeObjects(pictures)
+                }
             })
         })
     }
 }
 
 async function generateImageData(chapter) {
-    let things = chapter.images.map((image) => addPicture(image))
+    const images = chapter.images.filter((image) =>
+        image.url.match(/\.(jpg|jpeg|png|svg)$/i)
+    )
+    let things = images.map((image) => addPicture(image))
     things.unshift(
         ...chapter.paragraphs.map((paragraph) => createTextPlane(paragraph, 20))
     )
@@ -254,11 +259,6 @@ export function setup() {
 }
 
 function setupFloor() {
-    const light = new THREE.DirectionalLight(0xffffff, 1)
-    light.position.x = 4
-    light.castShadow = true
-    scene.add(light)
-
     const ambient = new THREE.AmbientLight(0xffffff) // soft white light
     scene.add(ambient)
 
@@ -358,7 +358,6 @@ function calculateObjectWidths(objects) {
 
 function distributeObjects(objects) {
     let widths = calculateObjectWidths(objects)
-    console.log(widths)
     let partIdx = splitIntoEqualParts(widths)
 
     let parts = [
