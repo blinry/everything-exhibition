@@ -12,8 +12,6 @@ const CANVAS_HEIGHT = 720
 const CHAPTER_RADIUS = 400
 const IMAGE_RADIUS = 80
 
-const IMAGE_DISTANCE = 10
-
 let scene
 let renderer
 let controls
@@ -50,48 +48,38 @@ function clearObjects(obj) {
     }
 }
 
-export function render(exhibition) {
+export async function render(exhibition) {
     clearObjects(scene)
     setupFloor()
 
-    for (let [i, chapter] of exhibition.entries()) {
-        let numberOfChapters = exhibition.length
-        let chapterMidpoint = new THREE.Vector3(
-            0,
-            0,
-            -CHAPTER_RADIUS
-        ).applyAxisAngle(
-            new THREE.Vector3(0, 1, 0),
-            -(i * Math.PI * 2) / numberOfChapters
-        )
+    const rooms = await Promise.all(
+        exhibition.map((chapter) => generateChapter(chapter))
+    )
+    console.log(rooms)
+    distributeObjects(rooms, scene, 0, false)
+}
 
-        let imageGroup = new THREE.Group()
-        scene.add(imageGroup)
-        imageGroup.position.x = chapterMidpoint.x
-        imageGroup.position.y = chapterMidpoint.y
-        imageGroup.position.z = chapterMidpoint.z
-        imageGroup.lookAt(new THREE.Vector3(0, 0, 0))
+async function generateChapter(chapter) {
+    let imageGroup = new THREE.Group()
+    scene.add(imageGroup)
 
-        createTextPlane(chapter.name).then((text) => {
-            text.position.x = 0
-            text.position.y = 40
-            text.position.z = 0
-            text.scale.x = 10
-            text.scale.y = 10
-            text.scale.z = 10
-            imageGroup.add(text)
-        })
+    let text = await createTextPlane(chapter.name)
+    text.position.x = 0
+    text.position.y = 40
+    text.position.z = 0
+    text.scale.x = 10
+    text.scale.y = 10
+    text.scale.z = 10
+    imageGroup.add(text)
 
-        generateImageData(chapter).then((promiseArr) => {
-            let numberOfImages = promiseArr.length
-            Promise.all(promiseArr).then((pictures) => {
-                if (pictures.length > 0) {
-                    imageGroup.add(...pictures)
-                    distributeObjects(pictures, imageGroup)
-                }
-            })
-        })
+    let promiseArr = await generateImageData(chapter)
+    let numberOfImages = promiseArr.length
+    let pictures = await Promise.all(promiseArr)
+    if (pictures.length > 0) {
+        imageGroup.add(...pictures)
     }
+    distributeObjects(pictures, imageGroup, 10)
+    return imageGroup
 }
 
 async function generateImageData(chapter) {
@@ -272,6 +260,8 @@ function setupFloor() {
     const ground = new THREE.Mesh(geometry, material)
     scene.add(ground)
     ground.position.y = -20
+
+    camera.position = new THREE.Vector3(0, 0, -300)
 }
 
 function createImagePlane(url, height = 30) {
@@ -356,8 +346,14 @@ function calculateObjectWidths(objects) {
     return widths
 }
 
-function distributeObjects(objects, imageGroup) {
+function distributeObjects(
+    objects,
+    imageGroup,
+    gapWidth,
+    generateWalls = true
+) {
     let widths = calculateObjectWidths(objects)
+    console.log(widths)
     let partIdx = splitIntoEqualParts(widths)
 
     let parts = [
@@ -373,10 +369,11 @@ function distributeObjects(objects, imageGroup) {
     ]
 
     let wallWidths = widthParts.map(
-        (widths) => widths.sum() + (widths.length + 1) * IMAGE_DISTANCE
+        (widths) => widths.sum() + (widths.length + 1) * gapWidth
     )
 
     let roomWidth = Math.max(...wallWidths)
+    console.log(roomWidth)
 
     let wallCenters = [
         new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),
@@ -402,7 +399,9 @@ function distributeObjects(objects, imageGroup) {
         new THREE.Vector3(-1, 0, 0),
     ]
 
-    createWalls(wallCenters, wallDirections, roomWidth, imageGroup)
+    if (generateWalls) {
+        createWalls(wallCenters, wallDirections, roomWidth, imageGroup)
+    }
 
     parts.forEach((part, i) => {
         let wallProgress = (roomWidth - wallWidths[i]) / 2
@@ -411,13 +410,15 @@ function distributeObjects(objects, imageGroup) {
             obj.position.z = wallStarts[i].z + wallNormals[i].z
             obj.translateOnAxis(
                 wallDirections[i],
-                wallProgress + IMAGE_DISTANCE + widthParts[i][j] / 2
+                wallProgress + gapWidth + widthParts[i][j] / 2
             )
 
-            wallProgress += IMAGE_DISTANCE + widthParts[i][j]
+            wallProgress += gapWidth + widthParts[i][j]
             obj.rotateY((1 - i) * (Math.PI / 2))
         }
     })
+
+    imageGroup.myWidth = roomWidth
 }
 
 function createWalls(wallCenters, wallDirections, roomWidth, imageGroup) {
