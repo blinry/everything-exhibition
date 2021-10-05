@@ -14,6 +14,7 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
 
 async function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
+    console.log(article)
 
     let exhibition = []
 
@@ -23,13 +24,12 @@ async function parseArticle(wikiText) {
 
     for (const section of article.sections) {
         if (section.depth === 0) {
-            if (currentSectionName) {
-                exhibition.push({
-                    name: currentSectionName,
-                    images: currentSectionImages,
-                    paragraphs: currentParagraphs,
-                })
-            }
+            addSection(
+                exhibition,
+                currentSectionName,
+                currentSectionImages,
+                currentParagraphs
+            )
             currentSectionName = section.title
             currentSectionImages = []
             currentParagraphs = []
@@ -69,11 +69,33 @@ async function parseArticle(wikiText) {
 
         currentSectionImages.push(...newImages)
     }
-    exhibition.push({
-        name: currentSectionName,
-        images: currentSectionImages,
-        paragraphs: currentParagraphs,
-    })
+    addSection(
+        exhibition,
+        currentSectionName,
+        currentSectionImages,
+        currentParagraphs
+    )
     console.log(exhibition)
     return exhibition
+}
+
+function addSection(
+    exhibition,
+    currentSectionName,
+    currentSectionImages,
+    currentParagraphs
+) {
+    currentParagraphs = currentParagraphs.filter((p) => p.length > 0)
+    console.log(currentSectionName)
+    console.log(currentParagraphs)
+    if (
+        currentSectionName !== undefined &&
+        currentParagraphs.length + currentSectionImages.length > 0
+    ) {
+        exhibition.push({
+            name: currentSectionName || "Start here!",
+            images: currentSectionImages,
+            paragraphs: currentParagraphs,
+        })
+    }
 }

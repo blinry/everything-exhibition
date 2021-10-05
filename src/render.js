@@ -9,9 +9,6 @@ import html2canvas from "html2canvas"
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
-const CHAPTER_RADIUS = 400
-const IMAGE_RADIUS = 80
-
 let scene
 let renderer
 let controls
@@ -67,9 +64,9 @@ async function generateChapter(chapter) {
     text.position.x = 0
     text.position.y = 40
     text.position.z = 0
-    text.scale.x = 10
-    text.scale.y = 10
-    text.scale.z = 10
+    text.scale.x = 3
+    text.scale.y = 3
+    text.scale.z = 3
     imageGroup.add(text)
 
     let promiseArr = await generateImageData(chapter)
@@ -83,8 +80,8 @@ async function generateChapter(chapter) {
 }
 
 async function generateImageData(chapter) {
-    const images = chapter.images.filter((image) =>
-        image.url.match(/\.(jpg|jpeg|png|svg)$/i)
+    const images = chapter.images.filter(
+        (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
     )
     let things = images.map((image) => addPicture(image))
     things.unshift(
@@ -250,12 +247,7 @@ function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff) // soft white light
     scene.add(ambient)
 
-    const geometry = new THREE.CylinderGeometry(
-        CHAPTER_RADIUS + IMAGE_RADIUS,
-        CHAPTER_RADIUS + IMAGE_RADIUS,
-        10,
-        128
-    )
+    const geometry = new THREE.CylinderGeometry(1000, 1000, 10, 128)
     const material = new THREE.MeshStandardMaterial({color: 0x188c1c})
     const ground = new THREE.Mesh(geometry, material)
     scene.add(ground)
