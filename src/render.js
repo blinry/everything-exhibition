@@ -130,9 +130,9 @@ export function animate() {
 
     controls.getObject().position.y += velocity.y * delta
 
-    if (controls.getObject().position.y < 10) {
+    if (controls.getObject().position.y < 0) {
         velocity.y = 0
-        controls.getObject().position.y = 10
+        controls.getObject().position.y = 0
 
         canJump = true
     }
@@ -253,7 +253,10 @@ function setupFloor() {
     scene.add(ground)
     ground.position.y = -20
 
-    camera.position = new THREE.Vector3(0, 0, -300)
+    var defaultCameraPosition = new THREE.Vector3(0, 0, -300)
+    camera.position.x = defaultCameraPosition.x
+    camera.position.y = defaultCameraPosition.y
+    camera.position.z = defaultCameraPosition.z
 }
 
 function createImagePlane(url, height = 30) {
