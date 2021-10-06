@@ -14,7 +14,6 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
 
 async function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
-    console.log(article)
 
     let exhibition = []
 
@@ -86,8 +85,6 @@ function addSection(
     currentParagraphs
 ) {
     currentParagraphs = currentParagraphs.filter((p) => p.length > 0)
-    console.log(currentSectionName)
-    console.log(currentParagraphs)
     if (
         currentSectionName !== undefined &&
         currentParagraphs.length + currentSectionImages.length > 0

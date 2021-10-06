@@ -19,6 +19,8 @@ let moveForward = false
 let moveBackward = false
 let moveLeft = false
 let moveRight = false
+let moveUp = false
+let moveDown = false
 let canJump = false
 const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
@@ -47,13 +49,14 @@ function clearObjects(obj) {
 
 export async function render(exhibition) {
     clearObjects(scene)
-    setupFloor()
 
     const rooms = await Promise.all(
         exhibition.map((chapter) => generateChapter(chapter))
     )
-    console.log(rooms)
     distributeObjects(rooms, scene, 0, false)
+    createEntrance()
+    createExit()
+    setupFloor()
 }
 
 async function generateChapter(chapter) {
@@ -114,28 +117,31 @@ export function animate() {
 
     velocity.x -= velocity.x * 10.0 * delta
     velocity.z -= velocity.z * 10.0 * delta
+    velocity.y -= velocity.y * 10.0 * delta
 
-    velocity.y -= 9.8 * 100.0 * delta
+    //velocity.y -= 9.8 * 100.0 * delta
 
     direction.z = Number(moveForward) - Number(moveBackward)
     direction.x = Number(moveRight) - Number(moveLeft)
+    direction.y = Number(moveUp) - Number(moveDown)
     direction.normalize()
 
     if (moveForward || moveBackward)
         velocity.z -= direction.z * movementSpeed * delta
     if (moveLeft || moveRight) velocity.x -= direction.x * movementSpeed * delta
+    if (moveUp || moveDown)
+        velocity.y -= direction.y * movementSpeed * 3 * delta
 
     controls.moveRight(-velocity.x * delta)
     controls.moveForward(-velocity.z * delta)
-
     controls.getObject().position.y += velocity.y * delta
 
-    if (controls.getObject().position.y < 0) {
-        velocity.y = 0
-        controls.getObject().position.y = 0
+    //if (controls.getObject().position.y < 0) {
+    //    velocity.y = 0
+    //    controls.getObject().position.y = 0
 
-        canJump = true
-    }
+    //    canJump = true
+    //}
 
     requestAnimationFrame(animate)
 
@@ -191,6 +197,14 @@ export function setup() {
                 moveRight = true
                 break
 
+            case "KeyQ":
+                moveUp = true
+                break
+
+            case "KeyE":
+                moveDown = true
+                break
+
             case "Space":
                 if (canJump === true) velocity.y += 350
                 canJump = false
@@ -229,6 +243,14 @@ export function setup() {
                 moveRight = false
                 break
 
+            case "KeyQ":
+                moveUp = false
+                break
+
+            case "KeyE":
+                moveDown = false
+                break
+
             case "ShiftLeft":
             case "ShiftRight":
                 movementSpeed = defaultMovementSpeed
@@ -253,10 +275,12 @@ function setupFloor() {
     scene.add(ground)
     ground.position.y = -20
 
-    var defaultCameraPosition = new THREE.Vector3(0, 0, -300)
+    const w = scene.myWidth
+    var defaultCameraPosition = new THREE.Vector3(-w * 0.75, 0, w * 0.25)
     camera.position.x = defaultCameraPosition.x
     camera.position.y = defaultCameraPosition.y
     camera.position.z = defaultCameraPosition.z
+    camera.lookAt(-w * 0.25, 0, w * 0.25)
 }
 
 function createImagePlane(url, height = 30) {
@@ -348,7 +372,6 @@ function distributeObjects(
     generateWalls = true
 ) {
     let widths = calculateObjectWidths(objects)
-    console.log(widths)
     let partIdx = splitIntoEqualParts(widths)
 
     let parts = [
@@ -368,7 +391,6 @@ function distributeObjects(
     )
 
     let roomWidth = Math.max(...wallWidths)
-    console.log(roomWidth)
 
     let wallCenters = [
         new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),
@@ -418,16 +440,68 @@ function distributeObjects(
 
 function createWalls(wallCenters, wallDirections, roomWidth, imageGroup) {
     for ([i, center] of wallCenters.entries()) {
-        var planeGeometry = new THREE.PlaneGeometry(roomWidth, 40)
-        var planeMaterial = new THREE.MeshStandardMaterial({
-            color: 0xeeeeee,
-            side: THREE.DoubleSide,
-        })
-        var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-        plane.position.x = center.x
-        plane.position.z = center.z
-        let rotationAngle = Math.atan2(wallDirections[i].z, wallDirections[i].x)
-        plane.rotateY(rotationAngle)
-        imageGroup.add(plane)
+        const a = center.clone()
+        a.add(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
+        const b = center.clone()
+        b.sub(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
+        imageGroup.add(
+            createWall(new THREE.Vector2(a.x, a.z), new THREE.Vector2(b.x, b.z))
+        )
     }
+}
+
+function createEntrance() {
+    const w = scene.myWidth
+    scene.add(createWall(new THREE.Vector2(0, 0), new THREE.Vector2(0, w / 2)))
+    scene.add(
+        createWall(
+            new THREE.Vector2(-w / 2, w / 2),
+            new THREE.Vector2(0, w / 2)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(-w / 2, 0),
+            new THREE.Vector2(-w / 2, w / 8)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(-w / 2, (3 * w) / 8),
+            new THREE.Vector2(-w / 2, (4 * w) / 8)
+        )
+    )
+}
+
+function createExit() {
+    const w = scene.myWidth
+    //scene.add(createWall(new THREE.Vector2(0, 0), new THREE.Vector2(0, w / 2)))
+    scene.add(
+        createWall(new THREE.Vector2(w / 2, w / 2), new THREE.Vector2(0, w / 2))
+    )
+    scene.add(
+        createWall(new THREE.Vector2(w / 2, 0), new THREE.Vector2(w / 2, w / 8))
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(w / 2, (3 * w) / 8),
+            new THREE.Vector2(w / 2, (4 * w) / 8)
+        )
+    )
+}
+
+function createWall(a, b) {
+    const l = a.distanceTo(b)
+    var planeGeometry = new THREE.PlaneGeometry(l, 40)
+    var planeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xeeeeee,
+        side: THREE.DoubleSide,
+    })
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    var center = a.add(b).divideScalar(2)
+    plane.position.x = center.x
+    plane.position.z = center.y
+    let rotationAngle = Math.atan2(a.y - b.y, a.x - b.x)
+    plane.rotateY(rotationAngle)
+    return plane
 }
