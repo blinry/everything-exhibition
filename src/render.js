@@ -9,6 +9,8 @@ import html2canvas from "html2canvas"
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
+const DOOR_WIDTH = 20
+
 let scene
 let renderer
 let controls
@@ -53,7 +55,7 @@ export async function render(exhibition) {
     const rooms = await Promise.all(
         exhibition.map((chapter) => generateChapter(chapter))
     )
-    distributeObjects(rooms, scene, 0, false)
+    distributeObjects(rooms, scene, 10, false)
     createEntrance()
     createExit()
     setupFloor()
@@ -98,7 +100,7 @@ function addPicture(img) {
         createImagePlane(img.url).then((plane) => {
             createTextPlane(img.description).then((textPlane) => {
                 textPlane.position.z = 1
-                textPlane.position.y = -10
+                textPlane.position.y = -5
                 plane.add(textPlane)
                 resolve(plane)
             })
@@ -273,7 +275,7 @@ function setupFloor() {
     const material = new THREE.MeshStandardMaterial({color: 0x188c1c})
     const ground = new THREE.Mesh(geometry, material)
     scene.add(ground)
-    ground.position.y = -20
+    ground.position.y = -30
 
     const w = scene.myWidth
     var defaultCameraPosition = new THREE.Vector3(-w * 0.75, 0, w * 0.25)
@@ -365,12 +367,7 @@ function calculateObjectWidths(objects) {
     return widths
 }
 
-function distributeObjects(
-    objects,
-    imageGroup,
-    gapWidth,
-    generateWalls = true
-) {
+function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
     let widths = calculateObjectWidths(objects)
     let partIdx = splitIntoEqualParts(widths)
 
@@ -416,13 +413,45 @@ function distributeObjects(
         new THREE.Vector3(-1, 0, 0),
     ]
 
-    if (generateWalls) {
+    if (fullWalls) {
         createWalls(wallCenters, wallDirections, roomWidth, imageGroup)
     }
 
     parts.forEach((part, i) => {
         let wallProgress = (roomWidth - wallWidths[i]) / 2
+        if (wallProgress > 0 && !fullWalls) {
+            const a = wallStarts[i]
+            const b = wallStarts[i]
+                .clone()
+                .add(wallDirections[i].clone().multiplyScalar(wallProgress))
+            imageGroup.add(
+                createWall(
+                    new THREE.Vector2(a.x, a.z),
+                    new THREE.Vector2(b.x, b.z)
+                )
+            )
+        }
         for (const [j, obj] of part.entries()) {
+            if (!fullWalls) {
+                // Add wall into gap
+                const a = wallStarts[i]
+                    .clone()
+                    .add(wallDirections[i].clone().multiplyScalar(wallProgress))
+                const b = wallStarts[i]
+                    .clone()
+                    .add(
+                        wallDirections[i]
+                            .clone()
+                            .multiplyScalar(wallProgress + gapWidth)
+                    )
+                imageGroup.add(
+                    createWall(
+                        new THREE.Vector2(a.x, a.z),
+                        new THREE.Vector2(b.x, b.z)
+                    )
+                )
+            }
+
             obj.position.x = wallStarts[i].x + wallNormals[i].x
             obj.position.z = wallStarts[i].z + wallNormals[i].z
             obj.translateOnAxis(
@@ -432,6 +461,20 @@ function distributeObjects(
 
             wallProgress += gapWidth + widthParts[i][j]
             obj.rotateY((1 - i) * (Math.PI / 2))
+        }
+        if (wallProgress < roomWidth && !fullWalls) {
+            const a = wallStarts[i]
+                .clone()
+                .add(wallDirections[i].clone().multiplyScalar(wallProgress))
+            const b = wallStarts[i]
+                .clone()
+                .add(wallDirections[i].clone().multiplyScalar(roomWidth))
+            imageGroup.add(
+                createWall(
+                    new THREE.Vector2(a.x, a.z),
+                    new THREE.Vector2(b.x, b.z)
+                )
+            )
         }
     })
 
@@ -461,14 +504,26 @@ function createEntrance() {
     )
     scene.add(
         createWall(
-            new THREE.Vector2(-w / 2, 0),
-            new THREE.Vector2(-w / 2, w / 8)
+            new THREE.Vector2(0, 0),
+            new THREE.Vector2(-w / 4 + DOOR_WIDTH / 2, 0)
         )
     )
     scene.add(
         createWall(
-            new THREE.Vector2(-w / 2, (3 * w) / 8),
-            new THREE.Vector2(-w / 2, (4 * w) / 8)
+            new THREE.Vector2(-w / 4 - DOOR_WIDTH / 2, 0),
+            new THREE.Vector2(-w / 2, 0)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(-w / 2, 0),
+            new THREE.Vector2(-w / 2, w / 4 - DOOR_WIDTH / 2)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(-w / 2, w / 4 + DOOR_WIDTH / 2),
+            new THREE.Vector2(-w / 2, w / 2)
         )
     )
 }
@@ -480,12 +535,27 @@ function createExit() {
         createWall(new THREE.Vector2(w / 2, w / 2), new THREE.Vector2(0, w / 2))
     )
     scene.add(
-        createWall(new THREE.Vector2(w / 2, 0), new THREE.Vector2(w / 2, w / 8))
+        createWall(
+            new THREE.Vector2(0, 0),
+            new THREE.Vector2(w / 4 + DOOR_WIDTH / 2, 0)
+        )
     )
     scene.add(
         createWall(
-            new THREE.Vector2(w / 2, (3 * w) / 8),
-            new THREE.Vector2(w / 2, (4 * w) / 8)
+            new THREE.Vector2(w / 4 - DOOR_WIDTH / 2, 0),
+            new THREE.Vector2(w / 2, 0)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(w / 2, 0),
+            new THREE.Vector2(w / 2, w / 4 - DOOR_WIDTH / 2)
+        )
+    )
+    scene.add(
+        createWall(
+            new THREE.Vector2(w / 2, w / 4 + DOOR_WIDTH / 2),
+            new THREE.Vector2(w / 2, w / 2)
         )
     )
 }
