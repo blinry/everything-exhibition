@@ -297,8 +297,8 @@ function loadMaterial(path, scaling) {
 }
 
 function setupFloor() {
-    const ambient = new THREE.AmbientLight(0xffffff) // soft white light
-    //scene.add(ambient)
+    const ambient = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
+    scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(1000, 1000, 10, 128)
     const material = loadMaterial("plywood", 64)
@@ -330,8 +330,8 @@ function createImagePlane(url, height = 30) {
         var texture = new THREE.TextureLoader().load(url, (texture) => {
             let ratio = texture.image.width / texture.image.height
             const width = height * ratio
-            var planeGeometry = new THREE.PlaneGeometry(width, height)
-            var planeMaterial = new THREE.MeshLambertMaterial({
+            var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
+            var planeMaterial = new THREE.MeshStandardMaterial({
                 map: texture,
                 side: THREE.DoubleSide,
             })
@@ -339,6 +339,7 @@ function createImagePlane(url, height = 30) {
             var plane = new THREE.Mesh(planeGeometry, planeMaterial)
             // Store the width in the Mesh object. This is a bit of a hack.
             plane.myWidth = width
+            plane.receiveShadow = true
             resolve(plane)
         })
     })
@@ -529,7 +530,7 @@ function distributeObjects(
         }
     })
 
-    const light = new THREE.PointLight(0xffffff, 0.5, 100, 1)
+    const light = new THREE.PointLight(0xffffff, 1, Math.sqrt(2) * roomWidth, 1)
     //light.position.x += 3
     light.position.y += 3
     light.position.z -= roomWidth / 2
