@@ -369,14 +369,14 @@ function calculateObjectWidths(objects) {
 
 /**
  * @param {THREE.Group} group The group to put the generated walls in.
- * @param {bool} fullWalls Should the function insert full walls around the whole room, or just fill the gaps?
+ * @param {bool} singleRoomMode Are we placing images in a single room?
  */
 function distributeObjects(
     objects,
     group,
     gapWidth,
     indentation = 0,
-    fullWalls = true
+    singleRoomMode = true
 ) {
     let widths = calculateObjectWidths(objects)
     let partIdx = splitIntoEqualParts(widths)
@@ -423,13 +423,13 @@ function distributeObjects(
         new THREE.Vector3(-1, 0, 0),
     ]
 
-    if (fullWalls) {
+    if (singleRoomMode) {
         createWalls(wallCenters, wallDirections, roomWidth, group)
     }
 
     parts.forEach((part, i) => {
         let wallProgress = (roomWidth - wallWidths[i]) / 2
-        if (wallProgress > 0 && !fullWalls) {
+        if (wallProgress > 0 && !singleRoomMode) {
             const a = wallStarts[i]
             const b = wallStarts[i]
                 .clone()
@@ -442,7 +442,7 @@ function distributeObjects(
             )
         }
         for (const [j, obj] of part.entries()) {
-            if (!fullWalls) {
+            if (!singleRoomMode) {
                 // Add wall into gap
                 const a = wallStarts[i]
                     .clone()
@@ -473,7 +473,7 @@ function distributeObjects(
             wallProgress += gapWidth + widthParts[i][j]
             obj.rotateY((1 - i) * (Math.PI / 2))
         }
-        if (wallProgress < roomWidth && !fullWalls) {
+        if (wallProgress < roomWidth && !singleRoomMode) {
             const a = wallStarts[i]
                 .clone()
                 .add(wallDirections[i].clone().multiplyScalar(wallProgress))
@@ -502,6 +502,27 @@ function createWalls(wallCenters, wallDirections, roomWidth, group) {
             createWall(new THREE.Vector2(a.x, a.z), new THREE.Vector2(b.x, b.z))
         )
     }
+    // Add a front wall with a door.
+    const a = wallCenters[0].clone()
+    a.sub(wallDirections[0].clone().multiplyScalar(roomWidth / 2))
+    const b = wallCenters[2].clone()
+    b.add(wallDirections[2].clone().multiplyScalar(roomWidth / 2))
+
+    const sideWallLength = (roomWidth - DOOR_WIDTH) / 2
+
+    const a1 = a.clone()
+    const b1 = a.clone()
+    b1.add(wallDirections[1].clone().multiplyScalar(sideWallLength))
+    group.add(
+        createWall(new THREE.Vector2(a1.x, a1.z), new THREE.Vector2(b1.x, b1.z))
+    )
+
+    const a2 = b.clone()
+    const b2 = b.clone()
+    b2.add(wallDirections[1].clone().multiplyScalar(-sideWallLength))
+    group.add(
+        createWall(new THREE.Vector2(a2.x, a2.z), new THREE.Vector2(b2.x, b2.z))
+    )
 }
 
 function createEntrance() {
