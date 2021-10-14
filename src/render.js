@@ -298,7 +298,7 @@ function loadMaterial(path, scaling) {
 
 function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff) // soft white light
-    scene.add(ambient)
+    //scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(1000, 1000, 10, 128)
     const material = loadMaterial("plywood", 64)
@@ -322,7 +322,7 @@ function setupFloor() {
     light.shadow.mapSize.width = 4 * 512
     light.shadow.mapSize.height = 4 * 512
     //light.shadow.bias = -0.0001
-    scene.add(light)
+    //scene.add(light)
 }
 
 function createImagePlane(url, height = 30) {
@@ -533,10 +533,10 @@ function distributeObjects(
     //light.position.x += 3
     light.position.y += 3
     light.position.z -= roomWidth / 2
-    //light.castShadow = true
-    light.shadow.mapSize.width = 4 * 512
-    light.shadow.mapSize.height = 4 * 512
-    //light.shadow.bias = 0.0001
+    light.castShadow = true
+    //light.shadow.mapSize.width = 4 * 512
+    //light.shadow.mapSize.height = 4 * 512
+    light.shadow.bias = -0.005
     group.add(light)
 
     group.myWidth = roomWidth
@@ -644,7 +644,7 @@ function createExit() {
 
 function createWall(a, b) {
     const l = a.distanceTo(b)
-    var planeGeometry = new THREE.PlaneGeometry(l, 40)
+    var planeGeometry = new THREE.BoxGeometry(l, 50, 1)
     var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
     plane.castShadow = true
