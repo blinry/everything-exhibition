@@ -90,7 +90,7 @@ async function generateImageData(chapter) {
     )
     let things = images.map((image) => addPicture(image))
     things.unshift(
-        ...chapter.paragraphs.map((paragraph) => createTextPlane(paragraph, 20))
+        ...chapter.paragraphs.map((paragraph) => createTextPlane(paragraph, 10))
     )
     return things
 }
