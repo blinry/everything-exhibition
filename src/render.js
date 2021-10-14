@@ -55,7 +55,7 @@ export async function render(exhibition) {
     const rooms = await Promise.all(
         exhibition.map((chapter) => generateChapter(chapter))
     )
-    distributeObjects(rooms, scene, 10, false)
+    distributeObjects(rooms, scene, 10, 0, false)
     createEntrance()
     createExit()
     setupFloor()
@@ -80,7 +80,7 @@ async function generateChapter(chapter) {
     if (pictures.length > 0) {
         imageGroup.add(...pictures)
     }
-    distributeObjects(pictures, imageGroup, 10)
+    distributeObjects(pictures, imageGroup, 10, 1)
     return imageGroup
 }
 
@@ -367,7 +367,17 @@ function calculateObjectWidths(objects) {
     return widths
 }
 
-function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
+/**
+ * @param {THREE.Group} group The group to put the generated walls in.
+ * @param {bool} fullWalls Should the function insert full walls around the whole room, or just fill the gaps?
+ */
+function distributeObjects(
+    objects,
+    group,
+    gapWidth,
+    indentation = 0,
+    fullWalls = true
+) {
     let widths = calculateObjectWidths(objects)
     let partIdx = splitIntoEqualParts(widths)
 
@@ -414,7 +424,7 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
     ]
 
     if (fullWalls) {
-        createWalls(wallCenters, wallDirections, roomWidth, imageGroup)
+        createWalls(wallCenters, wallDirections, roomWidth, group)
     }
 
     parts.forEach((part, i) => {
@@ -424,7 +434,7 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
             const b = wallStarts[i]
                 .clone()
                 .add(wallDirections[i].clone().multiplyScalar(wallProgress))
-            imageGroup.add(
+            group.add(
                 createWall(
                     new THREE.Vector2(a.x, a.z),
                     new THREE.Vector2(b.x, b.z)
@@ -444,7 +454,7 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
                             .clone()
                             .multiplyScalar(wallProgress + gapWidth)
                     )
-                imageGroup.add(
+                group.add(
                     createWall(
                         new THREE.Vector2(a.x, a.z),
                         new THREE.Vector2(b.x, b.z)
@@ -452,8 +462,9 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
                 )
             }
 
-            obj.position.x = wallStarts[i].x + wallNormals[i].x
-            obj.position.z = wallStarts[i].z + wallNormals[i].z
+            // Place the actual object.
+            obj.position.x = wallStarts[i].x + indentation * wallNormals[i].x
+            obj.position.z = wallStarts[i].z + indentation * wallNormals[i].z
             obj.translateOnAxis(
                 wallDirections[i],
                 wallProgress + gapWidth + widthParts[i][j] / 2
@@ -469,7 +480,7 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
             const b = wallStarts[i]
                 .clone()
                 .add(wallDirections[i].clone().multiplyScalar(roomWidth))
-            imageGroup.add(
+            group.add(
                 createWall(
                     new THREE.Vector2(a.x, a.z),
                     new THREE.Vector2(b.x, b.z)
@@ -478,16 +489,16 @@ function distributeObjects(objects, imageGroup, gapWidth, fullWalls = true) {
         }
     })
 
-    imageGroup.myWidth = roomWidth
+    group.myWidth = roomWidth
 }
 
-function createWalls(wallCenters, wallDirections, roomWidth, imageGroup) {
+function createWalls(wallCenters, wallDirections, roomWidth, group) {
     for ([i, center] of wallCenters.entries()) {
         const a = center.clone()
         a.add(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
         const b = center.clone()
         b.sub(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
-        imageGroup.add(
+        group.add(
             createWall(new THREE.Vector2(a.x, a.z), new THREE.Vector2(b.x, b.z))
         )
     }
