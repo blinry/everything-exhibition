@@ -11,6 +11,8 @@ const CANVAS_HEIGHT = 720
 
 const DOOR_WIDTH = 20
 
+const WALL_TEXTURE = loadMaterial("beige_wall_001", 5)
+
 let scene
 let renderer
 let controls
@@ -164,6 +166,8 @@ export function setup() {
     )
 
     renderer = new THREE.WebGLRenderer({antialias: true})
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
@@ -267,13 +271,39 @@ export function setup() {
     window.addEventListener("resize", onWindowResize)
 }
 
+function loadMaterial(path, scaling) {
+    //plywood
+    let materialData = {
+        map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
+        normal: new THREE.TextureLoader().load(`textures/${path}_nor_gl.png`),
+        rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
+        arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
+        ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
+    }
+
+    for (const [key, value] of Object.entries(materialData)) {
+        value.wrapS = THREE.RepeatWrapping
+        value.wrapT = THREE.RepeatWrapping
+        value.repeat.set(scaling, scaling)
+    }
+
+    return new THREE.MeshStandardMaterial({
+        map: materialData.map,
+        normalMap: materialData.normal,
+        roughnessMap: materialData.rough,
+        aoMap: materialData.ao,
+        side: THREE.DoubleSide,
+    })
+}
+
 function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff) // soft white light
     scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(1000, 1000, 10, 128)
-    const material = new THREE.MeshStandardMaterial({color: 0x188c1c})
+    const material = loadMaterial("plywood", 64)
     const ground = new THREE.Mesh(geometry, material)
+    ground.receiveShadow = true
     scene.add(ground)
     ground.position.y = -30
 
@@ -283,6 +313,16 @@ function setupFloor() {
     camera.position.y = defaultCameraPosition.y
     camera.position.z = defaultCameraPosition.z
     camera.lookAt(-w * 0.25, 0, w * 0.25)
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.5)
+    light.position.x += 3
+    light.position.y += 3
+    light.position.z += 1
+    light.castShadow = true
+    light.shadow.mapSize.width = 4 * 512
+    light.shadow.mapSize.height = 4 * 512
+    //light.shadow.bias = -0.0001
+    scene.add(light)
 }
 
 function createImagePlane(url, height = 30) {
@@ -489,6 +529,16 @@ function distributeObjects(
         }
     })
 
+    const light = new THREE.PointLight(0xffffff, 0.5, 100, 1)
+    //light.position.x += 3
+    light.position.y += 3
+    light.position.z -= roomWidth / 2
+    //light.castShadow = true
+    light.shadow.mapSize.width = 4 * 512
+    light.shadow.mapSize.height = 4 * 512
+    //light.shadow.bias = 0.0001
+    group.add(light)
+
     group.myWidth = roomWidth
 }
 
@@ -595,11 +645,10 @@ function createExit() {
 function createWall(a, b) {
     const l = a.distanceTo(b)
     var planeGeometry = new THREE.PlaneGeometry(l, 40)
-    var planeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xeeeeee,
-        side: THREE.DoubleSide,
-    })
+    var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    plane.castShadow = true
+    plane.receiveShadow = true
     var center = a.add(b).divideScalar(2)
     plane.position.x = center.x
     plane.position.z = center.y

@@ -1,4 +1,4 @@
 /node_modules/
-/dist/
+/dist/index.*
 /.parcel-cache/
 *.kdev4
