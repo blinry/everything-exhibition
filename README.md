@@ -2,4 +2,4 @@
 
 ## Credits
 
--   Materials CC0 from polyhaven.com
+-   Textures and HDRs: CC0, from polyhaven.com

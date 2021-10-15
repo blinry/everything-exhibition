@@ -11,7 +11,7 @@ const CANVAS_HEIGHT = 720
 
 const DOOR_WIDTH = 20
 
-const WALL_TEXTURE = loadMaterial("beige_wall_001", 5)
+const WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
 
 let scene
 let renderer
@@ -28,7 +28,7 @@ let moveDown = false
 let canJump = false
 const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
-const defaultMovementSpeed = 400
+const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
 
 function clearObjects(obj) {
@@ -69,8 +69,8 @@ async function generateChapter(chapter) {
 
     let text = await createTextPlane(chapter.name)
     text.position.x = 0
-    text.position.y = 40
-    text.position.z = 0
+    text.position.y = 20
+    text.position.z = 1
     text.scale.x = 3
     text.scale.y = 3
     text.scale.z = 3
@@ -92,7 +92,9 @@ async function generateImageData(chapter) {
     )
     let things = images.map((image) => addPicture(image))
     things.unshift(
-        ...chapter.paragraphs.map((paragraph) => createTextPlane(paragraph, 10))
+        ...chapter.paragraphs.map((paragraph) =>
+            createTextPlane(paragraph, null, 20)
+        )
     )
     return things
 }
@@ -170,6 +172,13 @@ export function setup() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
+
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load("hdrs/kloppenheim_06.jpg", () => {
+        const rt = new THREE.WebGLCubeRenderTarget(texture.image.height)
+        rt.fromEquirectangularTexture(renderer, texture)
+        scene.background = rt.texture
+    })
 
     controls = new PointerLockControls(camera, document.body)
 
@@ -325,11 +334,19 @@ function setupFloor() {
     //scene.add(light)
 }
 
-function createImagePlane(url, height = 30) {
+function createImagePlane(url, height = 30, width = null) {
     return new Promise((resolve) => {
         var texture = new THREE.TextureLoader().load(url, (texture) => {
             let ratio = texture.image.width / texture.image.height
-            const width = height * ratio
+            if (height !== null && width === null) {
+                width = height * ratio
+            } else if (height === null && width !== null) {
+                height = width / ratio
+            } else if (height === null && width === null) {
+                height = 30
+                width = 30
+                console.log("Tried to create an image plane without any size.")
+            }
             var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
             var planeMaterial = new THREE.MeshStandardMaterial({
                 map: texture,
@@ -345,7 +362,7 @@ function createImagePlane(url, height = 30) {
     })
 }
 
-function createTextPlane(text, height = 2) {
+function createTextPlane(text, height = 2, width = null) {
     return new Promise((resolve) => {
         let div = document.createElement("div")
         div.innerHTML = text
@@ -358,10 +375,12 @@ function createTextPlane(text, height = 2) {
         div.style.left = "0px"
         document.body.appendChild(div)
         html2canvas(div, {logging: false}).then(function (canvas) {
-            createImagePlane(canvas.toDataURL(), height).then((plane) => {
-                div.remove()
-                resolve(plane)
-            })
+            createImagePlane(canvas.toDataURL(), height, width).then(
+                (plane) => {
+                    div.remove()
+                    resolve(plane)
+                }
+            )
         })
     })
 }
