@@ -1,3 +1,5 @@
+import {generateExhibition} from "./main.js"
+
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
 }
@@ -16,8 +18,10 @@ const WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
 let scene
 let renderer
 let controls
-let camera
+let camera, raycaster
 let clock
+
+let selectedObject
 
 let moveForward = false
 let moveBackward = false
@@ -142,12 +146,33 @@ export function animate() {
     controls.moveForward(-velocity.z * delta)
     controls.getObject().position.y += velocity.y * delta
 
-    //if (controls.getObject().position.y < 0) {
-    //    velocity.y = 0
-    //    controls.getObject().position.y = 0
+    if (controls.getObject().position.y < 0) {
+        velocity.y = 0
+        controls.getObject().position.y = 0
 
-    //    canJump = true
-    //}
+        canJump = true
+    }
+
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera)
+    const intersects = raycaster.intersectObjects(scene.children, true)
+    if (intersects.length > 0) {
+        if (selectedObject != intersects[0].object) {
+            if (selectedObject)
+                selectedObject.material.emissive.setHex(
+                    selectedObject.currentHex
+                )
+
+            selectedObject = intersects[0].object
+            selectedObject.currentHex =
+                selectedObject.material.emissive.getHex()
+            selectedObject.material.emissive.setHex(0xff0000)
+        }
+    } else {
+        if (selectedObject)
+            selectedObject.material.emissive.setHex(selectedObject.currentHex)
+
+        selectedObject = null
+    }
 
     requestAnimationFrame(animate)
 
@@ -167,6 +192,9 @@ export function setup() {
         1000
     )
 
+    raycaster = new THREE.Raycaster()
+    raycaster.layers.set(1)
+
     renderer = new THREE.WebGLRenderer({antialias: true})
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
@@ -184,6 +212,12 @@ export function setup() {
 
     renderer.domElement.addEventListener("click", function () {
         controls.lock()
+    })
+
+    document.addEventListener("mousedown", () => {
+        if (controls.isLocked && selectedObject?.myLink) {
+            generateExhibition(selectedObject.myLink)
+        }
     })
 
     const onKeyDown = function (event) {
@@ -323,6 +357,16 @@ function setupFloor() {
     camera.position.z = defaultCameraPosition.z
     camera.lookAt(-w * 0.25, 0, w * 0.25)
 
+    const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xffffff})
+    var crosshair = new THREE.Mesh(
+        new THREE.SphereGeometry(0.005),
+        crosshairMaterial
+    )
+    crosshair.position.z = -0.5
+
+    camera.add(crosshair)
+    scene.add(camera)
+
     const light = new THREE.DirectionalLight(0xffffff, 0.5)
     light.position.x += 3
     light.position.y += 3
@@ -378,6 +422,14 @@ function createTextPlane(text, height = 2, width = null) {
             createImagePlane(canvas.toDataURL(), height, width).then(
                 (plane) => {
                     div.remove()
+                    plane.layers.enable(1)
+                    var link = text.match(
+                        /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/
+                    )
+                    if (link) {
+                        plane.myLink = link[2]
+                        console.log(plane.myLink)
+                    }
                     resolve(plane)
                 }
             )

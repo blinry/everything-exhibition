@@ -35,6 +35,12 @@ function startGeneration() {
     let outputDiv = document.getElementById("output")
     outputDiv.innerHTML = ""
 
+    generateExhibition(topic)
+}
+
+export function generateExhibition(topic) {
+    let topicDiv = document.getElementById("topic")
+    topicDiv.value = topic
     generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
         render(exhibition)
     )

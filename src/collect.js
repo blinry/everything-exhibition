@@ -47,7 +47,7 @@ async function parseArticle(wikiText) {
                                         if (link.text && link.page) {
                                             text = text.replace(
                                                 link.text,
-                                                `<a href="${link}">${link.text}</a>`
+                                                `<a href="${link.page}">${link.text}</a>`
                                             )
                                         }
                                     }
