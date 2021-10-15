@@ -14,6 +14,7 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
 
 async function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
+    console.log(article)
 
     let exhibition = []
 
@@ -40,7 +41,18 @@ async function parseArticle(wikiText) {
                     currentParagraphs.push(
                         paragraph.sentences
                             .map((sentence) => {
-                                return sentence.text
+                                var text = sentence.text
+                                if (sentence.links) {
+                                    for (var link of sentence.links) {
+                                        if (link.text && link.page) {
+                                            text = text.replace(
+                                                link.text,
+                                                `<a href="${link}">${link.text}</a>`
+                                            )
+                                        }
+                                    }
+                                }
+                                return text
                             })
                             .join("<br><br>")
                     )

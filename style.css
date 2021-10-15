@@ -65,11 +65,6 @@ button {
 
 a {
     text-decoration: none;
-    color: #484;
-}
-
-a:hover {
-    color: #262;
 }
 
 #output {
