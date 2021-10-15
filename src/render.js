@@ -428,7 +428,6 @@ function createTextPlane(text, height = 2, width = null) {
                     )
                     if (link) {
                         plane.myLink = link[2]
-                        console.log(plane.myLink)
                     }
                     resolve(plane)
                 }

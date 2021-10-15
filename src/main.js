@@ -18,6 +18,23 @@ function getSuggestions(value) {
         })
 }
 
+function randomSuggestions() {
+    window
+        .fetch(
+            `${API_URL}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
+        )
+        .then((response) => {
+            response.json().then(function (data) {
+                let datalist = document.getElementById("suggestions")
+                datalist.innerHTML = ""
+
+                for (let item of data.query.random) {
+                    addOption(item.title)
+                }
+            })
+        })
+}
+
 function addOption(label) {
     let datalist = document.getElementById("suggestions")
     let option = document.createElement("option")
@@ -57,9 +74,15 @@ window.onload = function () {
         .addEventListener("click", (e) => {
             startGeneration()
         })
-    document
-        .getElementById("topic")
-        .addEventListener("input", (e) => getSuggestions(e.target.value))
+    document.getElementById("topic").addEventListener("input", (e) => {
+        let text = e.target.value
+        if (text === "") {
+            randomSuggestions()
+        } else {
+            getSuggestions(text)
+        }
+    })
+    randomSuggestions()
 
     setup()
     animate()
