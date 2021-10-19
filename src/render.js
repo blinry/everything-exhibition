@@ -59,7 +59,7 @@ export async function render(exhibition) {
     clearObjects(scene)
 
     const rooms = await Promise.all(
-        exhibition.map((chapter) => generateChapter(chapter))
+        exhibition.sections.map((chapter) => generateChapter(chapter))
     )
     distributeObjects(rooms, scene, 10, 0, false)
     createEntrance()

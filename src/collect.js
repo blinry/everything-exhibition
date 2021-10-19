@@ -16,54 +16,64 @@ async function parseArticle(wikiText) {
     const article = wtf(wikiText).json()
     console.log(article)
 
-    let exhibition = []
+    let exhibition = {name: "TBD", sections: [], images: [], paragraphs: []}
 
     let currentSectionName
     let currentSectionImages = []
     let currentParagraphs = []
 
+    // The stack holds the chain of parents up to the last inserted section.
+    var stack = [exhibition]
     for (const section of article.sections) {
-        if (section.depth === 0) {
-            addSection(
-                exhibition,
-                currentSectionName,
-                currentSectionImages,
-                currentParagraphs
-            )
-            currentSectionName = section.title
-            currentSectionImages = []
-            currentParagraphs = []
-        }
+        // How much deeper is the depth of the current section, compared to the top one on the stack?
+        const depthIncrease = section.depth - (stack.length - 2)
 
-        if (section.paragraphs) {
-            for (let paragraph of section.paragraphs) {
-                if (paragraph.sentences) {
-                    currentParagraphs.push(
-                        paragraph.sentences
-                            .map((sentence) => {
-                                var text = sentence.text
-                                if (sentence.links) {
-                                    for (var link of sentence.links) {
-                                        if (link.text && link.page) {
-                                            text = text.replace(
-                                                link.text,
-                                                `<a href="${link.page}">${link.text}</a>`
-                                            )
-                                        }
-                                    }
+        // Remove the correct number of sections from the stack.
+        const removeHowMany = -depthIncrease + 1
+        stack.splice(stack.length - removeHowMany, removeHowMany)
+
+        const s = await createSection(section)
+        stack[stack.length - 1].sections.push(s)
+        stack.push(s)
+    }
+
+    console.log(exhibition)
+    return exhibition
+}
+
+async function createSection(section) {
+    // Get paragraphs.
+    var paragraphs = []
+    if (section.paragraphs) {
+        for (let paragraph of section.paragraphs) {
+            if (paragraph.sentences) {
+                const p = paragraph.sentences
+                    .map((sentence) => {
+                        var text = sentence.text
+                        if (sentence.links) {
+                            for (var link of sentence.links) {
+                                if (link.text && link.page) {
+                                    text = text.replace(
+                                        link.text,
+                                        `<a href="${link.page}">${link.text}</a>`
+                                    )
                                 }
-                                return text
-                            })
-                            .join("<br><br>")
-                    )
+                            }
+                        }
+                        return text
+                    })
+                    .join("<br><br>")
+                if (p.length > 0) {
+                    paragraphs.push(p)
                 }
             }
         }
+    }
 
-        if (!section.images) {
-            continue
-        }
+    // Get images.
+    var images = []
 
+    if (section.images) {
         let newImagePromises = section.images.map(async (image) => {
             let response = await window.fetch(
                 `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&origin=*`
@@ -76,35 +86,13 @@ async function parseArticle(wikiText) {
                 }
             }
         })
-        let newImages = await Promise.all(newImagePromises)
-
-        currentSectionImages.push(...newImages)
+        images = await Promise.all(newImagePromises)
     }
-    addSection(
-        exhibition,
-        currentSectionName,
-        currentSectionImages,
-        currentParagraphs
-    )
-    console.log(exhibition)
-    return exhibition
-}
 
-function addSection(
-    exhibition,
-    currentSectionName,
-    currentSectionImages,
-    currentParagraphs
-) {
-    currentParagraphs = currentParagraphs.filter((p) => p.length > 0)
-    if (
-        currentSectionName !== undefined &&
-        currentParagraphs.length + currentSectionImages.length > 0
-    ) {
-        exhibition.push({
-            name: currentSectionName || "Start here!",
-            images: currentSectionImages,
-            paragraphs: currentParagraphs,
-        })
+    return {
+        name: section.title || "Start here!",
+        images: images,
+        paragraphs: paragraphs,
+        sections: [],
     }
 }
