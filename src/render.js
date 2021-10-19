@@ -61,15 +61,15 @@ export async function render(exhibition) {
     const rooms = await Promise.all(
         exhibition.sections.map((chapter) => generateChapter(chapter))
     )
-    distributeObjects(rooms, scene, 10, 0, false)
-    createEntrance()
-    createExit()
+    distributeObjects(rooms, scene, 10, false)
+    //createEntrance()
+    //createExit()
     setupFloor()
 }
 
 async function generateChapter(chapter) {
-    let imageGroup = new THREE.Group()
-    scene.add(imageGroup)
+    let group = new THREE.Group()
+    scene.add(group)
 
     let text = await createTextPlane(chapter.name)
     text.position.x = 0
@@ -78,16 +78,29 @@ async function generateChapter(chapter) {
     text.scale.x = 3
     text.scale.y = 3
     text.scale.z = 3
-    imageGroup.add(text)
+    group.add(text)
 
     let promiseArr = await generateImageData(chapter)
     let numberOfImages = promiseArr.length
     let pictures = await Promise.all(promiseArr)
     if (pictures.length > 0) {
-        imageGroup.add(...pictures)
+        group.add(...pictures)
     }
-    distributeObjects(pictures, imageGroup, 10, 1)
-    return imageGroup
+
+    // Add subrooms.
+    const rooms = await Promise.all(
+        chapter.sections.map((c) => generateChapter(c))
+    )
+    if (rooms.length > 0) {
+        group.add(...rooms)
+    }
+
+    var objects = []
+    objects.push(...pictures)
+    objects.push(...rooms)
+
+    distributeObjects(objects, group, 10, false)
+    return group
 }
 
 async function generateImageData(chapter) {
@@ -400,6 +413,7 @@ function createImagePlane(url, height = 30, width = null) {
             var plane = new THREE.Mesh(planeGeometry, planeMaterial)
             // Store the width in the Mesh object. This is a bit of a hack.
             plane.myWidth = width
+            plane.safetyWidth = width
             plane.receiveShadow = true
             resolve(plane)
         })
@@ -474,7 +488,7 @@ function splitIntoEqualParts(lengths) {
 }
 
 function calculateObjectWidths(objects) {
-    let widths = objects.map((obj) => obj.myWidth)
+    let widths = objects.map((obj) => obj.safetyWidth)
     return widths
 }
 
@@ -482,14 +496,16 @@ function calculateObjectWidths(objects) {
  * @param {THREE.Group} group The group to put the generated walls in.
  * @param {bool} singleRoomMode Are we placing images in a single room?
  */
-function distributeObjects(
-    objects,
-    group,
-    gapWidth,
-    indentation = 0,
-    singleRoomMode = true
-) {
+function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
     let widths = calculateObjectWidths(objects)
+
+    let groupObjects = objects.filter((o) => o instanceof THREE.Group)
+    let groupWidths = calculateObjectWidths(groupObjects)
+
+    let largestGroupObjectWidth =
+        groupObjects.length === 0 ? 0 : Math.max(...groupWidths)
+    console.log(largestGroupObjectWidth)
+
     let partIdx = splitIntoEqualParts(widths)
 
     let parts = [
@@ -534,17 +550,20 @@ function distributeObjects(
         new THREE.Vector3(-1, 0, 0),
     ]
 
-    if (singleRoomMode) {
-        createWalls(wallCenters, wallDirections, roomWidth, group)
-    }
+    createDoorWall(wallCenters, wallDirections, roomWidth, group)
 
     parts.forEach((part, i) => {
+        // Wall from left edge to first object.
         let wallProgress = (roomWidth - wallWidths[i]) / 2
         if (wallProgress > 0 && !singleRoomMode) {
             const a = wallStarts[i]
+            var wallLength = wallProgress
+            if (part[0]) {
+                wallLength += (part[0].safetyWidth - part[0].myWidth) / 2
+            }
             const b = wallStarts[i]
                 .clone()
-                .add(wallDirections[i].clone().multiplyScalar(wallProgress))
+                .add(wallDirections[i].clone().multiplyScalar(wallLength))
             group.add(
                 createWall(
                     new THREE.Vector2(a.x, a.z),
@@ -552,9 +571,11 @@ function distributeObjects(
                 )
             )
         }
+        // Walls between objects.
         for (const [j, obj] of part.entries()) {
+            const isImage = !(obj instanceof THREE.Group)
             if (!singleRoomMode) {
-                // Add wall into gap
+                // Add wall into front gap
                 const a = wallStarts[i]
                     .clone()
                     .add(wallDirections[i].clone().multiplyScalar(wallProgress))
@@ -563,7 +584,11 @@ function distributeObjects(
                     .add(
                         wallDirections[i]
                             .clone()
-                            .multiplyScalar(wallProgress + gapWidth)
+                            .multiplyScalar(
+                                wallProgress +
+                                    gapWidth +
+                                    (obj.safetyWidth - obj.myWidth) / 2
+                            )
                     )
                 group.add(
                     createWall(
@@ -571,9 +596,70 @@ function distributeObjects(
                         new THREE.Vector2(b.x, b.z)
                     )
                 )
+                if (isImage) {
+                    // Add wall into gap behind object.
+                    const a3 = wallStarts[i]
+                        .clone()
+                        .add(
+                            wallDirections[i]
+                                .clone()
+                                .multiplyScalar(
+                                    wallProgress +
+                                        gapWidth +
+                                        (obj.safetyWidth - obj.myWidth) / 2
+                                )
+                        )
+                    const b3 = wallStarts[i]
+                        .clone()
+                        .add(
+                            wallDirections[i]
+                                .clone()
+                                .multiplyScalar(
+                                    wallProgress +
+                                        gapWidth +
+                                        obj.safetyWidth / 2 +
+                                        obj.myWidth / 2
+                                )
+                        )
+                    group.add(
+                        createWall(
+                            new THREE.Vector2(a3.x, a3.z),
+                            new THREE.Vector2(b3.x, b3.z)
+                        )
+                    )
+                }
+                // Add wall into gap behind object.
+                const a2 = wallStarts[i]
+                    .clone()
+                    .add(
+                        wallDirections[i]
+                            .clone()
+                            .multiplyScalar(
+                                wallProgress +
+                                    gapWidth +
+                                    obj.safetyWidth / 2 +
+                                    obj.myWidth / 2
+                            )
+                    )
+                const b2 = wallStarts[i]
+                    .clone()
+                    .add(
+                        wallDirections[i]
+                            .clone()
+                            .multiplyScalar(
+                                wallProgress + gapWidth + obj.safetyWidth
+                            )
+                    )
+                group.add(
+                    createWall(
+                        new THREE.Vector2(a2.x, a2.z),
+                        new THREE.Vector2(b2.x, b2.z)
+                    )
+                )
             }
 
             // Place the actual object.
+            const indentation = isImage ? 1 : 0
             obj.position.x = wallStarts[i].x + indentation * wallNormals[i].x
             obj.position.z = wallStarts[i].z + indentation * wallNormals[i].z
             obj.translateOnAxis(
@@ -584,6 +670,7 @@ function distributeObjects(
             wallProgress += gapWidth + widthParts[i][j]
             obj.rotateY((1 - i) * (Math.PI / 2))
         }
+        // Wall to right edge.
         if (wallProgress < roomWidth && !singleRoomMode) {
             const a = wallStarts[i]
                 .clone()
@@ -611,18 +698,10 @@ function distributeObjects(
     group.add(light)
 
     group.myWidth = roomWidth
+    group.safetyWidth = roomWidth + 2 * largestGroupObjectWidth
 }
 
-function createWalls(wallCenters, wallDirections, roomWidth, group) {
-    for ([i, center] of wallCenters.entries()) {
-        const a = center.clone()
-        a.add(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
-        const b = center.clone()
-        b.sub(wallDirections[i].clone().multiplyScalar(roomWidth / 2))
-        group.add(
-            createWall(new THREE.Vector2(a.x, a.z), new THREE.Vector2(b.x, b.z))
-        )
-    }
+function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
     // Add a front wall with a door.
     const a = wallCenters[0].clone()
     a.sub(wallDirections[0].clone().multiplyScalar(roomWidth / 2))

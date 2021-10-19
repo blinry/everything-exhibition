@@ -25,6 +25,13 @@ async function parseArticle(wikiText) {
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
     for (const section of article.sections) {
+        const s = await createSection(section)
+
+        if (s.images.length + s.paragraphs.length === 0) {
+            // Skip this section.
+            continue
+        }
+
         // How much deeper is the depth of the current section, compared to the top one on the stack?
         const depthIncrease = section.depth - (stack.length - 2)
 
@@ -32,7 +39,6 @@ async function parseArticle(wikiText) {
         const removeHowMany = -depthIncrease + 1
         stack.splice(stack.length - removeHowMany, removeHowMany)
 
-        const s = await createSection(section)
         stack[stack.length - 1].sections.push(s)
         stack.push(s)
     }
