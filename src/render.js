@@ -58,10 +58,8 @@ function clearObjects(obj) {
 export async function render(exhibition) {
     clearObjects(scene)
 
-    const rooms = await Promise.all(
-        exhibition.sections.map((chapter) => generateChapter(chapter))
-    )
-    distributeObjects(rooms, scene, 10, false)
+    const everything = await generateChapter(exhibition)
+    scene.add(everything)
     //createEntrance()
     //createExit()
     setupFloor()
@@ -69,7 +67,6 @@ export async function render(exhibition) {
 
 async function generateChapter(chapter) {
     let group = new THREE.Group()
-    scene.add(group)
 
     let text = await createTextPlane(chapter.name)
     text.position.x = 0
@@ -91,9 +88,6 @@ async function generateChapter(chapter) {
     const rooms = await Promise.all(
         chapter.sections.map((c) => generateChapter(c))
     )
-    if (rooms.length > 0) {
-        group.add(...rooms)
-    }
 
     var objects = []
     objects.push(...pictures)
@@ -116,17 +110,15 @@ async function generateImageData(chapter) {
     return things
 }
 
-function addPicture(img) {
-    return new Promise((resolve) => {
-        createImagePlane(img.url).then((plane) => {
-            createTextPlane(img.description).then((textPlane) => {
-                textPlane.position.z = 1
-                textPlane.position.y = -5
-                plane.add(textPlane)
-                resolve(plane)
-            })
-        })
-    })
+async function addPicture(img) {
+    var plane = await createImagePlane(img.url)
+    if (img.description) {
+        var textPlane = await createTextPlane(img.description)
+        textPlane.position.z = 1
+        textPlane.position.y = -5
+        plane.add(textPlane)
+    }
+    return plane
 }
 
 export function animate() {
@@ -170,19 +162,19 @@ export function animate() {
     const intersects = raycaster.intersectObjects(scene.children, true)
     if (intersects.length > 0) {
         if (selectedObject != intersects[0].object) {
-            if (selectedObject)
-                selectedObject.material.emissive.setHex(
-                    selectedObject.currentHex
-                )
+            //if (selectedObject)
+            //    selectedObject.material.emissive.setHex(
+            //        selectedObject.currentHex
+            //    )
 
             selectedObject = intersects[0].object
-            selectedObject.currentHex =
-                selectedObject.material.emissive.getHex()
-            selectedObject.material.emissive.setHex(0xff0000)
+            //selectedObject.currentHex =
+            //    selectedObject.material.emissive.getHex()
+            //selectedObject.material.emissive.setHex(0xff0000)
         }
     } else {
-        if (selectedObject)
-            selectedObject.material.emissive.setHex(selectedObject.currentHex)
+        //if (selectedObject)
+        //    selectedObject.material.emissive.setHex(selectedObject.currentHex)
 
         selectedObject = null
     }
@@ -356,19 +348,23 @@ function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
     scene.add(ambient)
 
-    const geometry = new THREE.CylinderGeometry(1000, 1000, 10, 128)
-    const material = loadMaterial("plywood", 64)
+    const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
+    const material = loadMaterial("plywood", 256)
     const ground = new THREE.Mesh(geometry, material)
     ground.receiveShadow = true
     scene.add(ground)
     ground.position.y = -30
 
     const w = scene.myWidth
-    var defaultCameraPosition = new THREE.Vector3(-w * 0.75, 0, w * 0.25)
+    var defaultCameraPosition = new THREE.Vector3(
+        DOOR_WIDTH * 3,
+        0,
+        DOOR_WIDTH * 3
+    )
     camera.position.x = defaultCameraPosition.x
     camera.position.y = defaultCameraPosition.y
     camera.position.z = defaultCameraPosition.z
-    camera.lookAt(-w * 0.25, 0, w * 0.25)
+    camera.lookAt(0, 0, 0)
 
     const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xffffff})
     var crosshair = new THREE.Mesh(
@@ -420,34 +416,29 @@ function createImagePlane(url, height = 30, width = null) {
     })
 }
 
-function createTextPlane(text, height = 2, width = null) {
-    return new Promise((resolve) => {
-        let div = document.createElement("div")
-        div.innerHTML = text
-        div.style.maxWidth = "300px"
-        div.style.display = "inline-block"
-        div.style.padding = "3px"
-        div.style.position = "absolute"
-        div.style.textAlign = "left"
-        div.style.top = "9000px"
-        div.style.left = "0px"
-        document.body.appendChild(div)
-        html2canvas(div, {logging: false}).then(function (canvas) {
-            createImagePlane(canvas.toDataURL(), height, width).then(
-                (plane) => {
-                    div.remove()
-                    plane.layers.enable(1)
-                    var link = text.match(
-                        /<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/
-                    )
-                    if (link) {
-                        plane.myLink = link[2]
-                    }
-                    resolve(plane)
-                }
-            )
-        })
-    })
+async function createTextPlane(text, height = 2, width = null) {
+    let div = document.createElement("div")
+    div.innerHTML = text
+    div.style.maxWidth = "300px"
+    div.style.display = "inline-block"
+    div.style.padding = "3px"
+    div.style.position = "absolute"
+    div.style.textAlign = "left"
+    div.style.top = "9000px"
+    div.style.left = "0px"
+    document.body.appendChild(div)
+
+    var canvas = await html2canvas(div, {logging: false})
+
+    var plane = await createImagePlane(canvas.toDataURL(), height, width)
+    div.remove()
+    plane.layers.enable(1)
+
+    var link = text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
+    if (link) {
+        plane.myLink = link[2]
+    }
+    return plane
 }
 
 function onWindowResize() {
@@ -504,7 +495,6 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
 
     let largestGroupObjectWidth =
         groupObjects.length === 0 ? 0 : Math.max(...groupWidths)
-    console.log(largestGroupObjectWidth)
 
     let partIdx = splitIntoEqualParts(widths)
 
@@ -669,6 +659,9 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
 
             wallProgress += gapWidth + widthParts[i][j]
             obj.rotateY((1 - i) * (Math.PI / 2))
+
+            // Add the object!
+            group.add(obj)
         }
         // Wall to right edge.
         if (wallProgress < roomWidth && !singleRoomMode) {

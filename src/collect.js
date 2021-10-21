@@ -3,34 +3,43 @@ const wtf = require("wtf_wikipedia")
 export const API_URL = `https://en.wikipedia.org/w/api.php`
 
 export async function generateExhibitionDescriptionFromWikipedia(topic) {
+    var wikiText = await fetchWikiText(topic)
+    var article = wtf(wikiText).json()
+    console.log(article)
+
+    while (article.redirectTo) {
+        topic = article.redirectTo.page
+
+        wikiText = await fetchWikiText(topic)
+        article = wtf(wikiText).json()
+        console.log(article)
+    }
+
+    return await parseArticle(article)
+}
+
+async function fetchWikiText(article) {
     let response = await window.fetch(
-        `${API_URL}?action=query&format=json&prop=revisions&titles=${topic}&formatversion=2&rvprop=content&rvslots=*&origin=*`
+        `${API_URL}?action=query&format=json&prop=revisions&titles=${article}&formatversion=2&rvprop=content&rvslots=*&origin=*`
     )
     let data = await response.json()
 
-    let wikiContent = data.query.pages[0].revisions[0].slots.main.content
-    return await parseArticle(wikiContent)
+    return data.query.pages[0].revisions[0].slots.main.content
 }
 
-async function parseArticle(wikiText) {
-    const article = wtf(wikiText).json()
-    console.log(article)
-
-    let exhibition = {name: "TBD", sections: [], images: [], paragraphs: []}
-
-    let currentSectionName
-    let currentSectionImages = []
-    let currentParagraphs = []
+async function parseArticle(article) {
+    let exhibition = await createSection(article.sections[0])
+    exhibition.name = article.title
 
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
-    for (const section of article.sections) {
+    for (const section of article.sections.slice(1)) {
         const s = await createSection(section)
 
-        if (s.images.length + s.paragraphs.length === 0) {
-            // Skip this section.
-            continue
-        }
+        //if (s.images.length + s.paragraphs.length === 0) {
+        //    // Skip this section.
+        //    continue
+        //}
 
         // How much deeper is the depth of the current section, compared to the top one on the stack?
         const depthIncrease = section.depth - (stack.length - 2)
@@ -42,6 +51,11 @@ async function parseArticle(wikiText) {
         stack[stack.length - 1].sections.push(s)
         stack.push(s)
     }
+
+    // Clear empty top-level sections.
+    exhibition.sections = exhibition.sections.filter(
+        (s) => s.images.length + s.paragraphs.length + s.sections.length > 0
+    )
 
     console.log(exhibition)
     return exhibition
