@@ -1,12 +1,12 @@
 import {generateExhibition} from "./main.js"
 
-Array.prototype.sum = function () {
-    return this.reduce((partial_sum, a) => partial_sum + a, 0)
-}
-
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 import html2canvas from "html2canvas"
+
+Array.prototype.sum = function () {
+    return this.reduce((partial_sum, a) => partial_sum + a, 0)
+}
 
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
@@ -35,6 +35,10 @@ const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
 
+function updateStatus(text) {
+    document.querySelector("#status").innerHTML = text
+}
+
 function clearObjects(obj) {
     while (obj.children.length > 0) {
         clearObjects(obj.children[0])
@@ -59,7 +63,10 @@ export async function render(exhibition) {
     clearObjects(scene)
 
     const everything = await generateChapter(exhibition)
+
     scene.add(everything)
+    updateStatus("")
+
     //createEntrance()
     //createExit()
     setupFloor()
@@ -67,6 +74,8 @@ export async function render(exhibition) {
 
 async function generateChapter(chapter) {
     let group = new THREE.Group()
+
+    updateStatus(`Generating "${chapter.name}"...`)
 
     let text = await createTextPlane(chapter.name)
     text.position.x = 0

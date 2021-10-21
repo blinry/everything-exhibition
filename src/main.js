@@ -49,9 +49,6 @@ function startGeneration() {
     let topicDiv = document.getElementById("topic")
     topicDiv.blur()
 
-    let outputDiv = document.getElementById("output")
-    outputDiv.innerHTML = ""
-
     generateExhibition(topic)
 }
 
