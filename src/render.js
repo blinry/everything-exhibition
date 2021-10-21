@@ -376,15 +376,24 @@ function setupFloor() {
     camera.add(crosshair)
     scene.add(camera)
 
-    const light = new THREE.DirectionalLight(0xffffff, 0.5)
-    light.position.x += 3
-    light.position.y += 3
-    light.position.z += 1
-    light.castShadow = true
-    light.shadow.mapSize.width = 4 * 512
-    light.shadow.mapSize.height = 4 * 512
-    //light.shadow.bias = -0.0001
+    //const light = new THREE.DirectionalLight(0xffffff, 0.5)
+    //light.position.x += 3
+    //light.position.y += 3
+    //light.position.z += 1
+    //light.castShadow = true
+    //light.shadow.mapSize.width = 4 * 512
+    //light.shadow.mapSize.height = 4 * 512
+    ////light.shadow.bias = -0.0001
     //scene.add(light)
+
+    const light = new THREE.PointLight(0xffffff, 1, 50)
+    light.position.y += 20
+    light.position.z += 10
+    light.castShadow = true
+    //light.shadow.mapSize.width = 4 * 512
+    //light.shadow.mapSize.height = 4 * 512
+    light.shadow.bias = -0.005
+    scene.add(light)
 }
 
 function createImagePlane(url, height = 30, width = null) {

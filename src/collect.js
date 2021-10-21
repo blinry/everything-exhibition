@@ -29,7 +29,11 @@ async function fetchWikiText(article) {
 
 async function parseArticle(article) {
     let exhibition = await createSection(article.sections[0])
-    exhibition.name = article.title
+
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1)
+    }
+    exhibition.name = capitalizeFirstLetter(article.title)
 
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
