@@ -58,6 +58,7 @@ export function generateExhibition(topic) {
 
     const settings = {
         lights: document.querySelector("#lights").checked,
+        shadows: document.querySelector("#shadows").checked,
         textures: document.querySelector("#textures").checked,
         images: document.querySelector("#images").checked,
         texts: document.querySelector("#texts").checked,
