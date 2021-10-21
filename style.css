@@ -60,6 +60,10 @@ input[type="text"] {
     padding: 0 0.5rem;
 }
 
+input[type="checkbox"] {
+    height: 1rem;
+}
+
 button {
     padding: 0 1rem;
 }
@@ -83,4 +87,16 @@ canvas {
     z-index: -1;
     margin: 0 auto;
     max-width: 100 vw;
+}
+
+#settings {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-top: 1rem;
+    text-align: left;
+}
+
+#settings input {
+    margin-left: 1rem;
 }

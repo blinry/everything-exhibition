@@ -13,14 +13,9 @@ const CANVAS_HEIGHT = 720
 
 const DOOR_WIDTH = 20
 
-const SHADOWS = false
-const TEXTURES = false
-const LIGHTS = false
-const TEXTS = false
-const IMAGES = false
-const HDR = false
+var SETTINGS = {}
 
-const WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
+var WALL_TEXTURE
 
 let scene
 let renderer
@@ -66,8 +61,11 @@ function clearObjects(obj) {
     }
 }
 
-export async function render(exhibition) {
+export async function render(exhibition, settings) {
+    SETTINGS = settings
     clearObjects(scene)
+
+    WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
 
     const everything = await generateChapter(exhibition)
 
@@ -111,14 +109,13 @@ async function generateChapter(chapter) {
 
 async function generateImageData(chapter) {
     let things = []
-    if (IMAGES) {
+    if (SETTINGS.images) {
         const images = chapter.images.filter(
             (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
         )
-        images.map((image) => addPicture(image))
-        things.unshift(...images)
+        things.unshift(...images.map((image) => addPicture(image)))
     }
-    if (TEXTS) {
+    if (SETTINGS.texts) {
         things.unshift(
             ...chapter.paragraphs.map((paragraph) =>
                 createTextPlane(paragraph, null, 20)
@@ -219,21 +216,19 @@ export function setup() {
     raycaster.layers.set(1)
 
     renderer = new THREE.WebGLRenderer({antialias: true})
-    if (SHADOWS) {
-        renderer.shadowMap.enabled = true
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    }
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
-    if (HDR) {
-        const loader = new THREE.TextureLoader()
-        const texture = loader.load("hdrs/kloppenheim_06.jpg", () => {
-            const rt = new THREE.WebGLCubeRenderTarget(texture.image.height)
-            rt.fromEquirectangularTexture(renderer, texture)
-            scene.background = rt.texture
-        })
-    }
+    //if (HDR) {
+    //    const loader = new THREE.TextureLoader()
+    //    const texture = loader.load("hdrs/kloppenheim_06.jpg", () => {
+    //        const rt = new THREE.WebGLCubeRenderTarget(texture.image.height)
+    //        rt.fromEquirectangularTexture(renderer, texture)
+    //        scene.background = rt.texture
+    //    })
+    //}
 
     controls = new PointerLockControls(camera, document.body)
 
@@ -342,7 +337,7 @@ export function setup() {
 }
 
 function loadMaterial(path, scaling) {
-    if (TEXTURES) {
+    if (SETTINGS.textures) {
         let materialData = {
             map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
             normal: new THREE.TextureLoader().load(
@@ -375,7 +370,7 @@ function loadMaterial(path, scaling) {
 
 function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
-    if (!LIGHTS) {
+    if (!SETTINGS.lights) {
         ambient.intensity = 1
     }
     scene.add(ambient)
@@ -383,7 +378,7 @@ function setupFloor() {
     const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
     const material = loadMaterial("plywood", 256)
     const ground = new THREE.Mesh(geometry, material)
-    if (SHADOWS) {
+    if (SETTINGS.shadows) {
         ground.receiveShadow = true
     }
     scene.add(ground)
@@ -420,12 +415,12 @@ function setupFloor() {
     ////light.shadow.bias = -0.0001
     //scene.add(light)
 
-    if (LIGHTS) {
+    if (SETTINGS.lights) {
         // Add a light to the entrance.
         const light = new THREE.PointLight(0xffffff, 1, 50)
         light.position.y += 20
         light.position.z += 10
-        if (SHADOWS) {
+        if (SETTINGS.shadows) {
             light.castShadow = true
             //light.shadow.mapSize.width = 4 * 512
             //light.shadow.mapSize.height = 4 * 512
@@ -458,7 +453,7 @@ function createImagePlane(url, height = 30, width = null) {
             // Store the width in the Mesh object. This is a bit of a hack.
             plane.myWidth = width
             plane.safetyWidth = width
-            if (SHADOWS) {
+            if (SETTINGS.shadows) {
                 plane.receiveShadow = true
             }
             resolve(plane)
@@ -730,7 +725,7 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
         }
     })
 
-    if (LIGHTS) {
+    if (SETTINGS.lights) {
         const light = new THREE.PointLight(
             0xffffff,
             1,
@@ -740,7 +735,7 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
         //light.position.x += 3
         light.position.y += 3
         light.position.z -= roomWidth / 2
-        if (SHADOWS) {
+        if (SETTINGS.shadows) {
             light.castShadow = true
             //light.shadow.mapSize.width = 4 * 512
             //light.shadow.mapSize.height = 4 * 512
@@ -849,7 +844,7 @@ function createWall(a, b) {
     var planeGeometry = new THREE.BoxGeometry(l, 50, 1)
     var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-    if (SHADOWS) {
+    if (SETTINGS.shadows) {
         plane.castShadow = true
         plane.receiveShadow = true
     }

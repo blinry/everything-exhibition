@@ -100,7 +100,7 @@ async function createSection(section) {
     if (section.images) {
         let newImagePromises = section.images.map(async (image) => {
             let response = await window.fetch(
-                `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&origin=*`
+                `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&iiurlwidth=200&origin=*`
             )
             let data = await response.json()
             if (data?.query?.pages?.["-1"]?.imageinfo?.[0]?.url) {

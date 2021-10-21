@@ -55,8 +55,16 @@ function startGeneration() {
 export function generateExhibition(topic) {
     let topicDiv = document.getElementById("topic")
     topicDiv.value = topic
+
+    const settings = {
+        lights: document.querySelector("#lights").checked,
+        textures: document.querySelector("#textures").checked,
+        images: document.querySelector("#images").checked,
+        texts: document.querySelector("#texts").checked,
+    }
+
     generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
-        render(exhibition)
+        render(exhibition, settings)
     )
 }
 
