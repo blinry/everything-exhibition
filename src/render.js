@@ -13,6 +13,13 @@ const CANVAS_HEIGHT = 720
 
 const DOOR_WIDTH = 20
 
+const SHADOWS = false
+const TEXTURES = false
+const LIGHTS = false
+const TEXTS = false
+const IMAGES = false
+const HDR = false
+
 const WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
 
 let scene
@@ -103,15 +110,21 @@ async function generateChapter(chapter) {
 }
 
 async function generateImageData(chapter) {
-    const images = chapter.images.filter(
-        (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
-    )
-    let things = images.map((image) => addPicture(image))
-    things.unshift(
-        ...chapter.paragraphs.map((paragraph) =>
-            createTextPlane(paragraph, null, 20)
+    let things = []
+    if (IMAGES) {
+        const images = chapter.images.filter(
+            (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
         )
-    )
+        images.map((image) => addPicture(image))
+        things.unshift(...images)
+    }
+    if (TEXTS) {
+        things.unshift(
+            ...chapter.paragraphs.map((paragraph) =>
+                createTextPlane(paragraph, null, 20)
+            )
+        )
+    }
     return things
 }
 
@@ -206,17 +219,21 @@ export function setup() {
     raycaster.layers.set(1)
 
     renderer = new THREE.WebGLRenderer({antialias: true})
-    renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    if (SHADOWS) {
+        renderer.shadowMap.enabled = true
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    }
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     document.body.appendChild(renderer.domElement)
 
-    const loader = new THREE.TextureLoader()
-    const texture = loader.load("hdrs/kloppenheim_06.jpg", () => {
-        const rt = new THREE.WebGLCubeRenderTarget(texture.image.height)
-        rt.fromEquirectangularTexture(renderer, texture)
-        scene.background = rt.texture
-    })
+    if (HDR) {
+        const loader = new THREE.TextureLoader()
+        const texture = loader.load("hdrs/kloppenheim_06.jpg", () => {
+            const rt = new THREE.WebGLCubeRenderTarget(texture.image.height)
+            rt.fromEquirectangularTexture(renderer, texture)
+            scene.background = rt.texture
+        })
+    }
 
     controls = new PointerLockControls(camera, document.body)
 
@@ -325,38 +342,50 @@ export function setup() {
 }
 
 function loadMaterial(path, scaling) {
-    //plywood
-    let materialData = {
-        map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
-        normal: new THREE.TextureLoader().load(`textures/${path}_nor_gl.png`),
-        rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
-        arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
-        ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
-    }
+    if (TEXTURES) {
+        let materialData = {
+            map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
+            normal: new THREE.TextureLoader().load(
+                `textures/${path}_nor_gl.png`
+            ),
+            rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
+            arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
+            ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
+        }
 
-    for (const [key, value] of Object.entries(materialData)) {
-        value.wrapS = THREE.RepeatWrapping
-        value.wrapT = THREE.RepeatWrapping
-        value.repeat.set(scaling, scaling)
-    }
+        for (const [key, value] of Object.entries(materialData)) {
+            value.wrapS = THREE.RepeatWrapping
+            value.wrapT = THREE.RepeatWrapping
+            value.repeat.set(scaling, scaling)
+        }
 
-    return new THREE.MeshStandardMaterial({
-        map: materialData.map,
-        normalMap: materialData.normal,
-        roughnessMap: materialData.rough,
-        aoMap: materialData.ao,
-        side: THREE.DoubleSide,
-    })
+        return new THREE.MeshStandardMaterial({
+            map: materialData.map,
+            normalMap: materialData.normal,
+            roughnessMap: materialData.rough,
+            aoMap: materialData.ao,
+            side: THREE.DoubleSide,
+        })
+    } else {
+        return new THREE.MeshStandardMaterial({
+            color: Math.floor(Math.random() * 256 * 256 * 256),
+        })
+    }
 }
 
 function setupFloor() {
     const ambient = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
+    if (!LIGHTS) {
+        ambient.intensity = 1
+    }
     scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
     const material = loadMaterial("plywood", 256)
     const ground = new THREE.Mesh(geometry, material)
-    ground.receiveShadow = true
+    if (SHADOWS) {
+        ground.receiveShadow = true
+    }
     scene.add(ground)
     ground.position.y = -30
 
@@ -391,14 +420,19 @@ function setupFloor() {
     ////light.shadow.bias = -0.0001
     //scene.add(light)
 
-    const light = new THREE.PointLight(0xffffff, 1, 50)
-    light.position.y += 20
-    light.position.z += 10
-    light.castShadow = true
-    //light.shadow.mapSize.width = 4 * 512
-    //light.shadow.mapSize.height = 4 * 512
-    light.shadow.bias = -0.005
-    scene.add(light)
+    if (LIGHTS) {
+        // Add a light to the entrance.
+        const light = new THREE.PointLight(0xffffff, 1, 50)
+        light.position.y += 20
+        light.position.z += 10
+        if (SHADOWS) {
+            light.castShadow = true
+            //light.shadow.mapSize.width = 4 * 512
+            //light.shadow.mapSize.height = 4 * 512
+            light.shadow.bias = -0.005
+        }
+        scene.add(light)
+    }
 }
 
 function createImagePlane(url, height = 30, width = null) {
@@ -424,7 +458,9 @@ function createImagePlane(url, height = 30, width = null) {
             // Store the width in the Mesh object. This is a bit of a hack.
             plane.myWidth = width
             plane.safetyWidth = width
-            plane.receiveShadow = true
+            if (SHADOWS) {
+                plane.receiveShadow = true
+            }
             resolve(plane)
         })
     })
@@ -694,15 +730,24 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
         }
     })
 
-    const light = new THREE.PointLight(0xffffff, 1, Math.sqrt(2) * roomWidth, 1)
-    //light.position.x += 3
-    light.position.y += 3
-    light.position.z -= roomWidth / 2
-    light.castShadow = true
-    //light.shadow.mapSize.width = 4 * 512
-    //light.shadow.mapSize.height = 4 * 512
-    light.shadow.bias = -0.005
-    group.add(light)
+    if (LIGHTS) {
+        const light = new THREE.PointLight(
+            0xffffff,
+            1,
+            Math.sqrt(2) * roomWidth,
+            1
+        )
+        //light.position.x += 3
+        light.position.y += 3
+        light.position.z -= roomWidth / 2
+        if (SHADOWS) {
+            light.castShadow = true
+            //light.shadow.mapSize.width = 4 * 512
+            //light.shadow.mapSize.height = 4 * 512
+            light.shadow.bias = -0.005
+        }
+        group.add(light)
+    }
 
     group.myWidth = roomWidth
     group.safetyWidth = roomWidth + 2 * largestGroupObjectWidth
@@ -804,8 +849,10 @@ function createWall(a, b) {
     var planeGeometry = new THREE.BoxGeometry(l, 50, 1)
     var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-    plane.castShadow = true
-    plane.receiveShadow = true
+    if (SHADOWS) {
+        plane.castShadow = true
+        plane.receiveShadow = true
+    }
     var center = a.add(b).divideScalar(2)
     plane.position.x = center.x
     plane.position.z = center.y
