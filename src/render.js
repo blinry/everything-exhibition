@@ -77,6 +77,7 @@ async function generateChapter(chapter) {
 
     updateStatus(`Generating "${chapter.name}"...`)
 
+    // Generate entrance sign.
     let text = await createTextPlane(chapter.name)
     text.position.x = 0
     text.position.y = 20
@@ -86,21 +87,16 @@ async function generateChapter(chapter) {
     text.scale.z = 3
     group.add(text)
 
-    let promiseArr = await generateImageData(chapter)
-    let numberOfImages = promiseArr.length
-    let pictures = await Promise.all(promiseArr)
-    if (pictures.length > 0) {
-        group.add(...pictures)
-    }
+    let picturePromises = await generateImageData(chapter)
 
-    // Add subrooms.
-    const rooms = await Promise.all(
-        chapter.sections.map((c) => generateChapter(c))
-    )
+    // Generate subrooms.
+    const roomPromises = chapter.sections.map((c) => generateChapter(c))
 
-    var objects = []
-    objects.push(...pictures)
-    objects.push(...rooms)
+    var objectPromises = []
+    objectPromises.push(...picturePromises)
+    objectPromises.push(...roomPromises)
+
+    var objects = await Promise.all(objectPromises)
 
     distributeObjects(objects, group, 10, false)
     return group
