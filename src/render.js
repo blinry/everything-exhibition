@@ -61,7 +61,7 @@ export async function render(exhibition, settings) {
     SETTINGS = settings
     clearObjects(scene)
 
-    WALL_TEXTURE = loadMaterial("beige_wall_001", 1)
+    WALL_TEXTURE = loadMaterial("beige_wall_001", 1, 0xb3b3b3)
 
     const everything = await generateChapter(exhibition)
 
@@ -332,7 +332,7 @@ export function setup() {
     window.addEventListener("resize", onWindowResize)
 }
 
-function loadMaterial(path, scaling) {
+function loadMaterial(path, scaling, fallbackColor) {
     if (SETTINGS.textures) {
         let materialData = {
             map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
@@ -359,7 +359,7 @@ function loadMaterial(path, scaling) {
         })
     } else {
         return new THREE.MeshStandardMaterial({
-            color: Math.floor(Math.random() * 256 * 256 * 256),
+            color: fallbackColor,
         })
     }
 }
@@ -372,7 +372,7 @@ function setupFloor() {
     scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
-    const material = loadMaterial("plywood", 256)
+    const material = loadMaterial("plywood", 256, 0x665d48)
     const ground = new THREE.Mesh(geometry, material)
     if (SETTINGS.shadows) {
         ground.receiveShadow = true
@@ -401,16 +401,6 @@ function setupFloor() {
     camera.add(crosshair)
     scene.add(camera)
 
-    //const light = new THREE.DirectionalLight(0xffffff, 0.5)
-    //light.position.x += 3
-    //light.position.y += 3
-    //light.position.z += 1
-    //light.castShadow = true
-    //light.shadow.mapSize.width = 4 * 512
-    //light.shadow.mapSize.height = 4 * 512
-    ////light.shadow.bias = -0.0001
-    //scene.add(light)
-
     if (SETTINGS.lights) {
         // Add a light to the entrance.
         const light = new THREE.PointLight(0xffffff, 1, 50)
@@ -422,6 +412,16 @@ function setupFloor() {
             //light.shadow.mapSize.height = 4 * 512
             light.shadow.bias = -0.005
         }
+        scene.add(light)
+    } else {
+        const light = new THREE.DirectionalLight(0xffffff, 0.5)
+        light.position.x += 3
+        light.position.y += 3
+        light.position.z += 1
+        light.castShadow = true
+        light.shadow.mapSize.width = 4 * 512
+        light.shadow.mapSize.height = 4 * 512
+        light.shadow.bias = -0.0001
         scene.add(light)
     }
 }

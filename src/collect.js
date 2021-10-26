@@ -94,6 +94,14 @@ async function createSection(section) {
         }
     }
 
+    paragraphs = paragraphs.map((text) => {
+        if (text.length >= 500) {
+            console.log(text.slice(0, 500) + "...")
+            return text.slice(0, 500) + "..."
+        }
+        return text
+    })
+
     // Get images.
     var images = []
 
