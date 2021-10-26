@@ -71,36 +71,42 @@ async function createSection(section) {
     if (section.paragraphs) {
         for (let paragraph of section.paragraphs) {
             if (paragraph.sentences) {
-                const p = paragraph.sentences
-                    .map((sentence) => {
-                        var text = sentence.text
-                        if (sentence.links) {
-                            for (var link of sentence.links) {
-                                if (link.text && link.page) {
-                                    text = text.replace(
-                                        link.text,
-                                        `<a href="${link.page}">${link.text}</a>`
-                                    )
-                                }
+                // Insert HTML links for all links in the text.
+                var sentences = paragraph.sentences.map((sentence) => {
+                    var text = sentence.text
+                    if (sentence.links) {
+                        for (var link of sentence.links) {
+                            if (link.text && link.page) {
+                                text = text.replace(
+                                    link.text,
+                                    `<a href="${link.page}">${link.text}</a>`
+                                )
                             }
                         }
-                        return text
-                    })
-                    .join("<br><br>")
-                if (p.length > 0) {
-                    paragraphs.push(p)
+                    }
+                    return text
+                })
+
+                // Make sure the individual paragraphs don't get too long.
+                var maxLength = 700
+                var currentParagraph = ""
+                for (var [i, s] of sentences.entries()) {
+                    if ((currentParagraph + s).length < maxLength) {
+                        if (i !== 0) {
+                            currentParagraph += "<br><br>"
+                        }
+                        currentParagraph += s
+                    } else {
+                        if (currentParagraph.length > 0) {
+                            paragraphs.push(currentParagraph)
+                        }
+                        currentParagraph = s
+                    }
                 }
+                paragraphs.push(currentParagraph)
             }
         }
     }
-
-    paragraphs = paragraphs.map((text) => {
-        if (text.length >= 500) {
-            console.log(text.slice(0, 500) + "...")
-            return text.slice(0, 500) + "..."
-        }
-        return text
-    })
 
     // Get images.
     var images = []
