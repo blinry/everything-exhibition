@@ -36,8 +36,13 @@ function randomSuggestions() {
 }
 
 function goodSuggestions() {
-    addOption("Elementary particle")
+    addOption("Kangaroo")
     addOption("Ada Lovelace")
+    addOption("Elementary particle")
+    addOption("Optical illusion")
+    addOption("Camera obscura")
+    addOption("Leonardo da Vinci")
+    addOption("Mammal")
 }
 
 function addOption(label) {

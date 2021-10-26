@@ -103,7 +103,9 @@ async function createSection(section) {
                         currentParagraph = s
                     }
                 }
-                paragraphs.push(currentParagraph)
+                if (currentParagraph.length > 0) {
+                    paragraphs.push(currentParagraph)
+                }
             }
         }
     }
