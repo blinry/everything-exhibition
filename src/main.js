@@ -35,12 +35,21 @@ function randomSuggestions() {
         })
 }
 
+function goodSuggestions() {
+    addOption("Elementary particle")
+    addOption("Ada Lovelace")
+}
+
 function addOption(label) {
     let datalist = document.getElementById("suggestions")
     let option = document.createElement("option")
 
     option.value = `${label}`
     datalist.appendChild(option)
+}
+
+export function updateStatus(text) {
+    document.querySelector("#status").innerHTML = text
 }
 
 function startGeneration() {
@@ -64,6 +73,7 @@ export function generateExhibition(topic) {
         texts: document.querySelector("#texts").checked,
     }
 
+    updateStatus("Generating...")
     generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
         render(exhibition, settings)
     )
@@ -88,7 +98,8 @@ window.onload = function () {
             getSuggestions(text)
         }
     })
-    randomSuggestions()
+    //randomSuggestions()
+    goodSuggestions()
 
     setup()
     animate()

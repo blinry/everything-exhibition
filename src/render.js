@@ -1,4 +1,4 @@
-import {generateExhibition} from "./main.js"
+import {updateStatus, generateExhibition} from "./main.js"
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
@@ -36,10 +36,6 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
-
-function updateStatus(text) {
-    document.querySelector("#status").innerHTML = text
-}
 
 function clearObjects(obj) {
     while (obj.children.length > 0) {
