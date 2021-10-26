@@ -98,7 +98,7 @@ window.onload = function () {
     document.getElementById("topic").addEventListener("input", (e) => {
         let text = e.target.value
         if (text === "") {
-            randomSuggestions()
+            goodSuggestions()
         } else {
             getSuggestions(text)
         }
