@@ -36,6 +36,9 @@ function randomSuggestions() {
 }
 
 function goodSuggestions() {
+    let datalist = document.getElementById("suggestions")
+    datalist.innerHTML = ""
+
     addOption("Kangaroo")
     addOption("Ada Lovelace")
     addOption("Elementary particle")
