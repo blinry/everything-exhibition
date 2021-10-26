@@ -1,4 +1,5 @@
 import {updateStatus, generateExhibition} from "./main.js"
+import {setPosition} from "./multiplayer.js"
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
@@ -37,7 +38,11 @@ const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
 
+let players = {}
+
 function clearObjects(obj) {
+    players = {}
+
     while (obj.children.length > 0) {
         clearObjects(obj.children[0])
         obj.remove(obj.children[0])
@@ -189,6 +194,12 @@ export function animate() {
 
         selectedObject = null
     }
+
+    setPosition(
+        controls.getObject().position.x,
+        controls.getObject().position.y,
+        controls.getObject().position.z
+    )
 
     requestAnimationFrame(animate)
 
@@ -850,4 +861,21 @@ function createWall(a, b) {
     let rotationAngle = Math.atan2(a.y - b.y, a.x - b.x)
     plane.rotateY(rotationAngle)
     return plane
+}
+
+export function updateMultiplayer(states) {
+    for (let [id, values] of states) {
+        if (!players[id]) {
+            const geometry = new THREE.CylinderGeometry(10, 10, 35, 32)
+            const material = loadMaterial("plywood", 1, 0xee3333)
+            const player = new THREE.Mesh(geometry, material)
+            players[id] = player
+            scene.add(player)
+            console.log("added")
+        }
+
+        players[id].position.x = values.position.x
+        players[id].position.y = values.position.y
+        players[id].position.z = values.position.z
+    }
 }

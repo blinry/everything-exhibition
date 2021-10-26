@@ -1,5 +1,6 @@
 import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 import {setup, generate, animate, render} from "./render.js"
+import {setupMultiplayer} from "./multiplayer.js"
 
 function getSuggestions(value) {
     window
@@ -81,6 +82,7 @@ export function generateExhibition(topic) {
         texts: document.querySelector("#texts").checked,
     }
 
+    setupMultiplayer(topic)
     updateStatus("Generating...")
     generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
         render(exhibition, settings)
