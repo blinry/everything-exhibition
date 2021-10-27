@@ -3,6 +3,7 @@ import {setPosition} from "./multiplayer.js"
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
+import {Sky} from "three/examples/jsm/objects/Sky"
 import html2canvas from "html2canvas"
 
 Array.prototype.sum = function () {
@@ -216,7 +217,7 @@ export function setup() {
         75,
         CANVAS_WIDTH / CANVAS_HEIGHT,
         0.1,
-        1000
+        2000
     )
 
     raycaster = new THREE.Raycaster()
@@ -226,6 +227,9 @@ export function setup() {
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
+    //renderer.outputEncoding = THREE.sRGBEncoding;
+    //renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    //renderer.toneMappingExposure = 1
     document.body.appendChild(renderer.domElement)
 
     //if (HDR) {
@@ -339,6 +343,8 @@ export function setup() {
     document.addEventListener("keydown", onKeyDown)
     document.addEventListener("keyup", onKeyUp)
 
+    setupFloor()
+
     onWindowResize()
     window.addEventListener("resize", onWindowResize)
 }
@@ -376,6 +382,19 @@ function loadMaterial(path, scaling, fallbackColor) {
 }
 
 function setupFloor() {
+    sky = new Sky()
+    sky.scale.setScalar(300000)
+    sky.material.uniforms.turbidity.value = 2
+    sky.material.uniforms.rayleigh.value = 1
+    sky.material.uniforms.mieCoefficient.value = 0.005
+    sky.material.uniforms.mieDirectionalG.value = 0.8
+    const phi = THREE.MathUtils.degToRad(90 - 30)
+    const theta = THREE.MathUtils.degToRad(0)
+    let sun = new THREE.Vector3()
+    sun.setFromSphericalCoords(1, phi, theta)
+    sky.material.uniforms.sunPosition.value.copy(sun)
+    scene.add(sky)
+
     const ambient = new THREE.AmbientLight(0xffffff, 0.2) // soft white light
     if (!SETTINGS.lights) {
         ambient.intensity = 1
