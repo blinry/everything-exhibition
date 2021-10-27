@@ -5,7 +5,7 @@ import {timeStart, timeEnd} from "./utils.js"
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 import {Sky} from "three/examples/jsm/objects/Sky"
-import html2canvas from "html2canvas"
+import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
@@ -42,6 +42,8 @@ let movementSpeed = defaultMovementSpeed
 
 let players = {}
 
+preloadFont({font: null}, () => {})
+
 function clearObjects(obj) {
     players = {}
 
@@ -50,6 +52,9 @@ function clearObjects(obj) {
         obj.remove(obj.children[0])
     }
     if (obj.geometry) obj.geometry.dispose()
+
+    // TODO: If obj is a Text, call dispose on it, see
+    // https://protectwise.github.io/troika/troika-three-text/
 
     if (obj.material) {
         Object.keys(obj.material).forEach((prop) => {
@@ -87,13 +92,10 @@ async function generateChapter(chapter) {
     updateStatus(`Generating "${chapter.name}"...`)
 
     // Generate entrance sign.
-    let text = await createTextPlane(chapter.name)
+    let text = await createTextPlane(chapter.name, 30, 3)
     text.position.x = 0
     text.position.y = 20
     text.position.z = 1
-    text.scale.x = 3
-    text.scale.y = 3
-    text.scale.z = 3
     group.add(text)
     timeEnd(te)
 
@@ -129,7 +131,7 @@ async function generateImageData(chapter) {
     if (SETTINGS.texts) {
         things.unshift(
             ...chapter.paragraphs.map((paragraph) =>
-                createTextPlane(paragraph, null, 20)
+                createTextPlane(paragraph, 20)
             )
         )
     }
@@ -138,12 +140,12 @@ async function generateImageData(chapter) {
 
 async function addPicture(img) {
     var plane = await createImagePlane(img.url, 30, null, img.width, img.height)
-    //if (img.description) {
-    //    var textPlane = await createTextPlane(img.description)
-    //    textPlane.position.z = 1
-    //    textPlane.position.y = -5
-    //    plane.add(textPlane)
-    //}
+    if (img.description) {
+        var textPlane = await createTextPlane(img.description, 10, 0.5)
+        textPlane.position.z = 1
+        textPlane.position.y = -5
+        plane.add(textPlane)
+    }
     return plane
 }
 
@@ -500,11 +502,15 @@ function createImagePlane(
     return plane
 }
 
-async function createTextPlane(text, height = 2, width = null) {
-    var planeGeometry = new THREE.BoxGeometry(20, 10, 0.1)
+async function createTextPlane(text, width, scale = 1) {
+    var margin = scale
+
+    var height = width / 10
+
+    var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
 
     var planeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xff0000,
+        color: 0xffffff,
         side: THREE.DoubleSide,
     })
 
@@ -519,17 +525,34 @@ async function createTextPlane(text, height = 2, width = null) {
         plane.myLink = link[2]
     }
 
-    // Create an image of the text and put it on the object.
-    setTimeout(() => {
-        getTextImage(text).then((dataURL) => {
-            var texture = new THREE.TextureLoader().load(dataURL)
+    var textObject = new Text()
+    plane.add(textObject)
+    textObject.text = text
+    textObject.fontSize = 1 * scale
+    textObject.anchorX = "center"
+    textObject.anchorY = "middle"
+    textObject.color = 0x000000
 
-            plane.material = new THREE.MeshStandardMaterial({
-                map: texture,
-                side: THREE.DoubleSide,
-            })
-        })
-    }, 1000)
+    textObject.maxWidth = width - 2 * margin
+
+    textObject.position.z = 0.1
+    textObject.sync(() => {
+        var bbox = new THREE.Box3().setFromObject(textObject)
+
+        var boxWidth = Math.max(
+            bbox.max.x - bbox.min.x,
+            bbox.max.z - bbox.min.z
+        )
+        var boxHeight = bbox.max.y - bbox.min.y
+
+        if (boxWidth > 0) {
+            plane.scale.y = (boxHeight + 2 * margin) / height
+            textObject.scale.y = height / (boxHeight + 2 * margin)
+
+            plane.scale.x = (boxWidth + 2 * margin) / width
+            textObject.scale.x = width / (boxWidth + 2 * margin)
+        }
+    })
 
     return plane
 }

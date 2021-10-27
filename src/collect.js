@@ -78,16 +78,16 @@ async function createSection(section) {
                 // Insert HTML links for all links in the text.
                 var sentences = paragraph.sentences.map((sentence) => {
                     var text = sentence.text
-                    if (sentence.links) {
-                        for (var link of sentence.links) {
-                            if (link.text && link.page) {
-                                text = text.replace(
-                                    link.text,
-                                    `<a href="${link.page}">${link.text}</a>`
-                                )
-                            }
-                        }
-                    }
+                    //if (sentence.links) {
+                    //    for (var link of sentence.links) {
+                    //        if (link.text && link.page) {
+                    //            text = text.replace(
+                    //                link.text,
+                    //                `<a href="${link.page}">${link.text}</a>`
+                    //            )
+                    //        }
+                    //    }
+                    //}
                     return text
                 })
 
@@ -97,7 +97,7 @@ async function createSection(section) {
                 for (var [i, s] of sentences.entries()) {
                     if ((currentParagraph + s).length < maxLength) {
                         if (i !== 0) {
-                            currentParagraph += "<br><br>"
+                            currentParagraph += "\n\n"
                         }
                         currentParagraph += s
                     } else {
