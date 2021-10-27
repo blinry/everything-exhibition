@@ -1,8 +1,10 @@
+import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 const wtf = require("wtf_wikipedia")
 
 export const API_URL = `https://en.wikipedia.org/w/api.php`
 
 export async function generateExhibitionDescriptionFromWikipedia(topic) {
+    var t = timeStart("parse")
     var wikiText = await fetchWikiText(topic)
     var article = wtf(wikiText).json()
     console.log(article)
@@ -15,7 +17,9 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
         console.log(article)
     }
 
-    return await parseArticle(article)
+    const exhibition = await parseArticle(article)
+    timeEnd(t)
+    return exhibition
 }
 
 async function fetchWikiText(article) {
@@ -116,13 +120,16 @@ async function createSection(section) {
     if (section.images) {
         let newImagePromises = section.images.map(async (image) => {
             let response = await window.fetch(
-                `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url&iiurlwidth=200&origin=*`
+                `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url|size&iiurlwidth=200&origin=*`
             )
             let data = await response.json()
             if (data?.query?.pages?.["-1"]?.imageinfo?.[0]?.url) {
+                var imageinfo = data.query.pages["-1"].imageinfo[0]
                 return {
-                    url: data.query.pages["-1"].imageinfo[0].url,
+                    url: imageinfo.url,
                     description: image.caption,
+                    width: imageinfo.width,
+                    height: imageinfo.height,
                 }
             }
         })

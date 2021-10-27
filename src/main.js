@@ -1,6 +1,7 @@
 import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 import {setup, generate, animate, render} from "./render.js"
 import {setupMultiplayer} from "./multiplayer.js"
+import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 function getSuggestions(value) {
     window
@@ -70,7 +71,7 @@ function startGeneration() {
     generateExhibition(topic)
 }
 
-export function generateExhibition(topic) {
+export async function generateExhibition(topic) {
     let topicDiv = document.getElementById("topic")
     topicDiv.value = topic
 
@@ -82,11 +83,16 @@ export function generateExhibition(topic) {
         texts: document.querySelector("#texts").checked,
     }
 
+    timeReset()
+
+    var t = timeStart("entire generation")
     setupMultiplayer(topic)
     updateStatus("Generating...")
-    generateExhibitionDescriptionFromWikipedia(topic).then((exhibition) =>
-        render(exhibition, settings)
-    )
+    var exhibition = await generateExhibitionDescriptionFromWikipedia(topic)
+    await render(exhibition, settings)
+    timeEnd(t)
+
+    timeDump()
 }
 
 window.onload = function () {
@@ -109,6 +115,7 @@ window.onload = function () {
         }
     })
     //randomSuggestions()
+
     goodSuggestions()
 
     setup()

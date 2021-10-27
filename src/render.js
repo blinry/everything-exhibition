@@ -1,5 +1,6 @@
 import {updateStatus, generateExhibition} from "./main.js"
 import {setPosition} from "./multiplayer.js"
+import {timeStart, timeEnd} from "./utils.js"
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
@@ -80,6 +81,7 @@ export async function render(exhibition, settings) {
 }
 
 async function generateChapter(chapter) {
+    var te = timeStart("entrance")
     let group = new THREE.Group()
 
     updateStatus(`Generating "${chapter.name}"...`)
@@ -93,19 +95,26 @@ async function generateChapter(chapter) {
     text.scale.y = 3
     text.scale.z = 3
     group.add(text)
-
-    let picturePromises = await generateImageData(chapter)
+    timeEnd(te)
 
     // Generate subrooms.
     const roomPromises = chapter.sections.map((c) => generateChapter(c))
 
+    var to = timeStart("objects")
     var objectPromises = []
-    objectPromises.push(...picturePromises)
-    objectPromises.push(...roomPromises)
+    let picturePromises = await generateImageData(chapter)
+    var pictures = await Promise.all(picturePromises)
+    timeEnd(to)
 
-    var objects = await Promise.all(objectPromises)
+    var rooms = await Promise.all(roomPromises)
 
+    var objects = []
+    objects.push(...pictures)
+    objects.push(...rooms)
+
+    var td = timeStart("distribute")
     distributeObjects(objects, group, 10, false)
+    timeEnd(td)
     return group
 }
 
@@ -128,13 +137,13 @@ async function generateImageData(chapter) {
 }
 
 async function addPicture(img) {
-    var plane = await createImagePlane(img.url)
-    if (img.description) {
-        var textPlane = await createTextPlane(img.description)
-        textPlane.position.z = 1
-        textPlane.position.y = -5
-        plane.add(textPlane)
-    }
+    var plane = await createImagePlane(img.url, 30, null, img.width, img.height)
+    //if (img.description) {
+    //    var textPlane = await createTextPlane(img.description)
+    //    textPlane.position.z = 1
+    //    textPlane.position.y = -5
+    //    plane.add(textPlane)
+    //}
     return plane
 }
 
@@ -456,38 +465,76 @@ function setupFloor() {
     }
 }
 
-function createImagePlane(url, height = 30, width = null) {
-    return new Promise((resolve) => {
-        var texture = new THREE.TextureLoader().load(url, (texture) => {
-            let ratio = texture.image.width / texture.image.height
-            if (height !== null && width === null) {
-                width = height * ratio
-            } else if (height === null && width !== null) {
-                height = width / ratio
-            } else if (height === null && width === null) {
-                height = 30
-                width = 30
-                console.log("Tried to create an image plane without any size.")
-            }
-            var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
-            var planeMaterial = new THREE.MeshStandardMaterial({
-                map: texture,
-                side: THREE.DoubleSide,
-            })
+function createImagePlane(
+    url,
+    height = 30,
+    width = null,
+    knownWidth = null,
+    knownHeight = null
+) {
+    var texture = new THREE.TextureLoader().load(url)
 
-            var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-            // Store the width in the Mesh object. This is a bit of a hack.
-            plane.myWidth = width
-            plane.safetyWidth = width
-            if (SETTINGS.shadows) {
-                plane.receiveShadow = true
-            }
-            resolve(plane)
-        })
+    let ratio = knownWidth / knownHeight
+    if (height !== null && width === null) {
+        width = height * ratio
+    } else if (height === null && width !== null) {
+        height = width / ratio
+    } else if (height === null && width === null) {
+        height = 30
+        width = 30
+        console.log("Tried to create an image plane without any size.")
+    }
+    var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
+    var planeMaterial = new THREE.MeshStandardMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
     })
+
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    // Store the width in the Mesh object. This is a bit of a hack.
+    plane.myWidth = width
+    plane.safetyWidth = width
+    if (SETTINGS.shadows) {
+        plane.receiveShadow = true
+    }
+    return plane
 }
 
 async function createTextPlane(text, height = 2, width = null) {
+    var planeGeometry = new THREE.BoxGeometry(20, 10, 0.1)
+
+    var planeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff0000,
+        side: THREE.DoubleSide,
+    })
+
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+
+    plane.myWidth = width
+    plane.safetyWidth = width
+    plane.layers.enable(1)
+
+    var link = text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
+    if (link) {
+        plane.myLink = link[2]
+    }
+
+    // Create an image of the text and put it on the object.
+    setTimeout(() => {
+        getTextImage(text).then((dataURL) => {
+            var texture = new THREE.TextureLoader().load(dataURL)
+
+            plane.material = new THREE.MeshStandardMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+            })
+        })
+    }, 1000)
+
+    return plane
+}
+
+async function getTextImage(text) {
     let div = document.createElement("div")
     div.innerHTML = text
     div.style.maxWidth = "300px"
@@ -501,15 +548,10 @@ async function createTextPlane(text, height = 2, width = null) {
 
     var canvas = await html2canvas(div, {logging: false})
 
-    var plane = await createImagePlane(canvas.toDataURL(), height, width)
+    var dataURL = canvas.toDataURL()
     div.remove()
-    plane.layers.enable(1)
 
-    var link = text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
-    if (link) {
-        plane.myLink = link[2]
-    }
-    return plane
+    return dataURL
 }
 
 function onWindowResize() {
@@ -890,7 +932,6 @@ export function updateMultiplayer(states) {
             const player = new THREE.Mesh(geometry, material)
             players[id] = player
             scene.add(player)
-            console.log("added")
         }
 
         players[id].position.x = values.position.x
