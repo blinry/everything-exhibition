@@ -402,7 +402,7 @@ function loadMaterial(path, scaling, fallbackColor) {
 }
 
 function setupFloor() {
-    sky = new Sky()
+    var sky = new Sky()
     sky.scale.setScalar(300000)
     sky.material.uniforms.turbidity.value = 2
     sky.material.uniforms.rayleigh.value = 1
