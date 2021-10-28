@@ -44,6 +44,11 @@ let players = {}
 
 preloadFont({font: null}, () => {})
 
+const whiteMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+})
+
 function clearObjects(obj) {
     players = {}
 
@@ -77,12 +82,17 @@ export async function render(exhibition, settings) {
 
     const everything = await generateChapter(exhibition)
 
+    var ta = timeStart("add to scene")
     scene.add(everything)
+    timeEnd(ta)
+
     updateStatus("")
 
     //createEntrance()
     //createExit()
+    var tf = timeStart("floor")
     setupFloor()
+    timeEnd(tf)
 }
 
 async function generateChapter(chapter) {
@@ -102,17 +112,16 @@ async function generateChapter(chapter) {
     // Generate subrooms.
     const roomPromises = chapter.sections.map((c) => generateChapter(c))
 
-    var to = timeStart("objects")
-    var objectPromises = []
-    let picturePromises = await generateImageData(chapter)
-    var pictures = await Promise.all(picturePromises)
+    var to = timeStart("imagedata")
+    let picturePromises = generateImageData(chapter)
     timeEnd(to)
 
-    var rooms = await Promise.all(roomPromises)
-
-    var objects = []
-    objects.push(...pictures)
-    objects.push(...rooms)
+    var tp = timeStart("objectpromises")
+    var objectPromises = []
+    objectPromises.push(...picturePromises)
+    objectPromises.push(...roomPromises)
+    var objects = await Promise.all(objectPromises)
+    timeEnd(tp)
 
     var td = timeStart("distribute")
     distributeObjects(objects, group, 10, false)
@@ -120,7 +129,7 @@ async function generateChapter(chapter) {
     return group
 }
 
-async function generateImageData(chapter) {
+function generateImageData(chapter) {
     let things = []
     if (SETTINGS.images) {
         const images = chapter.images.filter(
@@ -228,7 +237,7 @@ export function setup() {
         75,
         CANVAS_WIDTH / CANVAS_HEIGHT,
         0.1,
-        2000
+        4000
     )
 
     raycaster = new THREE.Raycaster()
@@ -509,12 +518,7 @@ async function createTextPlane(text, width, scale = 1) {
 
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
 
-    var planeMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        side: THREE.DoubleSide,
-    })
-
-    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    var plane = new THREE.Mesh(planeGeometry, whiteMaterial)
 
     plane.myWidth = width
     plane.safetyWidth = width

@@ -1,24 +1,38 @@
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 const wtf = require("wtf_wikipedia")
 
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
 export const API_URL = `https://en.wikipedia.org/w/api.php`
 
 export async function generateExhibitionDescriptionFromWikipedia(topic) {
-    var t = timeStart("parse")
+    var tf = timeStart("fetch")
     var wikiText = await fetchWikiText(topic)
+    timeEnd(tf)
+
+    var tw = timeStart("wtf")
     var article = wtf(wikiText).json()
+    article.title = topic
+    timeEnd(tw)
     console.log(article)
 
+    var tr = timeStart("redirect")
     while (article.redirectTo) {
         topic = article.redirectTo.page
 
         wikiText = await fetchWikiText(topic)
         article = wtf(wikiText).json()
+        article.title = topic
         console.log(article)
     }
+    timeEnd(tr)
 
+    var tp = timeStart("parse")
     const exhibition = await parseArticle(article)
-    timeEnd(t)
+    timeEnd(tp)
+
     return exhibition
 }
 
@@ -32,22 +46,16 @@ async function fetchWikiText(article) {
 }
 
 async function parseArticle(article) {
-    let exhibition = await createSection(article.sections[0])
+    const imageURLs = await getImageURLs(article.title)
 
-    function capitalizeFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1)
-    }
+    let exhibition = createSection(article.sections[0], imageURLs)
+
     exhibition.name = capitalizeFirstLetter(article.title)
 
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
     for (const section of article.sections.slice(1)) {
-        const s = await createSection(section)
-
-        //if (s.images.length + s.paragraphs.length === 0) {
-        //    // Skip this section.
-        //    continue
-        //}
+        const s = createSection(section, imageURLs)
 
         // How much deeper is the depth of the current section, compared to the top one on the stack?
         const depthIncrease = section.depth - (stack.length - 2)
@@ -69,7 +77,26 @@ async function parseArticle(article) {
     return exhibition
 }
 
-async function createSection(section) {
+async function getImageURLs(title) {
+    let response = await window.fetch(
+        `${API_URL}?action=query&format=json&prop=imageinfo&iiprop=url|size&generator=images&gimlimit=max&titles=${title}&origin=*`
+    )
+    // TODO: What if a page has more than 500 images?
+    let data = await response.json()
+
+    let result = {}
+    for (const entry of Object.values(data.query.pages)) {
+        result[entry.title] = {
+            url: entry.imageinfo[0].url,
+            width: entry.imageinfo[0].width,
+            height: entry.imageinfo[0].height,
+        }
+    }
+
+    return result
+}
+
+function createSection(section, imageURLs) {
     // Get paragraphs.
     var paragraphs = []
     if (section.paragraphs) {
@@ -118,22 +145,30 @@ async function createSection(section) {
     var images = []
 
     if (section.images) {
-        let newImagePromises = section.images.map(async (image) => {
-            let response = await window.fetch(
-                `${API_URL}?action=query&titles=${image.file}&format=json&prop=imageinfo&iiprop=url|size&iiurlwidth=200&origin=*`
-            )
-            let data = await response.json()
-            if (data?.query?.pages?.["-1"]?.imageinfo?.[0]?.url) {
-                var imageinfo = data.query.pages["-1"].imageinfo[0]
-                return {
-                    url: imageinfo.url,
-                    description: image.caption,
-                    width: imageinfo.width,
-                    height: imageinfo.height,
-                }
+        images = section.images.map((image) => {
+            // In case the name is "File:foobar.png", make it "File:Foobar.png".
+            let parts = image.file.split(":", 2)
+            image.file = parts[0] + ":" + capitalizeFirstLetter(parts[1])
+
+            // Replace underscores with spaces.
+            image.file = image.file.replaceAll("_", " ")
+
+            // Replace "Image:" and "file:" with "File:", removing spaces as neccessary.
+            image.file = image.file.replace(/^(image|file): */i, "File:")
+
+            const imageinfo = imageURLs[image.file]
+            if (!imageinfo) {
+                console.log(imageURLs)
+                console.log("Could not find image URL for " + image.file)
+            }
+
+            return {
+                url: imageinfo.url,
+                description: image.caption,
+                width: imageinfo.width,
+                height: imageinfo.height,
             }
         })
-        images = await Promise.all(newImagePromises)
     }
 
     return {
