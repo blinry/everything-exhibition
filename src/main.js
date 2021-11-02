@@ -86,9 +86,9 @@ export async function generateExhibition(topic) {
     timeReset()
 
     var t = timeStart("entire generation")
-    setupMultiplayer(topic)
     updateStatus("Generating...")
     var exhibition = await generateExhibitionDescriptionFromWikipedia(topic)
+    await setupMultiplayer(exhibition.name)
     await render(exhibition, settings)
     timeEnd(t)
 
@@ -119,5 +119,6 @@ window.onload = function () {
     goodSuggestions()
 
     setup()
+    setupMultiplayer("xxx-lobby")
     animate()
 }

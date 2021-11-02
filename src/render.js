@@ -216,10 +216,14 @@ export function animate() {
         selectedObject = null
     }
 
+    let dir = controls.getObject().getWorldDirection(new THREE.Vector3(0, 0, 0)) // Trash input vector
     setPosition(
         controls.getObject().position.x,
         controls.getObject().position.y,
-        controls.getObject().position.z
+        controls.getObject().position.z,
+        dir.x,
+        dir.y,
+        dir.z
     )
 
     requestAnimationFrame(animate)
@@ -951,18 +955,45 @@ function createWall(a, b) {
     return plane
 }
 
-export function updateMultiplayer(states) {
+export async function updateMultiplayer(states) {
+    // Update the player positions.
     for (let [id, values] of states) {
         if (!players[id]) {
-            const geometry = new THREE.CylinderGeometry(10, 10, 35, 32)
+            const geometry = new THREE.CylinderGeometry(5, 5, 15, 32)
             const material = loadMaterial("plywood", 1, 0xee3333)
             const player = new THREE.Mesh(geometry, material)
+
+            // Add name as text above the player.
+            const textPlane = await createTextPlane("^_^", 2, 2)
+            textPlane.position.y = 15
+            player.add(textPlane)
+
             players[id] = player
             scene.add(player)
+            console.log("added")
         }
 
-        players[id].position.x = values.position.x
-        players[id].position.y = values.position.y
-        players[id].position.z = values.position.z
+        players[id].position.x = values.transformation.position.x
+        players[id].position.y = values.transformation.position.y - 25
+        players[id].position.z = values.transformation.position.z
+
+        let sign = players[id].children[0]
+        let direction = new THREE.Vector3(
+            values.transformation.rotation.x,
+            values.transformation.rotation.y,
+            values.transformation.rotation.z
+        )
+        direction.multiplyScalar(500)
+        direction.add(values.transformation.position)
+        sign.lookAt(direction)
+    }
+
+    // Remove players who disconnected.
+    for (let id of Object.keys(players)) {
+        if (!states.has(parseInt(id))) {
+            scene.remove(players[id])
+            delete players[id]
+            console.log("removed")
+        }
     }
 }
