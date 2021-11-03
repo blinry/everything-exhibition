@@ -128,7 +128,6 @@ window.onload = async function () {
     })
 
     document.getElementById("name").addEventListener("input", (e) => {
-        console.log(e.target.value)
         setName(e.target.value)
     })
 

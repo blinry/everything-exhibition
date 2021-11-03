@@ -435,14 +435,27 @@ function setupFloor() {
     ground.position.y = -30
 
     const w = scene.myWidth
-    var defaultCameraPosition = new THREE.Vector3(
-        DOOR_WIDTH * 3,
+    //var defaultCameraPosition = new THREE.Vector3(
+    //    DOOR_WIDTH * 3,
+    //    0,
+    //    DOOR_WIDTH * 3
+    //)
+    //camera.position.x = defaultCameraPosition.x
+    //camera.position.y = defaultCameraPosition.y
+    //camera.position.z = defaultCameraPosition.z
+    //camera.lookAt(0, 0, 0)
+
+    // Set players on a random position in a half circle around the entrance.
+    let randomAngle = Math.random() * Math.PI
+    let distance = 60
+    var initialCameraPosition = new THREE.Vector3(
+        Math.cos(randomAngle) * distance,
         0,
-        DOOR_WIDTH * 3
+        Math.sin(randomAngle) * distance
     )
-    camera.position.x = defaultCameraPosition.x
-    camera.position.y = defaultCameraPosition.y
-    camera.position.z = defaultCameraPosition.z
+    camera.position.x = initialCameraPosition.x
+    camera.position.y = initialCameraPosition.y
+    camera.position.z = initialCameraPosition.z
     camera.lookAt(0, 0, 0)
 
     const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xffffff})
@@ -974,7 +987,6 @@ export async function updateMultiplayer(states) {
         }
 
         if (values.name !== undefined) {
-            console.log(values.name)
             if (players[id].name !== values.name) {
                 if (players[id].children.length > 0) {
                     players[id].remove(players[id].children[0])
