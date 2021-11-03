@@ -1,6 +1,6 @@
 import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 import {setup, generate, animate, render} from "./render.js"
-import {setupMultiplayer} from "./multiplayer.js"
+import {setupMultiplayer, setName, setColor} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 function getSuggestions(value) {
@@ -88,14 +88,22 @@ export async function generateExhibition(topic) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
     var exhibition = await generateExhibitionDescriptionFromWikipedia(topic)
-    await setupMultiplayer(exhibition.name)
+    await initializeMultiplayer(exhibition.name)
     await render(exhibition, settings)
     timeEnd(t)
 
     timeDump()
 }
 
-window.onload = function () {
+async function initializeMultiplayer(topic) {
+    await setupMultiplayer(topic)
+
+    // Trigger input events.
+    document.getElementById("name").dispatchEvent(new Event("input"))
+    document.getElementById("color").dispatchEvent(new Event("input"))
+}
+
+window.onload = async function () {
     document.getElementById("topic").addEventListener("keyup", (e) => {
         if (e.key === "Enter") {
             startGeneration()
@@ -114,11 +122,29 @@ window.onload = function () {
             getSuggestions(text)
         }
     })
-    //randomSuggestions()
+
+    document.getElementById("color").addEventListener("input", (e) => {
+        setColor(e.target.value)
+    })
+
+    document.getElementById("name").addEventListener("input", (e) => {
+        console.log(e.target.value)
+        setName(e.target.value)
+    })
 
     goodSuggestions()
 
     setup()
-    setupMultiplayer("xxx-lobby")
+    initializeMultiplayer("xxx-lobby")
+
+    // Pick random color.
+    let color =
+        "#" +
+        Math.floor(Math.random() * 16777215)
+            .toString(16)
+            .padStart(6, "0")
+    document.getElementById("color").value = color
+    setColor(color)
+
     animate()
 }

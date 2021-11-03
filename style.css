@@ -100,3 +100,20 @@ canvas {
 #settings input {
     margin-left: 1rem;
 }
+
+#avatar {
+    position: absolute;
+    top: 0;
+    right: 1rem;
+    margin-top: 1rem;
+}
+
+#avatar input[type="color"] {
+    height: 2rem;
+    width: 2rem;
+}
+
+#avatar input[type="text"] {
+    height: 2rem;
+    width: 10rem;
+}

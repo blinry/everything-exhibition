@@ -35,3 +35,15 @@ export function setPosition(x, y, z, dirX, dirY, dirZ) {
         })
     }
 }
+
+export function setName(name) {
+    if (awareness) {
+        awareness.setLocalStateField("name", name)
+    }
+}
+
+export function setColor(htmlColor) {
+    if (awareness) {
+        awareness.setLocalStateField("color", htmlColor)
+    }
+}

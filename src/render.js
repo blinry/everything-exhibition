@@ -959,33 +959,50 @@ export async function updateMultiplayer(states) {
     // Update the player positions.
     for (let [id, values] of states) {
         if (!players[id]) {
-            const geometry = new THREE.CylinderGeometry(5, 5, 15, 32)
+            const geometry = new THREE.CylinderGeometry(5, 5, 10, 32)
             const material = loadMaterial("plywood", 1, 0xee3333)
             const player = new THREE.Mesh(geometry, material)
-
-            // Add name as text above the player.
-            const textPlane = await createTextPlane("^_^", 2, 2)
-            textPlane.position.y = 15
-            player.add(textPlane)
 
             players[id] = player
             scene.add(player)
             console.log("added")
         }
 
-        players[id].position.x = values.transformation.position.x
-        players[id].position.y = values.transformation.position.y - 25
-        players[id].position.z = values.transformation.position.z
+        if (values.color) {
+            // Convert from string to color
+            players[id].material.color = new THREE.Color(values.color)
+        }
 
-        let sign = players[id].children[0]
-        let direction = new THREE.Vector3(
-            values.transformation.rotation.x,
-            values.transformation.rotation.y,
-            values.transformation.rotation.z
-        )
-        direction.multiplyScalar(500)
-        direction.add(values.transformation.position)
-        sign.lookAt(direction)
+        if (values.name !== undefined) {
+            console.log(values.name)
+            if (players[id].name !== values.name) {
+                if (players[id].children.length > 0) {
+                    players[id].remove(players[id].children[0])
+                }
+                const textPlane = await createTextPlane(values.name, 20, 2)
+                textPlane.position.y = 10
+                players[id].add(textPlane)
+                players[id].name = values.name
+            }
+        }
+
+        if (values.transformation) {
+            players[id].position.x = values.transformation.position.x
+            players[id].position.y = values.transformation.position.y - 15
+            players[id].position.z = values.transformation.position.z
+
+            let direction = new THREE.Vector3(
+                values.transformation.rotation.x,
+                values.transformation.rotation.y,
+                values.transformation.rotation.z
+            )
+            direction.multiplyScalar(500)
+            direction.add(values.transformation.position)
+            if (players[id].children.length > 0) {
+                let sign = players[id].children[0]
+                sign.lookAt(direction)
+            }
+        }
     }
 
     // Remove players who disconnected.
