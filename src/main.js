@@ -125,25 +125,32 @@ window.onload = async function () {
 
     document.getElementById("color").addEventListener("input", (e) => {
         setColor(e.target.value)
+        localStorage.setItem("color", e.target.value)
     })
 
     document.getElementById("name").addEventListener("input", (e) => {
         setName(e.target.value)
+        localStorage.setItem("name", e.target.value)
     })
 
     goodSuggestions()
 
     setup()
-    initializeMultiplayer("xxx-lobby")
 
     // Pick random color.
     let color =
+        localStorage.getItem("color") ||
         "#" +
-        Math.floor(Math.random() * 16777215)
-            .toString(16)
-            .padStart(6, "0")
+            Math.floor(Math.random() * 16777215)
+                .toString(16)
+                .padStart(6, "0")
     document.getElementById("color").value = color
-    setColor(color)
+
+    // Set or load name.
+    let name = localStorage.getItem("name") || "^_^"
+    document.getElementById("name").value = name
+
+    initializeMultiplayer("xxx-lobby")
 
     animate()
 }

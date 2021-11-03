@@ -968,9 +968,14 @@ function createWall(a, b) {
     return plane
 }
 
-export async function updateMultiplayer(states) {
+export async function updateMultiplayer(states, myId) {
     // Update the player positions.
     for (let [id, values] of states) {
+        // Skip myself.
+        if (id === myId) {
+            continue
+        }
+
         if (!players[id]) {
             const geometry = new THREE.CylinderGeometry(5, 5, 10, 32)
             const material = loadMaterial("plywood", 1, 0xee3333)
@@ -1000,7 +1005,7 @@ export async function updateMultiplayer(states) {
 
         if (values.transformation) {
             players[id].position.x = values.transformation.position.x
-            players[id].position.y = values.transformation.position.y - 15
+            players[id].position.y = values.transformation.position.y - 20
             players[id].position.z = values.transformation.position.z
 
             let direction = new THREE.Vector3(
