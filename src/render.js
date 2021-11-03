@@ -18,7 +18,7 @@ const DOOR_WIDTH = 20
 
 var SETTINGS = {}
 
-var WALL_TEXTURE
+var WALL_TEXTURE, FLOOR_TEXTURE
 
 let scene
 let renderer
@@ -79,8 +79,9 @@ export async function render(exhibition, settings) {
     clearObjects(scene)
 
     WALL_TEXTURE = loadMaterial("beige_wall_001", 1, 0xb3b3b3)
+    FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
 
-    const everything = await generateChapter(exhibition)
+    const everything = await generateChapter(exhibition, true)
 
     var ta = timeStart("add to scene")
     scene.add(everything)
@@ -95,14 +96,14 @@ export async function render(exhibition, settings) {
     timeEnd(tf)
 }
 
-async function generateChapter(chapter) {
+async function generateChapter(chapter, stack = false) {
     var te = timeStart("entrance")
     let group = new THREE.Group()
 
     updateStatus(`Generating "${chapter.name}"...`)
 
     // Generate entrance sign.
-    let text = await createTextPlane(chapter.name, 30, 3)
+    let text = await createTextPlane(chapter.name, 50, 3)
     text.position.x = 0
     text.position.y = 20
     text.position.z = 1
@@ -124,7 +125,16 @@ async function generateChapter(chapter) {
     timeEnd(tp)
 
     var td = timeStart("distribute")
-    distributeObjects(objects, group, 10, false)
+    if (stack) {
+        let floorHeight = 50
+
+        for (let i = 0; i < objects.length; i++) {
+            objects[i].position.y = i * floorHeight
+            group.add(objects[i])
+        }
+    } else {
+        distributeObjects(objects, group, 10, false)
+    }
     timeEnd(td)
     return group
 }
@@ -426,8 +436,7 @@ function setupFloor() {
     scene.add(ambient)
 
     const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
-    const material = loadMaterial("plywood", 256, 0x665d48)
-    const ground = new THREE.Mesh(geometry, material)
+    const ground = new THREE.Mesh(geometry, FLOOR_TEXTURE)
     if (SETTINGS.shadows) {
         ground.receiveShadow = true
     }
@@ -535,7 +544,7 @@ async function createTextPlane(text, width, scale = 1) {
 
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
 
-    var plane = new THREE.Mesh(planeGeometry, whiteMaterial)
+    var plane = new THREE.Mesh(planeGeometry)
 
     plane.myWidth = width
     plane.safetyWidth = width
@@ -672,6 +681,21 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
     )
 
     let roomWidth = Math.max(...wallWidths)
+
+    // Add floor.
+    let floor = new THREE.Mesh(
+        new THREE.BoxGeometry(roomWidth, 0.1, roomWidth),
+        FLOOR_TEXTURE
+    )
+    floor.position.y = -25
+    floor.position.z = -roomWidth / 2
+    group.add(floor)
+
+    // Clone, and add as ceiling.
+    let ceiling = floor.clone()
+    ceiling.position.y = 25
+    ceiling.position.z = -roomWidth / 2
+    group.add(ceiling)
 
     let wallCenters = [
         new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),

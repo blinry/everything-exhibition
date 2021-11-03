@@ -48,9 +48,16 @@ async function fetchWikiText(article) {
 async function parseArticle(article) {
     const imageURLs = await getImageURLs(article.title)
 
-    let exhibition = createSection(article.sections[0], imageURLs)
+    // Explicitly add introduction section.
+    let intro = createSection(article.sections[0], imageURLs)
+    intro.name = " "
 
-    exhibition.name = capitalizeFirstLetter(article.title)
+    let exhibition = {
+        name: capitalizeFirstLetter(article.title),
+        images: [],
+        paragraphs: [],
+        sections: [intro],
+    }
 
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
