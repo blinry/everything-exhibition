@@ -104,6 +104,17 @@ async function getImageURLs(title) {
 }
 
 function createSection(section, imageURLs) {
+    // Convert lists into paragraphs.
+    if (section.lists) {
+        if (!section.paragraphs) {
+            section.paragraphs = []
+        }
+        for (let list of section.lists) {
+            let p = list.map((item) => "- " + item.text).join("\n\n")
+            section.paragraphs.push({sentences: [{text: p}]})
+        }
+    }
+
     // Get paragraphs.
     var paragraphs = []
     if (section.paragraphs) {
