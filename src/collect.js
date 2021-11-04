@@ -110,8 +110,21 @@ function createSection(section, imageURLs) {
             section.paragraphs = []
         }
         for (let list of section.lists) {
-            let p = list.map((item) => "- " + item.text).join("\n\n")
-            section.paragraphs.push({sentences: [{text: p}]})
+            var links = []
+            let p = list
+                .map((item) => {
+                    if (item.links) {
+                        for (const link of item.links) {
+                            if (link.text === undefined) {
+                                link.text = item.text
+                            }
+                            links.push({text: link.text, page: link.page})
+                        }
+                    }
+                    return "- " + item.text
+                })
+                .join("\n\n")
+            section.paragraphs.push({sentences: [{text: p, links: links}]})
         }
     }
 
@@ -119,20 +132,18 @@ function createSection(section, imageURLs) {
     var paragraphs = []
     if (section.paragraphs) {
         for (let paragraph of section.paragraphs) {
+            var links = []
             if (paragraph.sentences) {
-                // Insert HTML links for all links in the text.
                 var sentences = paragraph.sentences.map((sentence) => {
                     var text = sentence.text
-                    //if (sentence.links) {
-                    //    for (var link of sentence.links) {
-                    //        if (link.text && link.page) {
-                    //            text = text.replace(
-                    //                link.text,
-                    //                `<a href="${link.page}">${link.text}</a>`
-                    //            )
-                    //        }
-                    //    }
-                    //}
+                    if (sentence.links) {
+                        for (const link of sentence.links) {
+                            if (link.text && link.page) {
+                                // TODO: What happens here when text is not set?
+                                links.push({text: link.text, page: link.page})
+                            }
+                        }
+                    }
                     return text
                 })
 
@@ -147,13 +158,16 @@ function createSection(section, imageURLs) {
                         currentParagraph += s
                     } else {
                         if (currentParagraph.length > 0) {
-                            paragraphs.push(currentParagraph)
+                            paragraphs.push({
+                                text: currentParagraph,
+                                links: links,
+                            })
                         }
                         currentParagraph = s
                     }
                 }
                 if (currentParagraph.length > 0) {
-                    paragraphs.push(currentParagraph)
+                    paragraphs.push({text: currentParagraph, links: links})
                 }
             }
         }

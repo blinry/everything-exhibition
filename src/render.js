@@ -6,6 +6,7 @@ import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
+import escapeStringRegexp from "escape-string-regexp"
 
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
@@ -18,7 +19,7 @@ const DOOR_WIDTH = 20
 
 var SETTINGS = {}
 
-var WALL_TEXTURE, FLOOR_TEXTURE
+var WALL_TEXTURE, FLOOR_TEXTURE, LINK_TEXTURE
 
 let scene
 let renderer
@@ -80,6 +81,9 @@ export async function render(exhibition, settings) {
 
     WALL_TEXTURE = loadMaterial("beige_wall_001", 1, 0xb3b3b3)
     FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
+    LINK_TEXTURE = new THREE.MeshBasicMaterial({
+        color: 0xcce0ff,
+    })
 
     const everything = await generateChapter(exhibition, true)
 
@@ -103,7 +107,7 @@ async function generateChapter(chapter, stack = false) {
     updateStatus(`Generating "${chapter.name}"...`)
 
     // Generate entrance sign.
-    let text = await createTextPlane(chapter.name, 50, 3)
+    let text = await createTextPlane({text: chapter.name, links: []}, 50, 3)
     text.position.x = 0
     text.position.y = 20
     text.position.z = 1
@@ -160,7 +164,11 @@ function generateImageData(chapter) {
 async function addPicture(img) {
     var plane = await createImagePlane(img.url, 30, null, img.width, img.height)
     if (img.description) {
-        var textPlane = await createTextPlane(img.description, 10, 0.5)
+        var textPlane = await createTextPlane(
+            {text: img.description, links: []},
+            10,
+            0.5
+        )
         textPlane.position.z = 1
         textPlane.position.y = -5
         plane.add(textPlane)
@@ -411,6 +419,7 @@ function loadMaterial(path, scaling, fallbackColor) {
     } else {
         return new THREE.MeshStandardMaterial({
             color: fallbackColor,
+            side: THREE.DoubleSide,
         })
     }
 }
@@ -467,7 +476,7 @@ function setupFloor() {
     camera.position.z = initialCameraPosition.z
     camera.lookAt(0, 0, 0)
 
-    const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xffffff})
+    const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xbcc0ef})
     var crosshair = new THREE.Mesh(
         new THREE.SphereGeometry(0.005),
         crosshairMaterial
@@ -537,7 +546,10 @@ function createImagePlane(
     return plane
 }
 
-async function createTextPlane(text, width, scale = 1) {
+async function createTextPlane(paragraph, width, scale = 1) {
+    var text = paragraph.text
+    var links = paragraph.links || []
+
     var margin = scale
 
     var height = width / 10
@@ -548,15 +560,14 @@ async function createTextPlane(text, width, scale = 1) {
 
     plane.myWidth = width
     plane.safetyWidth = width
-    plane.layers.enable(1)
+    //plane.layers.enable(1)
 
-    var link = text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
-    if (link) {
-        plane.myLink = link[2]
-    }
+    //var link = "Philosophy"//text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
+    //if (link) {
+    //    plane.myLink = link
+    //}
 
     var textObject = new Text()
-    plane.add(textObject)
     textObject.text = text
     textObject.fontSize = 1 * scale
     textObject.anchorX = "center"
@@ -565,7 +576,9 @@ async function createTextPlane(text, width, scale = 1) {
 
     textObject.maxWidth = width - 2 * margin
 
-    textObject.position.z = 0.1
+    textObject.position.z = 0.2
+
+    plane.add(textObject)
     textObject.sync(() => {
         var bbox = new THREE.Box3().setFromObject(textObject)
 
@@ -575,12 +588,49 @@ async function createTextPlane(text, width, scale = 1) {
         )
         var boxHeight = bbox.max.y - bbox.min.y
 
+        const linkGroup = new THREE.Group()
+
+        for (const linkDefinition of links) {
+            const link = linkDefinition.text
+            const linkPage = linkDefinition.page
+            // Find all matches of link in the text.
+            const match = new RegExp(escapeStringRegexp(link), "gi").exec(text)
+            if (match) {
+                const fromIndex = match.index
+                const toIndex = fromIndex + link.length
+                const rects = getSelectionRects(
+                    textObject.textRenderInfo,
+                    fromIndex,
+                    toIndex
+                )
+
+                for (const r of rects) {
+                    const w = r.right - r.left
+                    const h = r.top - r.bottom
+                    var linkGeometry = new THREE.BoxGeometry(w, h, 0.01)
+                    var linkObject = new THREE.Mesh(linkGeometry, LINK_TEXTURE)
+                    linkObject.position.y = (r.top + r.bottom) / 2
+                    linkObject.position.x = (r.left + r.right) / 2
+                    linkObject.layers.enable(1)
+                    linkObject.myLink = linkPage
+                    linkGroup.add(linkObject)
+                }
+            }
+        }
+
+        linkGroup.position.z = 0.1
+        plane.add(linkGroup)
+
         if (boxWidth > 0) {
             plane.scale.y = (boxHeight + 2 * margin) / height
             textObject.scale.y = height / (boxHeight + 2 * margin)
+            linkGroup.scale.y = height / (boxHeight + 2 * margin)
+            linkGroup.position.y *= height / (boxHeight + 2 * margin)
 
             plane.scale.x = (boxWidth + 2 * margin) / width
             textObject.scale.x = width / (boxWidth + 2 * margin)
+            linkGroup.scale.x = width / (boxWidth + 2 * margin)
+            linkGroup.position.x *= (boxWidth + 2 * margin) / width
         }
     })
 
@@ -1020,7 +1070,11 @@ export async function updateMultiplayer(states, myId) {
                 if (players[id].children.length > 0) {
                     players[id].remove(players[id].children[0])
                 }
-                const textPlane = await createTextPlane(values.name, 20, 2)
+                const textPlane = await createTextPlane(
+                    {text: values.name, links: []},
+                    20,
+                    2
+                )
                 textPlane.position.y = 10
                 players[id].add(textPlane)
                 players[id].name = values.name

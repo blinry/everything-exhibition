@@ -150,7 +150,8 @@ window.onload = async function () {
     let name = localStorage.getItem("name") || "^_^"
     document.getElementById("name").value = name
 
-    initializeMultiplayer("xxx-lobby")
+    document.getElementById("topic").value = "Kangaroo"
+    startGeneration()
 
     animate()
 }
