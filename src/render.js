@@ -4,12 +4,22 @@ import {timeStart, timeEnd} from "./utils.js"
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
+import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
+import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
 import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 import escapeStringRegexp from "escape-string-regexp"
 
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
+}
+
+function isIterable(obj) {
+    // checks for null and undefined
+    if (obj == null) {
+        return false
+    }
+    return typeof obj[Symbol.iterator] === "function"
 }
 
 const CANVAS_WIDTH = 1280
@@ -40,6 +50,9 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
+
+// a variable to store the values from the last polling of the gamepads
+const prevGamePads = new Map()
 
 let players = {}
 
@@ -179,11 +192,13 @@ async function addPicture(img) {
 export function animate() {
     const delta = clock.getDelta()
 
-    if (delta > 0.1) {
-        // Moving with a delta this big wouldn't look good. Do nothing.
-        requestAnimationFrame(animate)
-        return
-    }
+    //if (delta > 0.1) {
+    //    // Moving with a delta this big wouldn't look good. Do nothing.
+    //    requestAnimationFrame(animate)
+    //    return
+    //}
+
+    xrInput()
 
     velocity.x -= velocity.x * 10.0 * delta
     velocity.z -= velocity.z * 10.0 * delta
@@ -244,9 +259,99 @@ export function animate() {
         dir.z
     )
 
-    requestAnimationFrame(animate)
+    //requestAnimationFrame(animate)
 
     renderer.render(scene, camera)
+}
+
+function xrInput() {
+    const session = renderer.xr.getSession()
+    let i = 0
+    let handedness
+
+    if (session) {
+        // A check to prevent console errors if only one input source.
+        moveLeft = moveRight = moveForward = moveBackward = false
+        if (isIterable(session.inputSources)) {
+            for (const source of session.inputSources) {
+                if (source && source.handedness) {
+                    handedness = source.handedness //left or right controllers
+                }
+                if (!source.gamepad) continue
+                const controller = renderer.xr.getController(i++)
+                const old = prevGamePads.get(source)
+                const data = {
+                    handedness: handedness,
+                    buttons: source.gamepad.buttons.map((b) => b.value),
+                    axes: source.gamepad.axes.slice(0),
+                }
+                if (old) {
+                    data.buttons.forEach((value, i) => {
+                        //handlers for buttons
+                        if (value !== old.buttons[i] || Math.abs(value) > 0.8) {
+                            //check if it is 'all the way pushed'
+                            if (value === 1) {
+                                console.log("Button" + i + "Down")
+                                if (data.handedness == "left") {
+                                    console.log("Left Paddle Down")
+                                    if (i == 1) {
+                                        //dolly.rotateY(-THREE.Math.degToRad(1));
+                                    }
+                                    if (i == 3) {
+                                        ////reset teleport to home position
+                                        //dolly.position.x = 0;
+                                        //dolly.position.y = 5;
+                                        //dolly.position.z = 0;
+                                    }
+                                } else {
+                                    console.log("Right Paddle Down")
+                                    if (i == 1) {
+                                        //dolly.rotateY(THREE.Math.degToRad(1));
+                                    }
+                                }
+                            } else {
+                                console.log("Button" + i + "Up")
+
+                                if (i == 1) {
+                                    //use the paddle buttons to rotate
+                                    if (data.handedness == "left") {
+                                        console.log("Left Paddle Down")
+                                        //dolly.rotateY(-THREE.Math.degToRad(Math.abs(value)));
+                                    } else {
+                                        console.log("Right Paddle Down")
+                                        //dolly.rotateY(THREE.Math.degToRad(Math.abs(value)));
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    data.axes.forEach((value, i) => {
+                        if (i == 2) {
+                            if (Math.abs(value) > 0.2) {
+                                if (data.axes[2] > 0) {
+                                    moveLeft = true
+                                } else {
+                                    moveRight = true
+                                }
+                            }
+                        }
+
+                        if (i == 3) {
+                            if (Math.abs(value) > 0.2) {
+                                if (data.axes[3] > 0) {
+                                    moveForward = true
+                                } else {
+                                    moveBackward = true
+                                }
+                            }
+                        }
+                    })
+                }
+                prevGamePads.set(source, data)
+            }
+        }
+        console.log(moveLeft)
+    }
 }
 
 export function setup() {
@@ -269,10 +374,16 @@ export function setup() {
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
+    renderer.xr.enabled = true
     //renderer.outputEncoding = THREE.sRGBEncoding;
     //renderer.toneMapping = THREE.ACESFilmicToneMapping;
     //renderer.toneMappingExposure = 1
     document.body.appendChild(renderer.domElement)
+
+    const xrController = renderer.xr.getController(0)
+    xrController.addEventListener("selectstart", () => {
+        console.log("selectstart")
+    })
 
     //if (HDR) {
     //    const loader = new THREE.TextureLoader()
@@ -389,6 +500,10 @@ export function setup() {
 
     onWindowResize()
     window.addEventListener("resize", onWindowResize)
+
+    document.body.appendChild(VRButton.createButton(renderer))
+
+    renderer.setAnimationLoop(animate)
 }
 
 function loadMaterial(path, scaling, fallbackColor) {
@@ -509,6 +624,12 @@ function setupFloor() {
         light.shadow.bias = -0.0001
         scene.add(light)
     }
+
+    const controllerGrip1 = renderer.xr.getControllerGrip(0)
+    const controllerModelFactory = new XRControllerModelFactory()
+    const model1 = controllerModelFactory.createControllerModel(controllerGrip1)
+    controllerGrip1.add(model1)
+    scene.add(controllerGrip1)
 }
 
 function createImagePlane(
