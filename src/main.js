@@ -1,12 +1,24 @@
-import {API_URL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
+const WIKIDATA_API_URL =
+    "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
+import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 import {setup, generate, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
+var lang = "en"
+
+String.prototype.trunc =
+    String.prototype.trunc ||
+    function (n) {
+        return this.length > n ? this.substr(0, n - 1) + "&hellip;" : this
+    }
+
 function getSuggestions(value) {
     window
         .fetch(
-            `${API_URL}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
+            `${apiURL(
+                lang
+            )}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
         )
         .then((response) => {
             response.json().then(function (data) {
@@ -23,7 +35,9 @@ function getSuggestions(value) {
 function randomSuggestions() {
     window
         .fetch(
-            `${API_URL}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
+            `${apiURL(
+                lang
+            )}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
         )
         .then((response) => {
             response.json().then(function (data) {
@@ -87,7 +101,10 @@ export async function generateExhibition(topic) {
 
     var t = timeStart("entire generation")
     updateStatus("Generating...")
-    var exhibition = await generateExhibitionDescriptionFromWikipedia(topic)
+    var exhibition = await generateExhibitionDescriptionFromWikipedia(
+        topic,
+        lang
+    )
     await initializeMultiplayer(exhibition.name)
     await render(exhibition, settings)
     timeEnd(t)
@@ -103,7 +120,63 @@ async function initializeMultiplayer(topic) {
     document.getElementById("color").dispatchEvent(new Event("input"))
 }
 
+function runQuery(query, callback) {
+    query = query.replace(/%/g, "%25")
+    query = query.replace(/&/g, "%26")
+
+    window
+        .fetch(WIKIDATA_API_URL + query)
+        .then(function (response) {
+            if (response.status !== 200) {
+                updateStatus(
+                    `The query took too long or failed. This is probably a bug, let us know! (Status code: ${response.status})`
+                )
+                return
+            }
+            response.json().then(function (data) {
+                callback(data.results.bindings)
+            })
+        })
+        .catch(function (err) {
+            updateStatus(
+                'An error occurred while running the query: "' + err + '"'
+            )
+        })
+}
+
+function populateLanguageOptions() {
+    const langQuery = `
+SELECT ?languageCode ?languageLabel (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
+  ?wiki wdt:P31 wd:Q10876391;
+    wdt:P424 ?languageCode;
+    wdt:P407 ?language.
+  ?language wdt:P1705 ?nativeLabel.
+  MINUS { ?wiki wdt:P576 ?when. }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+GROUP BY ?languageCode ?languageLabel ORDER BY ?languageLabel
+    `
+    runQuery(langQuery, (results) => {
+        let select = document.querySelector("select")
+        for (let line of results) {
+            let option = document.createElement("option")
+            option.innerHTML =
+                `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
+                    40
+                )
+            option.value = line.languageCode.value
+            select.appendChild(option)
+        }
+        document.querySelector("#language").value = lang
+    })
+}
+
 window.onload = async function () {
+    populateLanguageOptions()
+    document.getElementById("language").addEventListener("change", function () {
+        lang = this.value
+    })
+
     document.getElementById("topic").addEventListener("keyup", (e) => {
         if (e.key === "Enter") {
             startGeneration()

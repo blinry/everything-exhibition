@@ -5,11 +5,13 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-export const API_URL = `https://en.wikipedia.org/w/api.php`
+export function apiURL(languageCode) {
+    return `https://${languageCode}.wikipedia.org/w/api.php`
+}
 
-export async function generateExhibitionDescriptionFromWikipedia(topic) {
+export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
     var tf = timeStart("fetch")
-    var wikiText = await fetchWikiText(topic)
+    var wikiText = await fetchWikiText(topic, lang)
     timeEnd(tf)
 
     var tw = timeStart("wtf")
@@ -22,7 +24,7 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
     while (article.redirectTo) {
         topic = article.redirectTo.page
 
-        wikiText = await fetchWikiText(topic)
+        wikiText = await fetchWikiText(topic, lang)
         article = wtf(wikiText).json()
         article.title = topic
         console.log(article)
@@ -30,23 +32,25 @@ export async function generateExhibitionDescriptionFromWikipedia(topic) {
     timeEnd(tr)
 
     var tp = timeStart("parse")
-    const exhibition = await parseArticle(article)
+    const exhibition = await parseArticle(article, lang)
     timeEnd(tp)
 
     return exhibition
 }
 
-async function fetchWikiText(article) {
+async function fetchWikiText(article, lang) {
     let response = await window.fetch(
-        `${API_URL}?action=query&format=json&prop=revisions&titles=${article}&formatversion=2&rvprop=content&rvslots=*&origin=*`
+        `${apiURL(
+            lang
+        )}?action=query&format=json&prop=revisions&titles=${article}&formatversion=2&rvprop=content&rvslots=*&origin=*`
     )
     let data = await response.json()
 
     return data.query.pages[0].revisions[0].slots.main.content
 }
 
-async function parseArticle(article) {
-    const imageURLs = await getImageURLs(article.title)
+async function parseArticle(article, lang) {
+    const imageURLs = await getImageURLs(article.title, lang)
 
     // Explicitly add introduction section.
     let intro = createSection(article.sections[0], imageURLs)
@@ -84,19 +88,23 @@ async function parseArticle(article) {
     return exhibition
 }
 
-async function getImageURLs(title) {
+async function getImageURLs(title, lang) {
     let response = await window.fetch(
-        `${API_URL}?action=query&format=json&prop=imageinfo&iiprop=url|size&generator=images&gimlimit=max&titles=${title}&origin=*`
+        `${apiURL(
+            lang
+        )}?action=query&format=json&prop=imageinfo&iiprop=url|size&generator=images&gimlimit=max&titles=${title}&origin=*`
     )
     // TODO: What if a page has more than 500 images?
     let data = await response.json()
-
     let result = {}
     for (const entry of Object.values(data.query.pages)) {
-        result[entry.title] = {
-            url: entry.imageinfo[0].url,
-            width: entry.imageinfo[0].width,
-            height: entry.imageinfo[0].height,
+        // For deadlinks, imageinfo is missing.
+        if (entry.imageinfo) {
+            result[entry.title] = {
+                url: entry.imageinfo[0].url,
+                width: entry.imageinfo[0].width,
+                height: entry.imageinfo[0].height,
+            }
         }
     }
 
