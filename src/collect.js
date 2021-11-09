@@ -186,15 +186,16 @@ function createSection(section, imageURLs) {
 
     if (section.images) {
         images = section.images.map((image) => {
-            // In case the name is "File:foobar.png", make it "File:Foobar.png".
-            let parts = image.file.split(":", 2)
-            image.file = parts[0] + ":" + capitalizeFirstLetter(parts[1])
+            // Normalize the filename.
+            image.file = image.file.replace(/^image:/i, "File:")
+            let parts = image.file.split(/: */, 2)
+            image.file =
+                capitalizeFirstLetter(parts[0]) +
+                ":" +
+                capitalizeFirstLetter(parts[1])
 
             // Replace underscores with spaces.
             image.file = image.file.replaceAll("_", " ")
-
-            // Replace "Image:" and "file:" with "File:", removing spaces as neccessary.
-            image.file = image.file.replace(/^(image|file): */i, "File:")
 
             const imageinfo = imageURLs[image.file]
             if (!imageinfo) {
