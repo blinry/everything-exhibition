@@ -98,7 +98,7 @@ export async function render(exhibition, settings) {
         color: 0xcce0ff,
     })
 
-    const everything = await generateChapter(exhibition, true)
+    const everything = await generateChapter(exhibition, false)
 
     var ta = timeStart("add to scene")
     scene.add(everything)
@@ -854,19 +854,19 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
     let roomWidth = Math.max(...wallWidths)
 
     // Add floor.
-    let floor = new THREE.Mesh(
-        new THREE.BoxGeometry(roomWidth, 0.1, roomWidth),
-        FLOOR_TEXTURE
-    )
-    floor.position.y = -25
-    floor.position.z = -roomWidth / 2
-    group.add(floor)
+    //let floor = new THREE.Mesh(
+    //    new THREE.BoxGeometry(roomWidth, 0.1, roomWidth),
+    //    FLOOR_TEXTURE
+    //)
+    //floor.position.y = -25
+    //floor.position.z = -roomWidth / 2
+    //group.add(floor)
 
     // Clone, and add as ceiling.
-    let ceiling = floor.clone()
-    ceiling.position.y = 25
-    ceiling.position.z = -roomWidth / 2
-    group.add(ceiling)
+    //let ceiling = floor.clone()
+    //ceiling.position.y = 25
+    //ceiling.position.z = -roomWidth / 2
+    //group.add(ceiling)
 
     let wallCenters = [
         new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),
