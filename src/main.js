@@ -146,15 +146,16 @@ function runQuery(query, callback) {
 
 function populateLanguageOptions() {
     const langQuery = `
-SELECT ?languageCode ?languageLabel (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
+SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
   ?wiki wdt:P31 wd:Q10876391;
     wdt:P424 ?languageCode;
     wdt:P407 ?language.
+  OPTIONAL { ?wiki wdt:P4876 ?records. }
   ?language wdt:P1705 ?nativeLabel.
   MINUS { ?wiki wdt:P576 ?when. }
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
-GROUP BY ?languageCode ?languageLabel ORDER BY ?languageLabel
+GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
     `
     runQuery(langQuery, (results) => {
         let select = document.querySelector("select")
