@@ -217,7 +217,9 @@ function createSection(section, imageURLs, fileNamespace) {
                             section.images = []
                         }
 
-                        section.images.push({file: template[key], caption: ""})
+                        let caption =
+                            template[key.replace("image", "caption")] || ""
+                        section.images.push({file: template[key], caption})
                     }
                 }
             }
