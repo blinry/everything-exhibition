@@ -195,7 +195,7 @@ function createSection(section, imageURLs, fileNamespace) {
 
     var images = []
 
-    // Pull images from gallery templates.
+    // Pull images from gallery templates and multiple image groups.
     if (section.templates) {
         for (let template of section.templates) {
             if (template.template === "gallery") {
@@ -209,12 +209,24 @@ function createSection(section, imageURLs, fileNamespace) {
                     section.images.push({file: image.file, caption})
                 }
             }
+
+            if (template.template === "multiple image") {
+                for (let key in template) {
+                    if (key.startsWith("image")) {
+                        if (!section.images) {
+                            section.images = []
+                        }
+
+                        section.images.push({file: template[key], caption: ""})
+                    }
+                }
+            }
         }
     }
 
     // Get images.
     if (section.images) {
-        images = section.images.map((image) => {
+        for (let image of section.images) {
             // Normalize the filename.
             if (image.file.indexOf(":") === -1) {
                 image.file = fileNamespace + ":" + image.file
@@ -229,19 +241,20 @@ function createSection(section, imageURLs, fileNamespace) {
             // Replace underscores with spaces.
             image.file = image.file.replaceAll("_", " ")
 
-            const imageinfo = imageURLs[image.file]
-            if (!imageinfo) {
+            if (imageURLs[image.file]) {
+                const imageinfo = imageURLs[image.file]
+
+                images.push({
+                    url: imageinfo.url,
+                    description: image.caption,
+                    width: imageinfo.width,
+                    height: imageinfo.height,
+                })
+            } else {
                 console.log(imageURLs)
                 console.log("Could not find image URL for " + image.file)
             }
-
-            return {
-                url: imageinfo.url,
-                description: image.caption,
-                width: imageinfo.width,
-                height: imageinfo.height,
-            }
-        })
+        }
     }
 
     return {
