@@ -191,9 +191,12 @@ async function addAudio(audio) {
     const audioLoader = new THREE.AudioLoader()
     audioLoader.load(audio.url, function (buffer) {
         sound.setBuffer(buffer)
+        sound.setLoop(true)
+
         sound.setRefDistance(30)
         sound.setDistanceModel("exponential")
         sound.setRolloffFactor(10)
+
         sound.play()
     })
 
