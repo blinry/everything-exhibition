@@ -51,9 +51,11 @@ async function fetchWikiText(article, lang) {
 
 async function parseArticle(article, lang) {
     const imageURLs = await getImageURLs(article.title, lang)
+    console.log(imageURLs)
+    const fileNamespace = await getFileNamespace(lang)
 
     // Explicitly add introduction section.
-    let intro = createSection(article.sections[0], imageURLs)
+    let intro = createSection(article.sections[0], imageURLs, fileNamespace)
     intro.name = " "
 
     let exhibition = {
@@ -66,7 +68,7 @@ async function parseArticle(article, lang) {
     // The stack holds the chain of parents up to the last inserted section.
     var stack = [exhibition]
     for (const section of article.sections.slice(1)) {
-        const s = createSection(section, imageURLs)
+        const s = createSection(section, imageURLs, fileNamespace)
 
         // How much deeper is the depth of the current section, compared to the top one on the stack?
         const depthIncrease = section.depth - (stack.length - 2)
@@ -111,7 +113,17 @@ async function getImageURLs(title, lang) {
     return result
 }
 
-function createSection(section, imageURLs) {
+async function getFileNamespace(lang) {
+    let response = await window.fetch(
+        `${apiURL(
+            lang
+        )}?action=query&format=json&meta=siteinfo&siprop=namespaces&origin=*`
+    )
+    let data = await response.json()
+    return data.query.namespaces["6"]["*"]
+}
+
+function createSection(section, imageURLs, fileNamespace) {
     // Convert lists into paragraphs.
     if (section.lists) {
         if (!section.paragraphs) {
@@ -181,13 +193,33 @@ function createSection(section, imageURLs) {
         }
     }
 
-    // Get images.
     var images = []
 
+    // Pull images from gallery templates.
+    if (section.templates) {
+        for (let template of section.templates) {
+            if (template.template === "gallery") {
+                for (let image of template.images) {
+                    let caption = image?.caption?.data?.text
+
+                    if (!section.images) {
+                        section.images = []
+                    }
+
+                    section.images.push({file: image.file, caption})
+                }
+            }
+        }
+    }
+
+    // Get images.
     if (section.images) {
         images = section.images.map((image) => {
             // Normalize the filename.
-            image.file = image.file.replace(/^image:/i, "File:")
+            if (image.file.indexOf(":") === -1) {
+                image.file = fileNamespace + ":" + image.file
+            }
+            image.file = image.file.replace(/^image:/i, fileNamespace + ":")
             let parts = image.file.split(/: */, 2)
             image.file =
                 capitalizeFirstLetter(parts[0]) +

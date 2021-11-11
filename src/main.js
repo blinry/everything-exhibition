@@ -224,7 +224,7 @@ window.onload = async function () {
     let name = localStorage.getItem("name") || "^_^"
     document.getElementById("name").value = name
 
-    document.getElementById("topic").value = "Kangaroo"
+    document.getElementById("topic").value = "House"
     startGeneration()
 
     animate()
