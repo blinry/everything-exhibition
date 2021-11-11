@@ -36,6 +36,7 @@ let renderer
 let controls
 let camera, raycaster
 let clock
+let listener
 
 let selectedObject
 
@@ -163,6 +164,12 @@ function generateImageData(chapter) {
             (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
         )
         things.unshift(...images.map((image) => addPicture(image)))
+
+        const audio = chapter.images.filter(
+            (audio) => audio && audio.url.match(/\.(ogg|mp3|wav)$/i)
+        )
+        console.log("audio", audio)
+        things.unshift(...audio.map((audio) => addAudio(audio)))
     }
     if (SETTINGS.texts) {
         things.unshift(
@@ -172,6 +179,26 @@ function generateImageData(chapter) {
         )
     }
     return things
+}
+
+async function addAudio(audio) {
+    var textPlane = await createTextPlane({text: "audio", links: []}, 10, 1)
+
+    // create the PositionalAudio object (passing in the listener)
+    const sound = new THREE.PositionalAudio(listener)
+
+    // load a sound and set it as the PositionalAudio object's buffer
+    const audioLoader = new THREE.AudioLoader()
+    audioLoader.load(audio.url, function (buffer) {
+        sound.setBuffer(buffer)
+        sound.setRefDistance(30)
+        sound.setDistanceModel("exponential")
+        sound.setRolloffFactor(10)
+        sound.play()
+    })
+
+    textPlane.add(sound)
+    return textPlane
 }
 
 async function addPicture(img) {
@@ -366,6 +393,7 @@ export function setup() {
         0.1,
         4000
     )
+    listener = new THREE.AudioListener()
 
     raycaster = new THREE.Raycaster()
     raycaster.layers.set(1)
@@ -599,6 +627,7 @@ function setupFloor() {
     crosshair.position.z = -0.5
 
     camera.add(crosshair)
+    camera.add(listener)
     scene.add(camera)
 
     if (SETTINGS.lights) {

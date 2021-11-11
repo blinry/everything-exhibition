@@ -223,6 +223,16 @@ function createSection(section, imageURLs, fileNamespace) {
                     }
                 }
             }
+
+            if (template.template === "listen") {
+                if (!section.images) {
+                    section.images = []
+                }
+                section.images.push({
+                    file: template.filename,
+                    caption: template.description,
+                })
+            }
         }
     }
 
