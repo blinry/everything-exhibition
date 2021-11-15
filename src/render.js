@@ -72,8 +72,6 @@ const whiteMaterial = new THREE.MeshStandardMaterial({
 })
 
 function clearObjects(obj) {
-    players = {}
-
     while (obj.children.length > 0) {
         clearObjects(obj.children[0])
         obj.remove(obj.children[0])
@@ -381,7 +379,7 @@ export function setup() {
         mapCameraSize,
         -mapCameraSize,
         0,
-        1000
+        2000
     )
     listener = new THREE.AudioListener()
 
@@ -633,7 +631,7 @@ function setupScene(everything) {
         let aabb = new THREE.Box3().setFromObject(everything)
         let center = new THREE.Vector3()
         aabb.getCenter(center)
-        center.y = 100
+        center.y = 1000
 
         const size = new THREE.Vector3()
         aabb.getSize(size)
@@ -962,32 +960,44 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
 }
 
 export async function updateMultiplayer(states, myId) {
+    console.log(players)
     // Update the player positions.
     for (let [id, values] of states) {
-        // Skip myself.
-        if (id === myId) {
-            continue
-        }
-
         if (!players[id]) {
             const geometry = new THREE.CylinderGeometry(5, 5, 10, 32)
             const material = loadMaterial("plywood", 1, 0xee3333)
             const player = new THREE.Mesh(geometry, material)
 
+            // Add a big circle for the minimap camera.
+            const circleGeometry = new THREE.CircleGeometry(20, 16)
+            const circleMaterial = new THREE.MeshBasicMaterial({
+                color: 0xff0000,
+                //side: THREE.DoubleSide
+            })
+            const circle = new THREE.Mesh(circleGeometry, circleMaterial)
+            circle.rotateX(-Math.PI / 2)
+            circle.position.y = 500
+            circle.name = "circle"
+            player.add(circle)
+
             players[id] = player
             scene.add(player)
             console.log("added")
+            console.log(id)
         }
 
         if (values.color) {
-            // Convert from string to color
             players[id].material.color = new THREE.Color(values.color)
+            if (players[id].getObjectByName("circle")) {
+                players[id].getObjectByName("circle").material.color =
+                    new THREE.Color(values.color)
+            }
         }
 
         if (values.name !== undefined) {
-            if (players[id].name !== values.name) {
+            if (players[id].myName !== values.name) {
                 if (players[id].children.length > 0) {
-                    players[id].remove(players[id].children[0])
+                    players[id].remove(players[id].getObjectByName("text"))
                 }
                 const textPlane = await createTextPlane(
                     {text: values.name, links: []},
@@ -995,8 +1005,9 @@ export async function updateMultiplayer(states, myId) {
                     2
                 )
                 textPlane.position.y = 10
+                textPlane.name = "text"
                 players[id].add(textPlane)
-                players[id].name = values.name
+                players[id].myName = values.name
             }
         }
 
@@ -1013,8 +1024,20 @@ export async function updateMultiplayer(states, myId) {
             direction.multiplyScalar(500)
             direction.add(values.transformation.position)
             if (players[id].children.length > 0) {
-                let sign = players[id].children[0]
+                let sign = players[id].getObjectByName("text")
                 sign.lookAt(direction)
+            }
+        }
+
+        // Skip myself.
+        if (id === myId) {
+            ////continue
+            //console.log("it's me!")
+            //console.log(myId)
+            //console.log(id)
+            //console.log(players)
+            if (players[id].parent === scene) {
+                scene.add(players[id])
             }
         }
     }
