@@ -1,3 +1,5 @@
+window.SETTINGS = {}
+
 const WIKIDATA_API_URL =
     "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
 import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
@@ -89,7 +91,7 @@ export async function generateExhibition(topic) {
     let topicDiv = document.getElementById("topic")
     topicDiv.value = topic
 
-    const settings = {
+    window.SETTINGS = {
         lights: document.querySelector("#lights").checked,
         shadows: document.querySelector("#shadows").checked,
         textures: document.querySelector("#textures").checked,
@@ -106,7 +108,7 @@ export async function generateExhibition(topic) {
         lang
     )
     await initializeMultiplayer(exhibition.name)
-    await render(exhibition, settings)
+    await render(exhibition)
     timeEnd(t)
 
     timeDump()
