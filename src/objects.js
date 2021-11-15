@@ -206,7 +206,7 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
 
 export function createWall(a, b) {
     const l = a.distanceTo(b)
-    var planeGeometry = new THREE.BoxGeometry(l, 50, 1)
+    var planeGeometry = new THREE.BoxGeometry(l, 50, 2)
     var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
     if (SETTINGS.shadows) {

@@ -32,12 +32,15 @@ function isIterable(obj) {
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
+const mapWidth = 400
+const mapHeight = 400
+
 var WALL_TEXTURE, FLOOR_TEXTURE
 
 let scene
 let renderer
 let controls
-let camera, raycaster
+let camera, raycaster, mapCamera
 let clock
 let listener
 
@@ -50,6 +53,7 @@ let moveRight = false
 let moveUp = false
 let moveDown = false
 let canJump = false
+let showMap = true
 const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
@@ -106,7 +110,7 @@ export async function render(exhibition) {
     updateStatus("")
 
     var tf = timeStart("floor")
-    setupScene()
+    setupScene(everything)
     timeEnd(tf)
 }
 
@@ -249,7 +253,23 @@ export function animate() {
 
     //requestAnimationFrame(animate)
 
+    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight)
+    renderer.setScissor(0, 0, window.innerWidth, window.innerHeight)
+    //renderer.clear();
+
     renderer.render(scene, camera)
+
+    if (showMap) {
+        renderer.setViewport(10, 10, mapWidth, mapHeight)
+        const borderSize = 3
+        renderer.setScissor(
+            borderSize,
+            borderSize,
+            mapWidth + borderSize * 2,
+            mapHeight + borderSize * 2
+        )
+        renderer.render(scene, mapCamera)
+    }
 }
 
 function xrInput() {
@@ -354,6 +374,15 @@ export function setup() {
         0.1,
         4000
     )
+    const mapCameraSize = 1
+    mapCamera = new THREE.OrthographicCamera(
+        -mapCameraSize,
+        mapCameraSize,
+        mapCameraSize,
+        -mapCameraSize,
+        0,
+        1000
+    )
     listener = new THREE.AudioListener()
 
     raycaster = new THREE.Raycaster()
@@ -364,6 +393,10 @@ export function setup() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     renderer.xr.enabled = true
+    renderer.setClearColor(0xff0000, 1)
+    renderer.setScissorTest(true)
+    //renderer.autoClear = false;
+
     //renderer.outputEncoding = THREE.sRGBEncoding;
     //renderer.toneMapping = THREE.ACESFilmicToneMapping;
     //renderer.toneMappingExposure = 1
@@ -427,6 +460,10 @@ export function setup() {
 
             case "KeyE":
                 moveDown = true
+                break
+
+            case "KeyM":
+                showMap = !showMap
                 break
 
             case "Space":
@@ -528,7 +565,7 @@ export function loadMaterial(path, scaling, fallbackColor) {
     }
 }
 
-function setupScene() {
+function setupScene(everything) {
     var sky = new Sky()
     sky.scale.setScalar(300000)
     sky.material.uniforms.turbidity.value = 2
@@ -590,6 +627,31 @@ function setupScene() {
     camera.add(crosshair)
     camera.add(listener)
     scene.add(camera)
+
+    if (everything) {
+        // Set up map camera.
+        let aabb = new THREE.Box3().setFromObject(everything)
+        let center = new THREE.Vector3()
+        aabb.getCenter(center)
+        center.y = 100
+
+        const size = new THREE.Vector3()
+        aabb.getSize(size)
+        const maxSize = Math.max(size.x, size.z)
+        const mapCameraSize = maxSize / 2 + 50
+        console.log(mapCameraSize)
+        mapCamera.left = -mapCameraSize
+        mapCamera.right = mapCameraSize
+        mapCamera.top = mapCameraSize
+        mapCamera.bottom = -mapCameraSize
+        mapCamera.updateProjectionMatrix()
+
+        console.log(center)
+        mapCamera.position.copy(center)
+        mapCamera.up = new THREE.Vector3(0, 0, -1)
+        mapCamera.lookAt(new THREE.Vector3(center.x, 0, center.z))
+        scene.add(mapCamera)
+    }
 
     if (window.SETTINGS.lights) {
         // Add a light to the entrance.
