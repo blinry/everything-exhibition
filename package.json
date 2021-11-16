@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "description": "Generates virtual 3D exhibitions from open data",
     "scripts": {
-        "dev": "npx parcel serve index.html --host 0.0.0.0 --https"
+        "dev": "npx parcel serve index.html --host 0.0.0.0"
     },
     "repository": {
         "type": "git",

@@ -12,7 +12,7 @@ import {
 
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
-import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
+//import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
 import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
 import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
@@ -188,7 +188,7 @@ export function animate() {
     //    return
     //}
 
-    xrInput()
+    //xrInput()
 
     velocity.x -= velocity.x * 10.0 * delta
     velocity.z -= velocity.z * 10.0 * delta
@@ -525,7 +525,7 @@ export function setup() {
     onWindowResize()
     window.addEventListener("resize", onWindowResize)
 
-    document.body.appendChild(VRButton.createButton(renderer))
+    //document.body.appendChild(VRButton.createButton(renderer))
 
     renderer.setAnimationLoop(animate)
 }
