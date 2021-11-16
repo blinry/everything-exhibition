@@ -77,6 +77,8 @@ export function createImagePlane(
     var planeMaterial = new THREE.MeshStandardMaterial({
         map: texture,
         side: THREE.DoubleSide,
+        transparent: true,
+        alphaTest: 0.5,
     })
 
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
