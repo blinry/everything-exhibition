@@ -115,6 +115,7 @@ export async function createTextPlane(paragraph, width, scale = 1) {
     var textObject = new Text()
     textObject.text = text
     textObject.fontSize = 1 * scale
+    textObject.font = "/fonts/Roboto-Regular.ttf"
     textObject.anchorX = "center"
     textObject.anchorY = "middle"
     textObject.color = 0x000000
