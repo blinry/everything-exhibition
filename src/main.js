@@ -88,6 +88,8 @@ function startGeneration() {
 }
 
 export async function generateExhibition(topic) {
+    localStorage.setItem("topic", topic)
+
     let topicDiv = document.getElementById("topic")
     topicDiv.value = topic
 
@@ -226,7 +228,8 @@ window.onload = async function () {
     let name = localStorage.getItem("name") || "^_^"
     document.getElementById("name").value = name
 
-    document.getElementById("topic").value = "Lebkuchen"
+    document.getElementById("topic").value =
+        localStorage.getItem("topic") || "Lebkuchen"
     startGeneration()
 
     animate()
