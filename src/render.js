@@ -427,7 +427,7 @@ export function setup() {
     })
 
     const onKeyDown = function (event) {
-        if (document.getElementById("topic") === document.activeElement) {
+        if (!controls.isLocked) {
             return
         }
 
@@ -477,7 +477,7 @@ export function setup() {
     }
 
     const onKeyUp = function (event) {
-        if (document.getElementById("topic") === document.activeElement) {
+        if (!controls.isLocked) {
             return
         }
 
