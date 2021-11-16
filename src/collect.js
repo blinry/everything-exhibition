@@ -131,20 +131,14 @@ function createSection(section, imageURLs, fileNamespace) {
         }
         for (let list of section.lists) {
             var links = []
-            let p = list
-                .map((item) => {
-                    if (item.links) {
-                        for (const link of item.links) {
-                            if (link.text === undefined) {
-                                link.text = item.text
-                            }
-                            links.push({text: link.text, page: link.page})
-                        }
-                    }
-                    return "- " + item.text
+            let sentences = list.map((item) => {
+                item.links = item.links?.map((link) => {
+                    return {text: link.text || link.page, page: link.page}
                 })
-                .join("\n\n")
-            section.paragraphs.push({sentences: [{text: p, links: links}]})
+                return {text: item.text, links: item.links}
+            })
+
+            section.paragraphs.push({sentences})
         }
     }
 
@@ -168,7 +162,7 @@ function createSection(section, imageURLs, fileNamespace) {
                 })
 
                 // Make sure the individual paragraphs don't get too long.
-                var maxLength = 700
+                var maxLength = 500
                 var currentParagraph = ""
                 for (var [i, s] of sentences.entries()) {
                     if ((currentParagraph + s).length < maxLength) {

@@ -960,7 +960,7 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
 }
 
 export async function updateMultiplayer(states, myId) {
-    console.log(players)
+    //console.log(players)
     // Update the player positions.
     for (let [id, values] of states) {
         if (!players[id]) {
@@ -983,7 +983,7 @@ export async function updateMultiplayer(states, myId) {
             players[id] = player
             scene.add(player)
             console.log("added")
-            console.log(id)
+            //console.log(id)
         }
 
         if (values.color) {
