@@ -77,6 +77,7 @@ function clearObjects(obj) {
         obj.remove(obj.children[0])
     }
     if (obj.geometry) obj.geometry.dispose()
+    if (obj instanceof THREE.PositionalAudio) obj.stop()
 
     // TODO: If obj is a Text, call dispose on it, see
     // https://protectwise.github.io/troika/troika-three-text/
