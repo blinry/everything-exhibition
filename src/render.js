@@ -952,17 +952,33 @@ export async function updateMultiplayer(states, myId) {
             const material = loadMaterial("plywood", 1, 0xee3333)
             const player = new THREE.Mesh(geometry, material)
 
-            // Add a big circle for the minimap camera.
-            const circleGeometry = new THREE.CircleGeometry(20, 16)
+            // Add a big marker for the minimap camera.
+            const markerRadius = 20
+            const circleGeometry = new THREE.CircleGeometry(markerRadius, 16)
             const circleMaterial = new THREE.MeshBasicMaterial({
                 color: 0xff0000,
                 //side: THREE.DoubleSide
             })
             const circle = new THREE.Mesh(circleGeometry, circleMaterial)
             circle.rotateX(-Math.PI / 2)
-            circle.position.y = 500
             circle.name = "circle"
-            player.add(circle)
+
+            const marker = new THREE.Group()
+            marker.position.y = 500
+
+            // Add a square to the circle to make it pointy!
+            const squareGeometry = new THREE.PlaneGeometry(
+                markerRadius,
+                markerRadius
+            )
+            const square = new THREE.Mesh(squareGeometry, circleMaterial)
+            square.rotateZ(Math.PI / 4)
+            square.position.y = (Math.sqrt(2) * markerRadius) / 2
+            square.name = "square"
+            circle.add(square)
+
+            marker.add(circle)
+            player.add(marker)
 
             players[id] = player
             scene.add(player)
@@ -972,6 +988,8 @@ export async function updateMultiplayer(states, myId) {
             players[id].material.color = new THREE.Color(values.color)
             if (players[id].getObjectByName("circle")) {
                 players[id].getObjectByName("circle").material.color =
+                    new THREE.Color(values.color)
+                players[id].getObjectByName("square").material.color =
                     new THREE.Color(values.color)
             }
         }
@@ -1008,6 +1026,13 @@ export async function updateMultiplayer(states, myId) {
             if (players[id].children.length > 0) {
                 let sign = players[id].getObjectByName("text")
                 sign.lookAt(direction)
+
+                let marker = players[id].getObjectByName("circle")
+                // This is horrible. I'm sorry.
+                direction.y = marker.parent.position.y
+                marker.lookAt(direction)
+                marker.rotateX(-Math.PI / 2)
+                marker.rotateZ(Math.PI)
             }
         }
 
