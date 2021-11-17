@@ -33,6 +33,9 @@ const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
 var WALL_TEXTURE, FLOOR_TEXTURE
+FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
+
+let everything
 
 let scene
 let renderer
@@ -93,11 +96,12 @@ function clearObjects(obj) {
 }
 
 export async function render(exhibition) {
-    clearObjects(scene)
+    if (everything) {
+        clearObjects(everything)
+        everything.removeFromParent()
+    }
 
-    FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
-
-    const everything = await generateChapter(exhibition, false)
+    everything = await generateChapter(exhibition, false)
 
     var ta = timeStart("add to scene")
     scene.add(everything)
@@ -509,7 +513,7 @@ export function setup() {
     document.addEventListener("keydown", onKeyDown)
     document.addEventListener("keyup", onKeyUp)
 
-    setupScene()
+    setupSceneOnce()
 
     onWindowResize()
     window.addEventListener("resize", onWindowResize)
@@ -552,7 +556,7 @@ export function loadMaterial(path, scaling, fallbackColor) {
     }
 }
 
-function setupScene(everything) {
+function setupSceneOnce() {
     var sky = new Sky()
     sky.scale.setScalar(300000)
     sky.material.uniforms.turbidity.value = 2
@@ -580,16 +584,32 @@ function setupScene(everything) {
     scene.add(ground)
     ground.position.y = -30
 
+    const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xbcc0ef})
+    var crosshair = new THREE.Mesh(
+        new THREE.SphereGeometry(0.005),
+        crosshairMaterial
+    )
+    crosshair.position.z = -0.5
+
+    camera.add(crosshair)
+    camera.add(listener)
+    scene.add(camera)
+
+    scene.add(mapCamera)
+
+    const light = new THREE.DirectionalLight(0xffffff, 0.5)
+    light.position.x += 3
+    light.position.y += 3
+    light.position.z += 1
+    light.castShadow = true
+    light.shadow.mapSize.width = 4 * 512
+    light.shadow.mapSize.height = 4 * 512
+    light.shadow.bias = -0.0001
+    scene.add(light)
+}
+
+function setupScene(everything) {
     const w = scene.myWidth
-    //var defaultCameraPosition = new THREE.Vector3(
-    //    DOOR_WIDTH * 3,
-    //    0,
-    //    DOOR_WIDTH * 3
-    //)
-    //camera.position.x = defaultCameraPosition.x
-    //camera.position.y = defaultCameraPosition.y
-    //camera.position.z = defaultCameraPosition.z
-    //camera.lookAt(0, 0, 0)
 
     // Set players on a random position in a half circle around the entrance.
     let randomAngle = Math.random() * Math.PI
@@ -603,17 +623,6 @@ function setupScene(everything) {
     camera.position.y = initialCameraPosition.y
     camera.position.z = initialCameraPosition.z
     camera.lookAt(0, 0, 0)
-
-    const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xbcc0ef})
-    var crosshair = new THREE.Mesh(
-        new THREE.SphereGeometry(0.005),
-        crosshairMaterial
-    )
-    crosshair.position.z = -0.5
-
-    camera.add(crosshair)
-    camera.add(listener)
-    scene.add(camera)
 
     if (everything) {
         // Set up map camera.
@@ -635,7 +644,6 @@ function setupScene(everything) {
         mapCamera.position.copy(center)
         mapCamera.up = new THREE.Vector3(0, 0, -1)
         mapCamera.lookAt(new THREE.Vector3(center.x, 0, center.z))
-        scene.add(mapCamera)
     }
 
     if (window.SETTINGS.lights) {
@@ -649,24 +657,14 @@ function setupScene(everything) {
             //light.shadow.mapSize.height = 4 * 512
             light.shadow.bias = -0.005
         }
-        scene.add(light)
-    } else {
-        const light = new THREE.DirectionalLight(0xffffff, 0.5)
-        light.position.x += 3
-        light.position.y += 3
-        light.position.z += 1
-        light.castShadow = true
-        light.shadow.mapSize.width = 4 * 512
-        light.shadow.mapSize.height = 4 * 512
-        light.shadow.bias = -0.0001
-        scene.add(light)
+        everything.add(light)
     }
 
-    const controllerGrip1 = renderer.xr.getControllerGrip(0)
-    const controllerModelFactory = new XRControllerModelFactory()
-    const model1 = controllerModelFactory.createControllerModel(controllerGrip1)
-    controllerGrip1.add(model1)
-    scene.add(controllerGrip1)
+    //const controllerGrip1 = renderer.xr.getControllerGrip(0)
+    //const controllerModelFactory = new XRControllerModelFactory()
+    //const model1 = controllerModelFactory.createControllerModel(controllerGrip1)
+    //controllerGrip1.add(model1)
+    //scene.add(controllerGrip1)
 }
 
 function onWindowResize() {
