@@ -11,7 +11,6 @@ export async function setupMultiplayer(topic) {
     }
 
     const ydoc = new Y.Doc()
-    console.log(`everything-exhibition-en-${topic}`)
     provider = new WebrtcProvider(`everything-exhibition-en-${topic}`, ydoc, {
         signaling: [
             "wss://signaling.yjs.dev",

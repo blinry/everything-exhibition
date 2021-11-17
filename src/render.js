@@ -167,7 +167,6 @@ function generateImageData(chapter) {
         const audio = chapter.images.filter(
             (audio) => audio && audio.url.match(/\.(ogg|mp3|wav)$/i)
         )
-        console.log("audio", audio)
         things.unshift(...audio.map((audio) => createAudio(audio, listener)))
     }
     if (window.SETTINGS.texts) {
@@ -298,9 +297,7 @@ function xrInput() {
                         if (value !== old.buttons[i] || Math.abs(value) > 0.8) {
                             //check if it is 'all the way pushed'
                             if (value === 1) {
-                                console.log("Button" + i + "Down")
                                 if (data.handedness == "left") {
-                                    console.log("Left Paddle Down")
                                     if (i == 1) {
                                         //dolly.rotateY(-THREE.Math.degToRad(1));
                                     }
@@ -311,21 +308,16 @@ function xrInput() {
                                         //dolly.position.z = 0;
                                     }
                                 } else {
-                                    console.log("Right Paddle Down")
                                     if (i == 1) {
                                         //dolly.rotateY(THREE.Math.degToRad(1));
                                     }
                                 }
                             } else {
-                                console.log("Button" + i + "Up")
-
                                 if (i == 1) {
                                     //use the paddle buttons to rotate
                                     if (data.handedness == "left") {
-                                        console.log("Left Paddle Down")
                                         //dolly.rotateY(-THREE.Math.degToRad(Math.abs(value)));
                                     } else {
-                                        console.log("Right Paddle Down")
                                         //dolly.rotateY(THREE.Math.degToRad(Math.abs(value)));
                                     }
                                 }
@@ -357,7 +349,6 @@ function xrInput() {
                 prevGamePads.set(source, data)
             }
         }
-        console.log(moveLeft)
     }
 }
 
@@ -401,10 +392,7 @@ export function setup() {
     //renderer.toneMappingExposure = 1
     document.body.appendChild(renderer.domElement)
 
-    const xrController = renderer.xr.getController(0)
-    xrController.addEventListener("selectstart", () => {
-        console.log("selectstart")
-    })
+    //const xrController = renderer.xr.getController(0)
 
     //if (HDR) {
     //    const loader = new THREE.TextureLoader()
@@ -638,14 +626,12 @@ function setupScene(everything) {
         aabb.getSize(size)
         const maxSize = Math.max(size.x, size.z)
         const mapCameraSize = maxSize / 2 + 50
-        console.log(mapCameraSize)
         mapCamera.left = -mapCameraSize
         mapCamera.right = mapCameraSize
         mapCamera.top = mapCameraSize
         mapCamera.bottom = -mapCameraSize
         mapCamera.updateProjectionMatrix()
 
-        console.log(center)
         mapCamera.position.copy(center)
         mapCamera.up = new THREE.Vector3(0, 0, -1)
         mapCamera.lookAt(new THREE.Vector3(center.x, 0, center.z))
@@ -961,7 +947,6 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
 }
 
 export async function updateMultiplayer(states, myId) {
-    //console.log(players)
     // Update the player positions.
     for (let [id, values] of states) {
         if (!players[id]) {
@@ -983,8 +968,6 @@ export async function updateMultiplayer(states, myId) {
 
             players[id] = player
             scene.add(player)
-            console.log("added")
-            //console.log(id)
         }
 
         if (values.color) {
@@ -1033,10 +1016,6 @@ export async function updateMultiplayer(states, myId) {
         // Skip myself.
         if (id === myId) {
             ////continue
-            //console.log("it's me!")
-            //console.log(myId)
-            //console.log(id)
-            //console.log(players)
             if (players[id].parent === scene) {
                 scene.add(players[id])
             }
@@ -1048,7 +1027,6 @@ export async function updateMultiplayer(states, myId) {
         if (!states.has(parseInt(id))) {
             scene.remove(players[id])
             delete players[id]
-            console.log("removed")
         }
     }
 }

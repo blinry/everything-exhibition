@@ -7,7 +7,7 @@ import {setup, generate, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
-var lang = "en"
+var lang = localStorage.getItem("lang") || "en"
 
 String.prototype.trunc =
     String.prototype.trunc ||
@@ -172,6 +172,7 @@ GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
             option.value = line.languageCode.value
             select.appendChild(option)
         }
+
         document.querySelector("#language").value = lang
     })
 }
@@ -180,6 +181,7 @@ window.onload = async function () {
     populateLanguageOptions()
     document.getElementById("language").addEventListener("change", function () {
         lang = this.value
+        localStorage.setItem("lang", lang)
     })
 
     document.getElementById("topic").addEventListener("keyup", (e) => {

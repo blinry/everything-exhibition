@@ -18,7 +18,6 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
     var article = wtf(wikiText).json()
     article.title = topic
     timeEnd(tw)
-    console.log(article)
 
     var tr = timeStart("redirect")
     while (article.redirectTo) {
@@ -27,9 +26,10 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
         wikiText = await fetchWikiText(topic, lang)
         article = wtf(wikiText).json()
         article.title = topic
-        console.log(article)
     }
     timeEnd(tr)
+
+    console.log(article)
 
     var tp = timeStart("parse")
     const exhibition = await parseArticle(article, lang)
@@ -51,7 +51,6 @@ async function fetchWikiText(article, lang) {
 
 async function parseArticle(article, lang) {
     const imageURLs = await getImageURLs(article.title, lang)
-    console.log(imageURLs)
     const fileNamespace = await getFileNamespace(lang)
 
     // Explicitly add introduction section.
