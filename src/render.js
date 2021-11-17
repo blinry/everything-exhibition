@@ -32,9 +32,6 @@ function isIterable(obj) {
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
-const mapWidth = 400
-const mapHeight = 400
-
 var WALL_TEXTURE, FLOOR_TEXTURE
 
 let scene
@@ -257,12 +254,15 @@ export function animate() {
 
     renderer.render(scene, camera)
 
+    const mapWidth = Math.max(window.innerWidth / 6, 200)
+    const mapHeight = mapWidth
+
     if (showMap) {
         renderer.setViewport(10, 10, mapWidth, mapHeight)
         const borderSize = 3
         renderer.setScissor(
-            borderSize,
-            borderSize,
+            10 - borderSize,
+            10 - borderSize,
             mapWidth + borderSize * 2,
             mapHeight + borderSize * 2
         )
