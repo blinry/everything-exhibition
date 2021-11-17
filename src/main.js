@@ -105,6 +105,9 @@ export async function generateExhibition(topic) {
 
     var t = timeStart("entire generation")
     updateStatus("Generating...")
+
+    location.hash = `https://${lang}.wikipedia.org/wiki/${topic}`
+
     var exhibition = await generateExhibitionDescriptionFromWikipedia(
         topic,
         lang
@@ -227,12 +230,29 @@ window.onload = async function () {
     document.getElementById("color").value = color
 
     // Set or load name.
-    let name = localStorage.getItem("name") || "^_^"
-    document.getElementById("name").value = name
 
-    document.getElementById("topic").value =
-        localStorage.getItem("topic") || "Lebkuchen"
-    startGeneration()
+    if (location.hash) {
+        // Parse language and topic from Wikipedia URL.
+        let url = location.hash.substr(1)
+        console.log(url)
+        let regex = /^https:\/\/([^.]*)\.wikipedia\.org\/wiki\/([^#]*)$/
+        let match = url.match(regex)
+        console.log(match)
+        if (match) {
+            lang = match[1]
+            topic = match[2]
+            document.getElementById("language").value = lang
+            document.getElementById("topic").value = topic
+            startGeneration()
+        }
+    } else {
+        let name = localStorage.getItem("name") || "^_^"
+        document.getElementById("name").value = name
+
+        document.getElementById("topic").value =
+            localStorage.getItem("topic") || "Lebkuchen"
+        startGeneration()
+    }
 
     animate()
 }
