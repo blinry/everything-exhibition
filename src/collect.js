@@ -1,4 +1,4 @@
-import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
+import {timeStart, timeEnd} from "./utils.js"
 const wtf = require("wtf_wikipedia")
 
 function capitalizeFirstLetter(string) {

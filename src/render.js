@@ -4,7 +4,6 @@ import {timeStart, timeEnd} from "./utils.js"
 import {
     createPicture,
     createAudio,
-    createImagePlane,
     createTextPlane,
     createDoorWall,
     createWall,
@@ -13,7 +12,7 @@ import {
 import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 //import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
-import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
+//import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
 import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 
@@ -32,8 +31,7 @@ function isIterable(obj) {
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
-var WALL_TEXTURE, FLOOR_TEXTURE
-FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
+var FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
 
 let everything
 
@@ -65,11 +63,6 @@ const prevGamePads = new Map()
 let players = {}
 
 preloadFont({font: null}, () => {})
-
-const whiteMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
-    side: THREE.DoubleSide,
-})
 
 function clearObjects(obj) {
     while (obj.children.length > 0) {
@@ -535,7 +528,7 @@ export function loadMaterial(path, scaling, fallbackColor) {
             ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
         }
 
-        for (const [key, value] of Object.entries(materialData)) {
+        for (const [_, value] of Object.entries(materialData)) {
             value.wrapS = THREE.RepeatWrapping
             value.wrapT = THREE.RepeatWrapping
             value.repeat.set(scaling, scaling)
@@ -609,8 +602,6 @@ function setupSceneOnce() {
 }
 
 function setupScene(everything) {
-    const w = scene.myWidth
-
     // Set players on a random position in a half circle around the entrance.
     let randomAngle = Math.random() * Math.PI
     let distance = 60

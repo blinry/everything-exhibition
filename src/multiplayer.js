@@ -21,7 +21,7 @@ export async function setupMultiplayer(topic) {
 
     awareness = provider.awareness
 
-    awareness.on("change", async (changes) => {
+    awareness.on("change", async () => {
         await updateMultiplayer(awareness.getStates(), awareness.clientID)
     })
 }

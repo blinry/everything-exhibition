@@ -1,11 +1,8 @@
 import * as THREE from "three"
 import {Text, getSelectionRects} from "troika-three-text"
 import escapeStringRegexp from "escape-string-regexp"
-import {loadMaterial} from "./render.js"
 
 const DOOR_WIDTH = 20
-
-//const WALL_TEXTURE = loadMaterial("beige_wall_001", 1, 0xb3b3b3)
 
 const WALL_TEXTURE = new THREE.MeshStandardMaterial({
     color: 0xb3b3b3,
@@ -16,8 +13,8 @@ var LINK_TEXTURE = new THREE.MeshBasicMaterial({
     color: 0xcce0ff,
 })
 
-export async function createAudio(audio, listener) {
-    var textPlane = await createTextPlane({text: "audio", links: []}, 10, 1)
+export function createAudio(audio, listener) {
+    var textPlane = createTextPlane({text: "audio", links: []}, 10, 1)
 
     // create the PositionalAudio object (passing in the listener)
     const sound = new THREE.PositionalAudio(listener)
@@ -39,10 +36,10 @@ export async function createAudio(audio, listener) {
     return textPlane
 }
 
-export async function createPicture(img) {
-    var plane = await createImagePlane(img.url, 30, null, img.width, img.height)
+export function createPicture(img) {
+    var plane = createImagePlane(img.url, 30, null, img.width, img.height)
     if (img.description) {
-        var textPlane = await createTextPlane(
+        var textPlane = createTextPlane(
             {text: img.description, links: []},
             10,
             0.5
@@ -91,7 +88,7 @@ export function createImagePlane(
     return plane
 }
 
-export async function createTextPlane(paragraph, width, scale = 1) {
+export function createTextPlane(paragraph, width, scale = 1) {
     var text = paragraph.text
     var links = paragraph.links || []
 

@@ -3,7 +3,7 @@ window.SETTINGS = {}
 const WIKIDATA_API_URL =
     "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
 import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
-import {setup, generate, animate, render} from "./render.js"
+import {setup, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
@@ -192,11 +192,9 @@ window.onload = async function () {
             startGeneration()
         }
     })
-    document
-        .getElementById("generate-button")
-        .addEventListener("click", (e) => {
-            startGeneration()
-        })
+    document.getElementById("generate-button").addEventListener("click", () => {
+        startGeneration()
+    })
     document.getElementById("topic").addEventListener("input", (e) => {
         let text = e.target.value
         if (text === "") {
