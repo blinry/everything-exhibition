@@ -993,6 +993,20 @@ export async function updateMultiplayer(states, myId) {
                 textPlane.name = "face"
                 players[id].add(textPlane)
                 players[id].myFace = values.face
+
+                if (players[id].myColor) {
+                    textPlane.material.color = new THREE.Color(
+                        players[id].myColor
+                    )
+
+                    let col = new THREE.Color()
+                    textPlane.material.color.getHSL(col)
+                    if (col.l < 0.5) {
+                        textPlane.children[0].color = 0xffffff
+                    } else {
+                        textPlane.children[0].color = 0x000000
+                    }
+                }
             }
 
             if (players[id].myName !== values.name) {
@@ -1024,6 +1038,13 @@ export async function updateMultiplayer(states, myId) {
             let face = players[id].getObjectByName("face")
             if (face) {
                 face.material.color = new THREE.Color(values.color)
+                let col = new THREE.Color()
+                face.material.color.getHSL(col)
+                if (col.l < 0.5) {
+                    face.children[0].color = 0xffffff
+                } else {
+                    face.children[0].color = 0x000000
+                }
             }
             players[id].myColor = values.color
         }
