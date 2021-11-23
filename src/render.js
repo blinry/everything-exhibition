@@ -265,6 +265,10 @@ export function animate() {
         )
         renderer.render(scene, mapCamera)
     }
+
+    for (let [idx, player] of Object.entries(players)) {
+        player.getObjectByName("name")?.lookAt(camera.position)
+    }
 }
 
 function xrInput() {
@@ -986,19 +990,38 @@ export async function updateMultiplayer(states, myId) {
         }
 
         if (id !== myId) {
-            if (values.name !== undefined) {
-                if (players[id].myName !== values.name) {
+            if (values.face !== undefined) {
+                if (players[id].myFace !== values.face) {
                     if (players[id].children.length > 0) {
-                        players[id].remove(players[id].getObjectByName("text"))
+                        players[id].remove(players[id].getObjectByName("face"))
                     }
                     const textPlane = await createTextPlane(
-                        {text: values.name, links: []},
+                        {text: values.face, links: []},
                         20,
                         2
                     )
                     textPlane.position.y = 10
-                    textPlane.name = "text"
+                    textPlane.name = "face"
                     players[id].add(textPlane)
+                    players[id].myFace = values.face
+                }
+            }
+
+            if (values.name !== undefined) {
+                if (players[id].myName !== values.name) {
+                    if (players[id].getObjectByName("face")) {
+                        players[id].remove(players[id].getObjectByName("face"))
+                    }
+                    const textObject = new Text()
+                    textObject.text = values.name
+                    textObject.fontSize = 2
+                    textObject.font = "/fonts/Roboto-Regular.ttf"
+                    textObject.anchorX = "center"
+                    textObject.anchorY = "middle"
+                    textObject.color = 0x000000
+                    textObject.position.y = 20
+                    textObject.name = "name"
+                    players[id].add(textObject)
                     players[id].myName = values.name
                 }
             }

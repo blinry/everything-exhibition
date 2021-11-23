@@ -117,3 +117,7 @@ canvas {
     height: 2rem;
     width: 10rem;
 }
+
+#face {
+    width: 3rem !important;
+}

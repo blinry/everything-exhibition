@@ -4,7 +4,7 @@ const WIKIDATA_API_URL =
     "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
 import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
 import {setup, animate, render} from "./render.js"
-import {setupMultiplayer, setName, setColor} from "./multiplayer.js"
+import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 var lang = localStorage.getItem("lang") || "en"
@@ -124,6 +124,7 @@ async function initializeMultiplayer(topic) {
 
     // Trigger input events.
     document.getElementById("name").dispatchEvent(new Event("input"))
+    document.getElementById("face").dispatchEvent(new Event("input"))
     document.getElementById("color").dispatchEvent(new Event("input"))
 }
 
@@ -214,6 +215,11 @@ window.onload = async function () {
         localStorage.setItem("name", e.target.value)
     })
 
+    document.getElementById("face").addEventListener("input", (e) => {
+        setFace(e.target.value)
+        localStorage.setItem("face", e.target.value)
+    })
+
     goodSuggestions()
 
     setup()
@@ -249,8 +255,11 @@ window.onload = async function () {
         startGeneration()
     }
 
-    let name = localStorage.getItem("name") || "^_^"
+    let name = localStorage.getItem("name") || "squirrel"
     document.getElementById("name").value = name
+
+    let face = localStorage.getItem("face") || "^_^"
+    document.getElementById("face").value = face
 
     animate()
 }

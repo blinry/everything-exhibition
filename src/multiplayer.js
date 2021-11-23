@@ -41,6 +41,12 @@ export function setName(name) {
     }
 }
 
+export function setFace(face) {
+    if (awareness) {
+        awareness.setLocalStateField("face", face)
+    }
+}
+
 export function setColor(htmlColor) {
     if (awareness) {
         awareness.setLocalStateField("color", htmlColor)
