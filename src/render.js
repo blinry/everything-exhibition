@@ -7,6 +7,7 @@ import {
     createTextPlane,
     createDoorWall,
     createWall,
+    WALL_THICKNESS,
 } from "./objects.js"
 
 import * as THREE from "three"
@@ -96,6 +97,10 @@ export async function render(exhibition) {
 
     everything = await generateChapter(exhibition, false)
 
+    if (exhibition.previous) {
+        addBackSign(everything, exhibition.previous)
+    }
+
     var ta = timeStart("add to scene")
     scene.add(everything)
     timeEnd(ta)
@@ -114,7 +119,7 @@ async function generateChapter(chapter, stack = false) {
     updateStatus(`Generating "${chapter.name}"...`)
 
     // Generate entrance sign.
-    let text = await createTextPlane({text: chapter.name, links: []}, 50, 3)
+    let text = createTextPlane({text: chapter.name, links: []}, 50, 3)
     text.position.x = 0
     text.position.y = 20
     text.position.z = 1
@@ -269,6 +274,21 @@ export function animate() {
     for (let [idx, player] of Object.entries(players)) {
         player.getObjectByName("name")?.lookAt(camera.position)
     }
+}
+
+function addBackSign(everything, topic) {
+    let text = createTextPlane(
+        {
+            text: `Back to: ${topic}`,
+            links: [{text: topic, page: topic}],
+        },
+        20
+    )
+    console.log(text)
+    text.position.x = -30
+    text.position.z = -WALL_THICKNESS / 2 - 0.01
+    text.rotateY(Math.PI)
+    everything.add(text)
 }
 
 function xrInput() {

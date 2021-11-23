@@ -8,6 +8,7 @@ import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 var lang = localStorage.getItem("lang") || "en"
+var topicStack
 
 String.prototype.trunc =
     String.prototype.trunc ||
@@ -90,6 +91,17 @@ function startGeneration() {
 export async function generateExhibition(topic) {
     localStorage.setItem("topic", topic)
 
+    if (topicStack[topicStack.length - 1] === topic) {
+        // The user likely refreshed the page, do nothing.
+    } else if (topicStack[topicStack.length - 2] === topic) {
+        // The user likely clicked on the "back" sign.
+        topicStack.pop()
+    } else {
+        topicStack.push(topic)
+    }
+    var previousTopic = topicStack[topicStack.length - 2]
+    localStorage.setItem("topicStack", JSON.stringify(topicStack))
+
     let topicDiv = document.getElementById("topic")
     topicDiv.value = topic
 
@@ -112,6 +124,7 @@ export async function generateExhibition(topic) {
         topic,
         lang
     )
+    exhibition.previous = previousTopic
     await initializeMultiplayer(exhibition.name)
     await render(exhibition)
     timeEnd(t)
@@ -190,10 +203,12 @@ window.onload = async function () {
 
     document.getElementById("topic").addEventListener("keyup", (e) => {
         if (e.key === "Enter") {
+            topicStack = []
             startGeneration()
         }
     })
     document.getElementById("generate-button").addEventListener("click", () => {
+        topicStack = []
         startGeneration()
     })
     document.getElementById("topic").addEventListener("input", (e) => {
@@ -222,6 +237,8 @@ window.onload = async function () {
 
     goodSuggestions()
 
+    topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
+
     setup()
 
     // Pick random color.
@@ -237,11 +254,11 @@ window.onload = async function () {
 
     if (location.hash) {
         // Parse language and topic from Wikipedia URL.
-        let url = location.hash.substr(1)
-        console.log(url)
+        let url = decodeURIComponent(location.hash.substr(1))
+
         let regex = /^https:\/\/([^.]*)\.wikipedia\.org\/wiki\/([^#]*)$/
         let match = url.match(regex)
-        console.log(match)
+
         if (match) {
             lang = match[1]
             topic = match[2]

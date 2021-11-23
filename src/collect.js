@@ -33,6 +33,7 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
 
     var tp = timeStart("parse")
     const exhibition = await parseArticle(article, lang)
+
     timeEnd(tp)
 
     return exhibition

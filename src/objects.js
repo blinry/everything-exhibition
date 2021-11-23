@@ -2,6 +2,7 @@ import * as THREE from "three"
 import {Text, getSelectionRects} from "troika-three-text"
 import escapeStringRegexp from "escape-string-regexp"
 
+export const WALL_THICKNESS = 2
 const DOOR_WIDTH = 20
 
 const WALL_TEXTURE = new THREE.MeshStandardMaterial({
@@ -205,9 +206,8 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
 }
 
 export function createWall(a, b) {
-    const wallThickness = 2
-    const l = a.distanceTo(b) + wallThickness
-    var planeGeometry = new THREE.BoxGeometry(l, 50, wallThickness)
+    const l = a.distanceTo(b) + WALL_THICKNESS
+    var planeGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
     var planeMaterial = WALL_TEXTURE
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
     if (SETTINGS.shadows) {
