@@ -985,20 +985,22 @@ export async function updateMultiplayer(states, myId) {
             }
         }
 
-        if (values.name !== undefined) {
-            if (players[id].myName !== values.name) {
-                if (players[id].children.length > 0) {
-                    players[id].remove(players[id].getObjectByName("text"))
+        if (id !== myId) {
+            if (values.name !== undefined) {
+                if (players[id].myName !== values.name) {
+                    if (players[id].children.length > 0) {
+                        players[id].remove(players[id].getObjectByName("text"))
+                    }
+                    const textPlane = await createTextPlane(
+                        {text: values.name, links: []},
+                        20,
+                        2
+                    )
+                    textPlane.position.y = 10
+                    textPlane.name = "text"
+                    players[id].add(textPlane)
+                    players[id].myName = values.name
                 }
-                const textPlane = await createTextPlane(
-                    {text: values.name, links: []},
-                    20,
-                    2
-                )
-                textPlane.position.y = 10
-                textPlane.name = "text"
-                players[id].add(textPlane)
-                players[id].myName = values.name
             }
         }
 
@@ -1016,7 +1018,9 @@ export async function updateMultiplayer(states, myId) {
             direction.add(values.transformation.position)
             if (players[id].children.length > 0) {
                 let sign = players[id].getObjectByName("text")
-                sign.lookAt(direction)
+                if (sign) {
+                    sign.lookAt(direction)
+                }
 
                 let marker = players[id].getObjectByName("circle")
                 // This is horrible. I'm sorry.
