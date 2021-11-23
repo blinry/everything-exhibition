@@ -75,6 +75,14 @@ function addOption(label) {
     datalist.appendChild(option)
 }
 
+function addFaceOption(label) {
+    let datalist = document.getElementById("face-suggestions")
+    let option = document.createElement("option")
+
+    option.value = `${label}`
+    datalist.appendChild(option)
+}
+
 export function updateStatus(text) {
     document.querySelector("#status").innerHTML = text
 }
@@ -165,6 +173,14 @@ function runQuery(query, callback) {
         })
 }
 
+function populateFaceOptions() {
+    addFaceOption("^_^")
+    addFaceOption("OvO")
+    addFaceOption("'o'")
+    addFaceOption("-.-")
+    addFaceOption("UwU")
+}
+
 function populateLanguageOptions() {
     const langQuery = `
 SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
@@ -196,6 +212,7 @@ GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
 
 window.onload = async function () {
     populateLanguageOptions()
+    populateFaceOptions()
     document.getElementById("language").addEventListener("change", function () {
         lang = this.value
         localStorage.setItem("lang", lang)

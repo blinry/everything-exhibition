@@ -35,7 +35,14 @@
             <input type="checkbox" checked id="texts" /> Texts<br />
         </div>
         <div id="avatar">
-            <input type="text" id="face" autocomplete="off" value="" />
+            <input
+                type="text"
+                id="face"
+                autocomplete="off"
+                value=""
+                list="face-suggestions"
+            />
+            <datalist id="face-suggestions"></datalist>
             <input type="text" id="name" autocomplete="off" value="" />
             <input type="color" id="color" />
         </div>
