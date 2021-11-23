@@ -1,5 +1,5 @@
 import {updateStatus, generateExhibition} from "./main.js"
-import {setPosition} from "./multiplayer.js"
+import {setPosition, addSketch, clearSketch} from "./multiplayer.js"
 import {timeStart, timeEnd} from "./utils.js"
 import {
     createPicture,
@@ -475,8 +475,23 @@ export function setup() {
                 break
 
             case "Space":
-                if (canJump === true) velocity.y += 350
-                canJump = false
+                //if (canJump === true) velocity.y += 350
+                //canJump = false
+                addSketch([
+                    {
+                        x: camera.position.x,
+                        y: camera.position.y,
+                        z: camera.position.z,
+                    },
+                ])
+
+                break
+
+            case "KeyC":
+                clearSketch()
+                while (scene.getObjectByName("orb")) {
+                    scene.getObjectByName("orb").removeFromParent()
+                }
                 break
 
             case "ShiftLeft":
@@ -1109,4 +1124,18 @@ export async function updateMultiplayer(states, myId) {
             delete players[id]
         }
     }
+}
+
+export function updateSketch(event, transaction) {
+    //console.log(event.target)
+    event.target.forEach((item) => {
+        let orbGeometry = new THREE.SphereGeometry(10, 16, 16)
+        let orbMaterial = new THREE.MeshBasicMaterial({color: 0xff00ff})
+        let orb = new THREE.Mesh(orbGeometry, orbMaterial)
+        orb.position.x = item.x
+        orb.position.y = item.y
+        orb.position.z = item.z
+        orb.name = "orb"
+        scene.add(orb)
+    })
 }

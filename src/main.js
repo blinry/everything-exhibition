@@ -255,6 +255,7 @@ window.onload = async function () {
     if (location.hash) {
         // Parse language and topic from Wikipedia URL.
         let url = decodeURIComponent(location.hash.substr(1))
+        console.log(url)
 
         let regex = /^https:\/\/([^.]*)\.wikipedia\.org\/wiki\/([^#]*)$/
         let match = url.match(regex)

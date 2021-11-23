@@ -1,8 +1,8 @@
 import * as Y from "yjs"
 import {WebrtcProvider} from "y-webrtc"
-import {updateMultiplayer} from "./render.js"
+import {updateMultiplayer, updateSketch} from "./render.js"
 
-var awareness, provider
+var awareness, provider, sketchArray
 
 export async function setupMultiplayer(topic) {
     if (awareness) {
@@ -11,6 +11,7 @@ export async function setupMultiplayer(topic) {
     }
 
     const ydoc = new Y.Doc()
+    sketchArray = ydoc.getArray("sketch")
     provider = new WebrtcProvider(`everything-exhibition-en-${topic}`, ydoc, {
         signaling: [
             "wss://signaling.yjs.dev",
@@ -24,6 +25,16 @@ export async function setupMultiplayer(topic) {
     awareness.on("change", async () => {
         await updateMultiplayer(awareness.getStates(), awareness.clientID)
     })
+
+    sketchArray.observe(updateSketch)
+}
+
+export function addSketch(sketchPoints) {
+    sketchArray.push(sketchPoints)
+}
+
+export function clearSketch() {
+    sketchArray.delete(0, sketchArray.length)
 }
 
 export function setPosition(x, y, z, dirX, dirY, dirZ) {
