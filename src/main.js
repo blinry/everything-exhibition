@@ -244,13 +244,13 @@ window.onload = async function () {
             startGeneration()
         }
     } else {
-        let name = localStorage.getItem("name") || "^_^"
-        document.getElementById("name").value = name
-
         document.getElementById("topic").value =
             localStorage.getItem("topic") || "Lebkuchen"
         startGeneration()
     }
+
+    let name = localStorage.getItem("name") || "^_^"
+    document.getElementById("name").value = name
 
     animate()
 }
