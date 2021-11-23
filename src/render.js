@@ -979,7 +979,41 @@ export async function updateMultiplayer(states, myId) {
             scene.add(player)
         }
 
-        if (values.color) {
+        if (id !== myId) {
+            if (players[id].myFace !== values.face) {
+                if (players[id].children.length > 0) {
+                    players[id].remove(players[id].getObjectByName("face"))
+                }
+                const textPlane = await createTextPlane(
+                    {text: values.face, links: []},
+                    20,
+                    2
+                )
+                textPlane.position.y = 10
+                textPlane.name = "face"
+                players[id].add(textPlane)
+                players[id].myFace = values.face
+            }
+
+            if (players[id].myName !== values.name) {
+                if (players[id].getObjectByName("name")) {
+                    players[id].remove(players[id].getObjectByName("name"))
+                }
+                const textObject = new Text()
+                textObject.text = values.name
+                textObject.fontSize = 2
+                textObject.font = "/fonts/Roboto-Regular.ttf"
+                textObject.anchorX = "center"
+                textObject.anchorY = "middle"
+                textObject.color = 0x000000
+                textObject.position.y = 15
+                textObject.name = "name"
+                players[id].add(textObject)
+                players[id].myName = values.name
+            }
+        }
+
+        if (players[id].myColor != values.color) {
             players[id].material.color = new THREE.Color(values.color)
             if (players[id].getObjectByName("circle")) {
                 players[id].getObjectByName("circle").material.color =
@@ -987,44 +1021,11 @@ export async function updateMultiplayer(states, myId) {
                 players[id].getObjectByName("square").material.color =
                     new THREE.Color(values.color)
             }
-        }
-
-        if (id !== myId) {
-            if (values.face !== undefined) {
-                if (players[id].myFace !== values.face) {
-                    if (players[id].children.length > 0) {
-                        players[id].remove(players[id].getObjectByName("face"))
-                    }
-                    const textPlane = await createTextPlane(
-                        {text: values.face, links: []},
-                        20,
-                        2
-                    )
-                    textPlane.position.y = 10
-                    textPlane.name = "face"
-                    players[id].add(textPlane)
-                    players[id].myFace = values.face
-                }
+            let face = players[id].getObjectByName("face")
+            if (face) {
+                face.material.color = new THREE.Color(values.color)
             }
-
-            if (values.name !== undefined) {
-                if (players[id].myName !== values.name) {
-                    if (players[id].getObjectByName("face")) {
-                        players[id].remove(players[id].getObjectByName("face"))
-                    }
-                    const textObject = new Text()
-                    textObject.text = values.name
-                    textObject.fontSize = 2
-                    textObject.font = "/fonts/Roboto-Regular.ttf"
-                    textObject.anchorX = "center"
-                    textObject.anchorY = "middle"
-                    textObject.color = 0x000000
-                    textObject.position.y = 20
-                    textObject.name = "name"
-                    players[id].add(textObject)
-                    players[id].myName = values.name
-                }
-            }
+            players[id].myColor = values.color
         }
 
         if (values.transformation) {
@@ -1040,10 +1041,7 @@ export async function updateMultiplayer(states, myId) {
             direction.multiplyScalar(500)
             direction.add(values.transformation.position)
             if (players[id].children.length > 0) {
-                let sign = players[id].getObjectByName("text")
-                if (sign) {
-                    sign.lookAt(direction)
-                }
+                players[id].getObjectByName("face")?.lookAt(direction)
 
                 let marker = players[id].getObjectByName("circle")
                 // This is horrible. I'm sorry.
