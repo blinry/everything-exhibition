@@ -99,13 +99,15 @@ async function getImageURLs(title, lang) {
     // TODO: What if a page has more than 500 images?
     let data = await response.json()
     let result = {}
-    for (const entry of Object.values(data.query.pages)) {
-        // For deadlinks, imageinfo is missing.
-        if (entry.imageinfo) {
-            result[entry.title] = {
-                url: entry.imageinfo[0].url,
-                width: entry.imageinfo[0].width,
-                height: entry.imageinfo[0].height,
+    if (data.query?.pages) {
+        for (const entry of Object.values(data.query.pages)) {
+            // For deadlinks, imageinfo is missing.
+            if (entry.imageinfo) {
+                result[entry.title] = {
+                    url: entry.imageinfo[0].url,
+                    width: entry.imageinfo[0].width,
+                    height: entry.imageinfo[0].height,
+                }
             }
         }
     }
