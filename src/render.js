@@ -96,6 +96,7 @@ export async function render(exhibition) {
         clearObjects(everything)
         everything.removeFromParent()
     }
+    clearObjects(sketch)
 
     everything = await generateChapter(exhibition, false)
 
@@ -210,7 +211,9 @@ export function animate() {
                 },
             ])
         }
-        prevCursorLocation = cursorLocation.clone()
+        if (cursorLocation) {
+            prevCursorLocation = cursorLocation.clone()
+        }
     }
 
     velocity.x -= velocity.x * 10.0 * delta
@@ -1162,29 +1165,22 @@ export async function updateMultiplayer(states, myId) {
 export function updateSketch(event, transaction) {
     clearObjects(sketch)
 
-    let geometry = new THREE.BufferGeometry()
-
-    const material = new THREE.LineBasicMaterial({
+    const material = new THREE.MeshBasicMaterial({
         color: 0x000000,
-        linewidth: 10,
-        linecap: "round",
-        linejoin: "round",
     })
 
-    let points = event.target.map((line) => {
-        return [
-            line.from.x,
-            line.from.y,
-            line.from.z,
-            line.to.x,
-            line.to.y,
-            line.to.z,
-        ]
+    event.target.forEach((line) => {
+        let from = new THREE.Vector3(line.from.x, line.from.y, line.from.z)
+        let to = new THREE.Vector3(line.to.x, line.to.y, line.to.z)
+        let length = from.distanceTo(to)
+
+        let geometry = new THREE.CylinderGeometry(0.1, 0.1, length, 6)
+        let mesh = new THREE.Mesh(geometry, material)
+        mesh.position.set(from.x, from.y, from.z)
+        mesh.lookAt(to)
+        mesh.rotateX(Math.PI / 2)
+        mesh.translateY(length / 2)
+
+        sketch.add(mesh)
     })
-
-    let vertices = new Float32Array(points.flat())
-    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
-
-    let lines = new THREE.LineSegments(geometry, material)
-    sketch.add(lines)
 }
