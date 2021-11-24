@@ -43,7 +43,8 @@ let camera, raycaster, mapCamera
 let clock
 let listener
 
-let selectedObject
+let mouseDown = false
+let selectedObject, cursorLocation, prevCursorLocation
 
 let moveForward = false
 let moveBackward = false
@@ -62,6 +63,7 @@ let movementSpeed = defaultMovementSpeed
 const prevGamePads = new Map()
 
 let players = {}
+let sketch = new THREE.Group()
 
 preloadFont({font: null}, () => {})
 
@@ -191,6 +193,25 @@ export function animate() {
     //}
 
     //xrInput()
+    if (mouseDown) {
+        if (prevCursorLocation && cursorLocation) {
+            addSketch([
+                {
+                    from: {
+                        x: prevCursorLocation.x,
+                        y: prevCursorLocation.y,
+                        z: prevCursorLocation.z,
+                    },
+                    to: {
+                        x: cursorLocation.x,
+                        y: cursorLocation.y,
+                        z: cursorLocation.z,
+                    },
+                },
+            ])
+        }
+        prevCursorLocation = cursorLocation.clone()
+    }
 
     velocity.x -= velocity.x * 10.0 * delta
     velocity.z -= velocity.z * 10.0 * delta
@@ -234,11 +255,13 @@ export function animate() {
             //    selectedObject.material.emissive.getHex()
             //selectedObject.material.emissive.setHex(0xff0000)
         }
+        cursorLocation = intersects[0].point
     } else {
         //if (selectedObject)
         //    selectedObject.material.emissive.setHex(selectedObject.currentHex)
 
         selectedObject = null
+        cursorLocation = null
     }
 
     let dir = controls.getObject().getWorldDirection(new THREE.Vector3(0, 0, 0)) // Trash input vector
@@ -381,6 +404,8 @@ export function setup() {
     scene = new THREE.Scene()
     scene.background = new THREE.Color(0xa3c3f7)
 
+    scene.add(sketch)
+
     camera = new THREE.PerspectiveCamera(
         75,
         CANVAS_WIDTH / CANVAS_HEIGHT,
@@ -433,9 +458,17 @@ export function setup() {
     })
 
     document.addEventListener("mousedown", () => {
-        if (controls.isLocked && selectedObject?.myLink) {
-            generateExhibition(selectedObject.myLink)
+        if (controls.isLocked) {
+            mouseDown = true
+            if (selectedObject?.myLink) {
+                generateExhibition(selectedObject.myLink)
+            }
         }
+    })
+
+    document.addEventListener("mouseup", () => {
+        mouseDown = false
+        prevCursorLocation = null
     })
 
     const onKeyDown = function (event) {
@@ -491,9 +524,6 @@ export function setup() {
 
             case "KeyC":
                 clearSketch()
-                while (scene.getObjectByName("orb")) {
-                    scene.getObjectByName("orb").removeFromParent()
-                }
                 break
 
             case "ShiftLeft":
@@ -617,6 +647,7 @@ function setupSceneOnce() {
     }
     scene.add(ground)
     ground.position.y = -30
+    ground.layers.enable(1)
 
     const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xbcc0ef})
     var crosshair = new THREE.Mesh(
@@ -1129,15 +1160,31 @@ export async function updateMultiplayer(states, myId) {
 }
 
 export function updateSketch(event, transaction) {
-    //console.log(event.target)
-    event.target.forEach((item) => {
-        let orbGeometry = new THREE.SphereGeometry(10, 16, 16)
-        let orbMaterial = new THREE.MeshBasicMaterial({color: 0xff00ff})
-        let orb = new THREE.Mesh(orbGeometry, orbMaterial)
-        orb.position.x = item.x
-        orb.position.y = item.y
-        orb.position.z = item.z
-        orb.name = "orb"
-        scene.add(orb)
+    clearObjects(sketch)
+
+    let geometry = new THREE.BufferGeometry()
+
+    const material = new THREE.LineBasicMaterial({
+        color: 0x000000,
+        linewidth: 10,
+        linecap: "round",
+        linejoin: "round",
     })
+
+    let points = event.target.map((line) => {
+        return [
+            line.from.x,
+            line.from.y,
+            line.from.z,
+            line.to.x,
+            line.to.y,
+            line.to.z,
+        ]
+    })
+
+    let vertices = new Float32Array(points.flat())
+    geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
+
+    let lines = new THREE.LineSegments(geometry, material)
+    sketch.add(lines)
 }

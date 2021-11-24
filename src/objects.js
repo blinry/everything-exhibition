@@ -219,5 +219,6 @@ export function createWall(a, b) {
     plane.position.z = center.y
     let rotationAngle = Math.atan2(a.y - b.y, a.x - b.x)
     plane.rotateY(rotationAngle)
+    plane.layers.enable(1)
     return plane
 }
