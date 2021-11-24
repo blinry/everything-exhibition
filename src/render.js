@@ -45,6 +45,7 @@ let listener
 
 let mouseDown = false
 let selectedObject, cursorLocation, prevCursorLocation
+let myColor
 
 let moveForward = false
 let moveBackward = false
@@ -208,6 +209,7 @@ export function animate() {
                         y: cursorLocation.y,
                         z: cursorLocation.z,
                     },
+                    color: myColor || "000000",
                 },
             ])
         }
@@ -1144,12 +1146,8 @@ export async function updateMultiplayer(states, myId) {
             }
         }
 
-        // Skip myself.
         if (id === myId) {
-            ////continue
-            if (players[id].parent === scene) {
-                scene.add(players[id])
-            }
+            myColor = values.color
         }
     }
 
@@ -1165,17 +1163,19 @@ export async function updateMultiplayer(states, myId) {
 export function updateSketch(event, transaction) {
     clearObjects(sketch)
 
-    const material = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-    })
-
     event.target.forEach((line) => {
         let from = new THREE.Vector3(line.from.x, line.from.y, line.from.z)
         let to = new THREE.Vector3(line.to.x, line.to.y, line.to.z)
         let length = from.distanceTo(to)
 
         let geometry = new THREE.CylinderGeometry(0.1, 0.1, length, 6)
+
+        const material = new THREE.MeshBasicMaterial({
+            color: line.color,
+        })
+
         let mesh = new THREE.Mesh(geometry, material)
+
         mesh.position.set(from.x, from.y, from.z)
         mesh.lookAt(to)
         mesh.rotateX(Math.PI / 2)
