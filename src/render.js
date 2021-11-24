@@ -127,7 +127,10 @@ async function generateChapter(chapter, stack = false) {
     timeEnd(te)
 
     // Generate subrooms.
-    const roomPromises = chapter.sections.map((c) => generateChapter(c))
+    let roomPromises = []
+    if (chapter.sections) {
+        roomPromises = chapter.sections.map((c) => generateChapter(c))
+    }
 
     var to = timeStart("imagedata")
     let picturePromises = generateImageData(chapter)
@@ -157,7 +160,7 @@ async function generateChapter(chapter, stack = false) {
 
 function generateImageData(chapter) {
     let things = []
-    if (window.SETTINGS.images) {
+    if (window.SETTINGS.images && chapter.images) {
         const images = chapter.images.filter(
             (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
         )
@@ -168,7 +171,7 @@ function generateImageData(chapter) {
         )
         things.unshift(...audio.map((audio) => createAudio(audio, listener)))
     }
-    if (window.SETTINGS.texts) {
+    if (window.SETTINGS.texts && chapter.paragraphs) {
         things.unshift(
             ...chapter.paragraphs.map((paragraph) =>
                 createTextPlane(paragraph, 20)
@@ -284,7 +287,6 @@ function addBackSign(everything, topic) {
         },
         20
     )
-    console.log(text)
     text.position.x = -30
     text.position.z = -WALL_THICKNESS / 2 - 0.01
     text.rotateY(Math.PI)

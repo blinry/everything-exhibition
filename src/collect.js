@@ -34,6 +34,11 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
     var tp = timeStart("parse")
     const exhibition = await parseArticle(article, lang)
 
+    exhibition.sections.push({
+        name: "Credits",
+        paragraphs: await getContributors(topic, lang),
+    })
+
     timeEnd(tp)
 
     return exhibition
@@ -271,4 +276,37 @@ function createSection(section, imageURLs, fileNamespace) {
         paragraphs: paragraphs,
         sections: [],
     }
+}
+
+async function getContributors(topic, lang) {
+    let response = await window.fetch(
+        `${apiURL(
+            lang
+        )}?action=query&titles=${topic}&prop=contributors&pclimit=max&format=json&origin=*`
+    )
+    let data = await response.json()
+
+    // TODO: If there are more than 500 contributors, we need to do more requests!
+
+    let page = data.query.pages[Object.keys(data.query.pages)[0]]
+    let contributors = page.contributors.map((c) => c.name).sort()
+
+    let perChunk = 90
+    let contributorChunks = contributors
+        .reduce((all, one, i) => {
+            const ch = Math.floor(i / perChunk)
+            all[ch] = [].concat(all[ch] || [], one)
+            return all
+        }, [])
+        .map((c) => c.join(", "))
+
+    let paragraphs = ["This content was written by:"]
+    paragraphs.push(...contributorChunks)
+    if (page.anoncontributors) {
+        paragraphs.push(
+            `...and ${page.anoncontributors} anonymous contributors!`
+        )
+    }
+
+    return paragraphs.map((p) => ({text: p, links: []}))
 }
