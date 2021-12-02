@@ -104,7 +104,7 @@ export async function render(exhibition) {
     let sideLength = Math.sqrt(totalArea)
     let lowerLeft = new THREE.Vector2(0, 0)
     let upperRight = new THREE.Vector2(sideLength, sideLength)
-    everything = generateTreemap(exhibition, lowerLeft, upperRight)
+    everything = await generateTreemap(exhibition, lowerLeft, upperRight)
 
     //everything = await generateChapter(exhibition, false)
 
@@ -123,12 +123,14 @@ export async function render(exhibition) {
 
 function treemapArea(chapter) {
     let widthPerObject = 30
-    let value = Math.pow(
+    let minSidelength = Math.max(
+        widthPerObject,
         (((chapter.images?.length || 0) + (chapter.paragraphs?.length || 0)) /
             4) *
-            widthPerObject,
-        2
+            widthPerObject
     )
+
+    let value = Math.pow(minSidelength, 2)
 
     if (chapter.sections) {
         value += chapter.sections?.map((child) => treemapArea(child) || 0).sum()
@@ -136,15 +138,17 @@ function treemapArea(chapter) {
     return value
 }
 
-function generateTreemap(chapter, lowerLeft, upperRight) {
+async function generateTreemap(chapter, lowerLeft, upperRight) {
     let group = new THREE.Group()
 
-    if (chapter.sections?.length == 1) {
-        group.add(generateTreemap(chapter.sections[0], lowerLeft, upperRight))
-    } else if (chapter.sections?.length > 1) {
-        let width = upperRight.x - lowerLeft.x
-        let height = upperRight.y - lowerLeft.y
+    let width = upperRight.x - lowerLeft.x
+    let height = upperRight.y - lowerLeft.y
 
+    if (chapter.sections?.length == 1) {
+        group.add(
+            await generateTreemap(chapter.sections[0], lowerLeft, upperRight)
+        )
+    } else if (chapter.sections?.length > 1) {
         let totalArea = treemapArea(chapter)
 
         let subsectionAreas = chapter.sections?.map((c) => treemapArea(c))
@@ -179,8 +183,12 @@ function generateTreemap(chapter, lowerLeft, upperRight) {
             let chapterHalf1 = {sections: firstPart}
             let chapterHalf2 = {sections: secondPart}
 
-            group.add(generateTreemap(chapterHalf1, lowerLeft, upperMiddle))
-            group.add(generateTreemap(chapterHalf2, lowerMiddle, upperRight))
+            group.add(
+                await generateTreemap(chapterHalf1, lowerLeft, upperMiddle)
+            )
+            group.add(
+                await generateTreemap(chapterHalf2, lowerMiddle, upperRight)
+            )
         } else {
             let splitHeight = height * (firstArea / totalArea)
 
@@ -204,9 +212,26 @@ function generateTreemap(chapter, lowerLeft, upperRight) {
             let chapterHalf1 = {sections: firstPart}
             let chapterHalf2 = {sections: secondPart}
 
-            group.add(generateTreemap(chapterHalf1, lowerLeft, rightMiddle))
-            group.add(generateTreemap(chapterHalf2, leftMiddle, upperRight))
+            group.add(
+                await generateTreemap(chapterHalf1, lowerLeft, rightMiddle)
+            )
+            group.add(
+                await generateTreemap(chapterHalf2, leftMiddle, upperRight)
+            )
         }
+    } else {
+        // Let's put in our objects!
+        let picturePromises = generateImageData(chapter)
+        var objects = await Promise.all(picturePromises)
+
+        // On lower wall
+        objects.forEach((o, i) => {
+            o.position.z = upperRight.y - WALL_THICKNESS / 1.99 // upperRight is a Vector2, so we need to use y.
+            o.position.x = lowerLeft.x + ((i + 1) * width) / objects.length
+            //o.position.y = 100
+            o.rotateY(Math.PI)
+            group.add(o)
+        })
     }
 
     return group
