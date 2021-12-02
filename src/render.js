@@ -122,7 +122,7 @@ export async function render(exhibition) {
 }
 
 function treemapArea(chapter) {
-    let widthPerObject = 30
+    let widthPerObject = 30 * 2
     let minSidelength = Math.max(
         widthPerObject,
         (((chapter.images?.length || 0) + (chapter.paragraphs?.length || 0)) /
@@ -224,12 +224,26 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         let picturePromises = generateImageData(chapter)
         var objects = await Promise.all(picturePromises)
 
+        let objectWidths = calculateObjectWidths(objects)
+
+        let splitIndex = splitIntoTwoEqualParts(objectWidths)
+        let firstPart = objects.slice(0, splitIndex)
+        let secondPart = objects.slice(splitIndex)
+
         // On lower wall
-        objects.forEach((o, i) => {
+        firstPart.forEach((o, i) => {
             o.position.z = upperRight.y - WALL_THICKNESS / 1.99 // upperRight is a Vector2, so we need to use y.
-            o.position.x = lowerLeft.x + ((i + 1) * width) / objects.length
+            o.position.x = lowerLeft.x + ((i + 1) * width) / firstPart.length
             //o.position.y = 100
             o.rotateY(Math.PI)
+            group.add(o)
+        })
+
+        // On upper wall
+        secondPart.forEach((o, i) => {
+            o.position.z = lowerLeft.y + WALL_THICKNESS / 1.99
+            o.position.x = lowerLeft.x + ((i + 1) * width) / secondPart.length
+            //o.position.y = 100
             group.add(o)
         })
     }
