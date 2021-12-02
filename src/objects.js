@@ -240,3 +240,56 @@ export function createRoom(corner, other_corner) {
 
     return group
 }
+
+export function createOpenRoom(corner, other_corner) {
+    let lower_left = new THREE.Vector2(corner.x, corner.y)
+    let upper_right = new THREE.Vector2(other_corner.x, other_corner.y)
+    let lower_right = new THREE.Vector2(upper_right.x, lower_left.y)
+    let upper_left = new THREE.Vector2(lower_left.x, upper_right.y)
+
+    let opening = 20
+
+    let lower_left_up = new THREE.Vector2(lower_left.x, lower_left.y + opening)
+    let lower_left_right = new THREE.Vector2(
+        lower_left.x + opening,
+        lower_left.y
+    )
+    let upper_left_down = new THREE.Vector2(
+        upper_left.x,
+        upper_left.y - opening
+    )
+    let upper_left_right = new THREE.Vector2(
+        upper_left.x + opening,
+        upper_left.y
+    )
+    let upper_right_down = new THREE.Vector2(
+        upper_right.x,
+        upper_right.y - opening
+    )
+    let upper_right_left = new THREE.Vector2(
+        upper_right.x - opening,
+        upper_right.y
+    )
+    let lower_right_up = new THREE.Vector2(
+        lower_right.x,
+        lower_right.y + opening
+    )
+    let lower_right_left = new THREE.Vector2(
+        lower_right.x - opening,
+        lower_right.y
+    )
+
+    let group = new THREE.Group()
+
+    //group.add(createWall(lower_left_up, upper_left_down))
+    //group.add(createWall(upper_left_right, upper_right_left))
+    //group.add(createWall(upper_right_down, lower_right_up))
+    //group.add(createWall(lower_left_right, lower_right_left))
+
+    group.add(createWall(lower_left_up, upper_left))
+    group.add(createWall(upper_left, upper_right_left))
+    group.add(createWall(upper_right, lower_right_up))
+    group.add(createWall(lower_left, lower_right_left))
+
+    return group
+}

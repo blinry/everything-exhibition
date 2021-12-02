@@ -8,6 +8,7 @@ import {
     createDoorWall,
     createWall,
     createRoom,
+    createOpenRoom,
     WALL_THICKNESS,
 } from "./objects.js"
 
@@ -122,7 +123,7 @@ export async function render(exhibition) {
 }
 
 function treemapArea(chapter) {
-    let widthPerObject = 30 * 1.5
+    let widthPerObject = 30 * 2
     let minSidelength = Math.max(
         widthPerObject,
         (((chapter.images?.length || 0) + (chapter.paragraphs?.length || 0)) /
@@ -143,6 +144,9 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
 
     let width = upperRight.x - lowerLeft.x
     let height = upperRight.y - lowerLeft.y
+
+    let room = createOpenRoom(lowerLeft, upperRight)
+    group.add(room)
 
     if (chapter.name && chapter.sections?.length > 0) {
         // Add a sign to the sky.
@@ -182,11 +186,7 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
                 lowerLeft.y
             )
 
-            let room = createRoom(lowerLeft, upperMiddle)
-            group.add(room)
-
-            let room2 = createRoom(lowerMiddle, upperRight)
-            group.add(room2)
+            firstPart.reverse()
 
             let chapterHalf1 = {sections: firstPart}
             let chapterHalf2 = {sections: secondPart}
@@ -211,11 +211,7 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
                 lowerLeft.y + splitHeight
             )
 
-            let room = createRoom(lowerLeft, rightMiddle)
-            group.add(room)
-
-            let room2 = createRoom(leftMiddle, upperRight)
-            group.add(room2)
+            secondPart.reverse()
 
             let chapterHalf1 = {sections: firstPart}
             let chapterHalf2 = {sections: secondPart}
@@ -238,15 +234,20 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
             treemapArea
         )
 
-        let margin = 30
+        let margin = 50
 
         // On lower wall
         parts[0].forEach((o, i) => {
             o.position.z = upperRight.y - WALL_THICKNESS / 1.99 // upperRight is a Vector2, so we need to use y.
-            o.position.x =
-                lowerLeft.x +
-                margin +
-                (i * (width - margin * 2)) / (parts[0].length - 1)
+            if (parts[0].length > 1) {
+                o.position.x =
+                    lowerLeft.x +
+                    margin +
+                    (i * (width - margin * 2)) / (parts[0].length - 1)
+            } else {
+                o.position.x = (lowerLeft.x + upperRight.x) / 2
+            }
+
             //o.position.y = 100
             o.rotateY(Math.PI)
             group.add(o)
@@ -255,10 +256,14 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         // On left wall
         parts[1].forEach((o, i) => {
             o.position.x = lowerLeft.x + WALL_THICKNESS / 1.99
-            o.position.z =
-                lowerLeft.y +
-                margin +
-                (i * (height - margin * 2)) / (parts[1].length - 1)
+            if (parts[1].length > 1) {
+                o.position.z =
+                    lowerLeft.y +
+                    margin +
+                    (i * (height - margin * 2)) / (parts[1].length - 1)
+            } else {
+                o.position.z = (lowerLeft.y + upperRight.y) / 2
+            }
             o.rotateY(Math.PI / 2)
             group.add(o)
         })
@@ -266,10 +271,14 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         // On upper wall
         parts[2].forEach((o, i) => {
             o.position.z = lowerLeft.y + WALL_THICKNESS / 1.99
-            o.position.x =
-                lowerLeft.x +
-                margin +
-                (i * (width - margin * 2)) / (parts[2].length - 1)
+            if (parts[2].length > 1) {
+                o.position.x =
+                    lowerLeft.x +
+                    margin +
+                    (i * (width - margin * 2)) / (parts[2].length - 1)
+            } else {
+                o.position.x = (lowerLeft.x + upperRight.x) / 2
+            }
             //o.position.y = 100
             group.add(o)
         })
@@ -277,10 +286,14 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         // On right wall
         parts[3].forEach((o, i) => {
             o.position.x = upperRight.x - WALL_THICKNESS / 1.99
-            o.position.z =
-                lowerLeft.y +
-                margin +
-                (i * (height - margin * 2)) / (parts[3].length - 1)
+            if (parts[3].length > 1) {
+                o.position.z =
+                    lowerLeft.y +
+                    margin +
+                    (i * (height - margin * 2)) / (parts[3].length - 1)
+            } else {
+                o.position.z = (lowerLeft.y + upperRight.y) / 2
+            }
             o.rotateY(-Math.PI / 2)
             group.add(o)
         })
@@ -470,7 +483,7 @@ export function animate() {
 
     renderer.render(scene, camera)
 
-    const mapWidth = Math.max(window.innerWidth / 6, 200)
+    const mapWidth = Math.max(window.innerWidth / 4, 200)
     const mapHeight = mapWidth
 
     if (showMap) {
