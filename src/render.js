@@ -7,6 +7,7 @@ import {
     createTextPlane,
     createDoorWall,
     createWall,
+    createRoom,
     WALL_THICKNESS,
 } from "./objects.js"
 
@@ -99,21 +100,116 @@ export async function render(exhibition) {
     }
     clearObjects(sketch)
 
-    everything = await generateChapter(exhibition, false)
+    let totalArea = treemapArea(exhibition)
+    let sideLength = Math.sqrt(totalArea)
+    let lowerLeft = new THREE.Vector2(0, 0)
+    let upperRight = new THREE.Vector2(sideLength, sideLength)
+    everything = generateTreemap(exhibition, lowerLeft, upperRight)
 
-    if (exhibition.previous) {
-        addBackSign(everything, exhibition.previous)
-    }
+    //everything = await generateChapter(exhibition, false)
 
-    var ta = timeStart("add to scene")
+    //if (exhibition.previous) {
+    //    addBackSign(everything, exhibition.previous)
+    //}
+
     scene.add(everything)
-    timeEnd(ta)
 
     updateStatus("")
 
     var tf = timeStart("floor")
     setupScene(everything)
     timeEnd(tf)
+}
+
+function treemapArea(chapter) {
+    let widthPerObject = 30
+    let value = Math.pow(
+        (((chapter.images?.length || 0) + (chapter.paragraphs?.length || 0)) /
+            4) *
+            widthPerObject,
+        2
+    )
+
+    if (chapter.sections) {
+        value += chapter.sections?.map((child) => treemapArea(child) || 0).sum()
+    }
+    return value
+}
+
+function generateTreemap(chapter, lowerLeft, upperRight) {
+    let group = new THREE.Group()
+
+    if (chapter.sections?.length == 1) {
+        group.add(generateTreemap(chapter.sections[0], lowerLeft, upperRight))
+    } else if (chapter.sections?.length > 1) {
+        let width = upperRight.x - lowerLeft.x
+        let height = upperRight.y - lowerLeft.y
+
+        let totalArea = treemapArea(chapter)
+
+        let subsectionAreas = chapter.sections?.map((c) => treemapArea(c))
+        let splitPoint = splitIntoTwoEqualParts(subsectionAreas)
+
+        let firstPart = chapter.sections.slice(0, splitPoint)
+        let secondPart = chapter.sections.slice(splitPoint)
+
+        let firstArea = subsectionAreas.slice(0, splitPoint).sum()
+        let secondArea = subsectionAreas.slice(splitPoint).sum()
+
+        if (width > height) {
+            let splitWidth = width * (firstArea / totalArea)
+
+            lowerLeft = lowerLeft.clone()
+            upperRight = upperRight.clone()
+            let upperMiddle = new THREE.Vector2(
+                lowerLeft.x + splitWidth,
+                upperRight.y
+            )
+            let lowerMiddle = new THREE.Vector2(
+                lowerLeft.x + splitWidth,
+                lowerLeft.y
+            )
+
+            let room = createRoom(lowerLeft, upperMiddle)
+            group.add(room)
+
+            let room2 = createRoom(lowerMiddle, upperRight)
+            group.add(room2)
+
+            let chapterHalf1 = {sections: firstPart}
+            let chapterHalf2 = {sections: secondPart}
+
+            group.add(generateTreemap(chapterHalf1, lowerLeft, upperMiddle))
+            group.add(generateTreemap(chapterHalf2, lowerMiddle, upperRight))
+        } else {
+            let splitHeight = height * (firstArea / totalArea)
+
+            lowerLeft = lowerLeft.clone()
+            upperRight = upperRight.clone()
+            let rightMiddle = new THREE.Vector2(
+                upperRight.x,
+                lowerLeft.y + splitHeight
+            )
+            let leftMiddle = new THREE.Vector2(
+                lowerLeft.x,
+                lowerLeft.y + splitHeight
+            )
+
+            let room = createRoom(lowerLeft, rightMiddle)
+            group.add(room)
+
+            let room2 = createRoom(leftMiddle, upperRight)
+            group.add(room2)
+
+            let chapterHalf1 = {sections: firstPart}
+            let chapterHalf2 = {sections: secondPart}
+
+            group.add(generateTreemap(chapterHalf1, lowerLeft, rightMiddle))
+            group.add(generateTreemap(chapterHalf2, leftMiddle, upperRight))
+        }
+    }
+
+    return group
 }
 
 async function generateChapter(chapter, stack = false) {
@@ -741,33 +837,42 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
-function splitIntoEqualParts(lengths) {
+function findBestSplit(lengths, searchPoint) {
+    let lengthProgress = 0
+    for (const [i, l] of lengths.entries()) {
+        if (lengthProgress + l >= searchPoint) {
+            let startPoint = lengthProgress
+            let endPoint = lengthProgress + l
+
+            if (
+                Math.abs(startPoint - searchPoint) <
+                Math.abs(endPoint - searchPoint)
+            ) {
+                return i
+            } else {
+                return i + 1
+            }
+        }
+
+        lengthProgress += l
+    }
+}
+
+function splitIntoTwoEqualParts(lengths) {
+    let totalLength = lengths.sum()
+    let searchLength = totalLength / 2
+
+    let firstSplit = findBestSplit(lengths, searchLength)
+
+    return firstSplit
+}
+
+function splitIntoThreeEqualParts(lengths) {
     let totalLength = lengths.sum()
     let searchLength = totalLength / 3
 
-    function findBestSplit(searchPoint) {
-        let lengthProgress = 0
-        for (const [i, l] of lengths.entries()) {
-            if (lengthProgress + l >= searchPoint) {
-                let startPoint = lengthProgress
-                let endPoint = lengthProgress + l
-
-                if (
-                    Math.abs(startPoint - searchPoint) <
-                    Math.abs(endPoint - searchPoint)
-                ) {
-                    return i
-                } else {
-                    return i + 1
-                }
-            }
-
-            lengthProgress += l
-        }
-    }
-
-    let firstSplit = findBestSplit(searchLength)
-    let secondSplit = findBestSplit(2 * searchLength)
+    let firstSplit = findBestSplit(lengths, searchLength)
+    let secondSplit = findBestSplit(lengths, 2 * searchLength)
 
     return [firstSplit, secondSplit]
 }
@@ -790,7 +895,7 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
     let largestGroupObjectWidth =
         groupObjects.length === 0 ? 0 : Math.max(...groupWidths)
 
-    let partIdx = splitIntoEqualParts(widths)
+    let partIdx = splitIntoThreeEqualParts(widths)
 
     let parts = [
         objects.slice(0, partIdx[0]),

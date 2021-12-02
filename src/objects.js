@@ -206,6 +206,8 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
 }
 
 export function createWall(a, b) {
+    a = a.clone()
+    b = b.clone()
     const l = a.distanceTo(b) + WALL_THICKNESS
     var planeGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
     var planeMaterial = WALL_TEXTURE
@@ -221,4 +223,20 @@ export function createWall(a, b) {
     plane.rotateY(rotationAngle)
     plane.layers.enable(1)
     return plane
+}
+
+export function createRoom(corner, other_corner) {
+    let lower_left = corner.clone()
+    let upper_right = other_corner.clone()
+    let lower_right = new THREE.Vector2(upper_right.x, lower_left.y)
+    let upper_left = new THREE.Vector2(lower_left.x, upper_right.y)
+
+    let group = new THREE.Group()
+
+    group.add(createWall(lower_left, upper_left))
+    group.add(createWall(upper_left, upper_right))
+    group.add(createWall(upper_right, lower_right))
+    group.add(createWall(lower_left, lower_right))
+
+    return group
 }
