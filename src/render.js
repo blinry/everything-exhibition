@@ -122,7 +122,7 @@ export async function render(exhibition) {
 }
 
 function treemapArea(chapter) {
-    let widthPerObject = 30 * 2
+    let widthPerObject = 30 * 1.5
     let minSidelength = Math.max(
         widthPerObject,
         (((chapter.images?.length || 0) + (chapter.paragraphs?.length || 0)) /
@@ -143,6 +143,14 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
 
     let width = upperRight.x - lowerLeft.x
     let height = upperRight.y - lowerLeft.y
+
+    if (chapter.name && chapter.sections?.length > 0) {
+        // Add a sign to the sky.
+        let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
+        sign.rotateX(-Math.PI / 2)
+        sign.position.set(lowerLeft.x + width / 2, 25, lowerLeft.y + height / 2)
+        group.add(sign)
+    }
 
     if (chapter.sections?.length == 1) {
         group.add(
@@ -276,6 +284,16 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
             o.rotateY(-Math.PI / 2)
             group.add(o)
         })
+
+        // Add a sign to the floor.
+        let sign = createTextPlane({text: chapter.name, links: []}, 40, 4)
+        sign.rotateX(-Math.PI / 2)
+        sign.position.set(
+            lowerLeft.x + width / 2,
+            -24,
+            lowerLeft.y + height / 2
+        )
+        group.add(sign)
     }
 
     return group
@@ -859,7 +877,9 @@ function setupScene(everything) {
 
     if (everything) {
         // Set up map camera.
+        console.log(everything)
         let aabb = new THREE.Box3().setFromObject(everything)
+        console.log(aabb)
         let center = new THREE.Vector3()
         aabb.getCenter(center)
         center.y = 1000
@@ -971,7 +991,6 @@ function splitIntoThreeEqualParts(lengths) {
 // The key defines the ratios of the resulting split.
 function splitIntoKey(objects, key, criterion) {
     if (key.length == 1) {
-        console.log("key length 1")
         return [objects]
     }
 
@@ -987,8 +1006,6 @@ function splitIntoKey(objects, key, criterion) {
     let firstPart = objects.slice(0, splitIndex)
     let secondPart = objects.slice(splitIndex)
 
-    console.log("split at", splitIndex, "with search length", searchLength)
-    console.log("first part", firstPart)
     let v = [firstPart]
     v.push(...splitIntoKey(secondPart, key.slice(1), criterion))
     return v
