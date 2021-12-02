@@ -224,26 +224,56 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         let picturePromises = generateImageData(chapter)
         var objects = await Promise.all(picturePromises)
 
-        let objectWidths = calculateObjectWidths(objects)
+        let parts = splitIntoKey(
+            objects,
+            [width, height, width, height],
+            treemapArea
+        )
 
-        let splitIndex = splitIntoTwoEqualParts(objectWidths)
-        let firstPart = objects.slice(0, splitIndex)
-        let secondPart = objects.slice(splitIndex)
+        let margin = 30
 
         // On lower wall
-        firstPart.forEach((o, i) => {
+        parts[0].forEach((o, i) => {
             o.position.z = upperRight.y - WALL_THICKNESS / 1.99 // upperRight is a Vector2, so we need to use y.
-            o.position.x = lowerLeft.x + ((i + 1) * width) / firstPart.length
+            o.position.x =
+                lowerLeft.x +
+                margin +
+                (i * (width - margin * 2)) / (parts[0].length - 1)
             //o.position.y = 100
             o.rotateY(Math.PI)
             group.add(o)
         })
 
+        // On left wall
+        parts[1].forEach((o, i) => {
+            o.position.x = lowerLeft.x + WALL_THICKNESS / 1.99
+            o.position.z =
+                lowerLeft.y +
+                margin +
+                (i * (height - margin * 2)) / (parts[1].length - 1)
+            o.rotateY(Math.PI / 2)
+            group.add(o)
+        })
+
         // On upper wall
-        secondPart.forEach((o, i) => {
+        parts[2].forEach((o, i) => {
             o.position.z = lowerLeft.y + WALL_THICKNESS / 1.99
-            o.position.x = lowerLeft.x + ((i + 1) * width) / secondPart.length
+            o.position.x =
+                lowerLeft.x +
+                margin +
+                (i * (width - margin * 2)) / (parts[2].length - 1)
             //o.position.y = 100
+            group.add(o)
+        })
+
+        // On right wall
+        parts[3].forEach((o, i) => {
+            o.position.x = upperRight.x - WALL_THICKNESS / 1.99
+            o.position.z =
+                lowerLeft.y +
+                margin +
+                (i * (height - margin * 2)) / (parts[3].length - 1)
+            o.rotateY(-Math.PI / 2)
             group.add(o)
         })
     }
@@ -876,6 +906,28 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
+function findBestSplitWithCriterion(objects, searchPoint, criterion) {
+    let lengthProgress = 0
+    for (const [i, o] of objects.entries()) {
+        let l = criterion(o)
+        if (lengthProgress + l >= searchPoint) {
+            let startPoint = lengthProgress
+            let endPoint = lengthProgress + l
+
+            if (
+                Math.abs(startPoint - searchPoint) <
+                Math.abs(endPoint - searchPoint)
+            ) {
+                return i
+            } else {
+                return i + 1
+            }
+        }
+
+        lengthProgress += l
+    }
+}
+
 function findBestSplit(lengths, searchPoint) {
     let lengthProgress = 0
     for (const [i, l] of lengths.entries()) {
@@ -914,6 +966,55 @@ function splitIntoThreeEqualParts(lengths) {
     let secondSplit = findBestSplit(lengths, 2 * searchLength)
 
     return [firstSplit, secondSplit]
+}
+
+// The key defines the ratios of the resulting split.
+function splitIntoKey(objects, key, criterion) {
+    if (key.length == 1) {
+        console.log("key length 1")
+        return [objects]
+    }
+
+    let totalLength = objects.map(criterion).sum()
+    let totalKey = key.sum()
+    let searchLength = (key[0] / totalKey) * totalLength
+    let splitIndex = findBestSplitWithCriterion(
+        objects,
+        searchLength,
+        criterion
+    )
+
+    let firstPart = objects.slice(0, splitIndex)
+    let secondPart = objects.slice(splitIndex)
+
+    console.log("split at", splitIndex, "with search length", searchLength)
+    console.log("first part", firstPart)
+    let v = [firstPart]
+    v.push(...splitIntoKey(secondPart, key.slice(1), criterion))
+    return v
+}
+window.splitIntoKey = splitIntoKey
+
+function splitIntoKey2(lengths, key) {
+    console.log(lengths, key)
+    if (key.length == 1) {
+        console.log("key length 1")
+        return [lengths]
+    }
+
+    let totalLength = lengths.sum()
+    let totalKey = key.sum()
+    let searchLength = (key[0] / totalKey) * totalLength
+    let splitIndex = findBestSplit(lengths, searchLength)
+
+    let firstPart = lengths.slice(0, splitIndex)
+    let secondPart = lengths.slice(splitIndex)
+
+    console.log("split at", splitIndex, "with search length", searchLength)
+    console.log("first part", firstPart)
+    let v = [firstPart]
+    v.push(...splitIntoKey(secondPart, key.slice(1)))
+    return v
 }
 
 function calculateObjectWidths(objects) {
