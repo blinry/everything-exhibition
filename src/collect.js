@@ -61,7 +61,7 @@ async function parseArticle(article, lang) {
 
     // Explicitly add introduction section.
     let intro = createSection(article.sections[0], imageURLs, fileNamespace)
-    intro.name = " "
+    intro.name = "Intro"
 
     let exhibition = {
         name: capitalizeFirstLetter(article.title),
@@ -172,6 +172,7 @@ function createSection(section, imageURLs, fileNamespace) {
     // Get paragraphs.
     var paragraphs = []
     if (section.paragraphs) {
+        var maxLength = 500
         for (let paragraph of section.paragraphs) {
             var links = []
             if (paragraph.sentences) {
@@ -189,7 +190,6 @@ function createSection(section, imageURLs, fileNamespace) {
                 })
 
                 // Make sure the individual paragraphs don't get too long.
-                var maxLength = 500
                 var currentParagraph = ""
                 for (var [i, s] of sentences.entries()) {
                     if ((currentParagraph + s).length < maxLength) {
@@ -210,6 +210,27 @@ function createSection(section, imageURLs, fileNamespace) {
                 if (currentParagraph.length > 0) {
                     paragraphs.push({text: currentParagraph, links: links})
                 }
+            }
+        }
+        // Combine paragraphs that are too short.
+        var minLength = 150
+        var i = 0
+        /// [1,2,3]
+        while (i < paragraphs.length - 1) {
+            var totalLength = paragraphs[i].text.length //sentences.map(s => s.text.length).sum()
+            var totalLengthNext = paragraphs[i + 1].text.length //sentences.map(s => s.text.length).sum()
+            if (
+                totalLength < minLength &&
+                totalLength + totalLengthNext <= maxLength
+            ) {
+                paragraphs[i + 1].text =
+                    paragraphs[i].text + "\n\n" + paragraphs[i + 1].text
+                paragraphs[i + 1].links = paragraphs[i].links.concat(
+                    paragraphs[i + 1].links
+                )
+                paragraphs.splice(i, 1)
+            } else {
+                i++
             }
         }
     }

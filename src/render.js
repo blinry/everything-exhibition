@@ -35,6 +35,7 @@ const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
 
 var FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
+const DOOR_WIDTH = 20
 
 let everything
 
@@ -231,10 +232,10 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         let parts = splitIntoKey(
             objects,
             [width, height, width, height],
-            treemapArea
+            treemapArea // TODO: other function
         )
 
-        let margin = 50
+        let margin = DOOR_WIDTH + 10
 
         // On lower wall
         parts[0].forEach((o, i) => {
@@ -303,7 +304,7 @@ async function generateTreemap(chapter, lowerLeft, upperRight) {
         sign.rotateX(-Math.PI / 2)
         sign.position.set(
             lowerLeft.x + width / 2,
-            -24,
+            -24.9,
             lowerLeft.y + height / 2
         )
         group.add(sign)
