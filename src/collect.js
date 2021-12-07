@@ -131,13 +131,13 @@ async function getFileNamespace(lang) {
 }
 
 function createSection(section, imageURLs, fileNamespace) {
+    if (!section.paragraphs) {
+        section.paragraphs = []
+    }
+
     // Convert lists into paragraphs.
     if (section.lists) {
-        if (!section.paragraphs) {
-            section.paragraphs = []
-        }
         for (let list of section.lists) {
-            var links = []
             let sentences = list.map((item) => {
                 item.links = item.links?.map((link) => {
                     return {text: link.text || link.page, page: link.page}
@@ -145,7 +145,27 @@ function createSection(section, imageURLs, fileNamespace) {
                 return {text: item.text, links: item.links}
             })
 
-            section.paragraphs.push({sentences})
+            section.paragraphs.push({sentences: sentences})
+        }
+    }
+
+    // Convert tables into paragraphs.
+    if (section.tables) {
+        for (let table of section.tables) {
+            var paragraphs = []
+            for (let row of table) {
+                let sentences = []
+                for (let [key, value] of Object.entries(row)) {
+                    value.links = value.links?.map((link) => {
+                        return {text: link.text || link.page, page: link.page}
+                    })
+                    sentences.push({
+                        text: `${key}: ${value.text}`,
+                        links: value.links,
+                    })
+                }
+                section.paragraphs.push({sentences: sentences})
+            }
         }
     }
 
