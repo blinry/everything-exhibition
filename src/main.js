@@ -114,11 +114,11 @@ export async function generateExhibition(topic) {
     topicDiv.value = topic
 
     window.SETTINGS = {
-        lights: document.querySelector("#lights").checked,
-        shadows: document.querySelector("#shadows").checked,
-        textures: document.querySelector("#textures").checked,
-        images: document.querySelector("#images").checked,
-        texts: document.querySelector("#texts").checked,
+        lights: document.querySelector("#lights")?.checked || false,
+        shadows: document.querySelector("#shadows")?.checked || false,
+        textures: document.querySelector("#textures")?.checked || false,
+        images: document.querySelector("#images")?.checked || true,
+        texts: document.querySelector("#texts")?.checked || true,
     }
 
     timeReset()
