@@ -385,11 +385,10 @@ function generateImageData(chapter) {
 export function animate() {
     const delta = clock.getDelta()
 
-    //if (delta > 0.1) {
-    //    // Moving with a delta this big wouldn't look good. Do nothing.
-    //    requestAnimationFrame(animate)
-    //    return
-    //}
+    if (delta > 0.1) {
+        // Moving with a delta this big would jump too wide. Do nothing.
+        return
+    }
 
     //xrInput()
     if (mouseDown) {
