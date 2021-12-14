@@ -225,6 +225,78 @@ export function createWall(a, b) {
     return plane
 }
 
+//doors: { upleft: true, upright: false, ... }
+export function createQuadRoom(corner, other_corner, doors) {
+    let lower_left = corner.clone()
+    let upper_right = other_corner.clone()
+    let lower_right = new THREE.Vector2(upper_right.x, lower_left.y)
+    let upper_left = new THREE.Vector2(lower_left.x, upper_right.y)
+
+    let group = new THREE.Group()
+
+    let leftdown_offset = new THREE.Vector2(0, 0)
+    let leftup_offset = new THREE.Vector2(0, 0)
+    let upleft_offset = new THREE.Vector2(0, 0)
+    let upright_offset = new THREE.Vector2(0, 0)
+    let rightup_offset = new THREE.Vector2(0, 0)
+    let rightdown_offset = new THREE.Vector2(0, 0)
+    let downleft_offset = new THREE.Vector2(0, 0)
+    let downright_offset = new THREE.Vector2(0, 0)
+
+    //hacky workaround for flipped y-axis
+    if (doors.leftup) {
+        leftdown_offset.y += DOOR_WIDTH
+    }
+    if (doors.leftdown) {
+        leftup_offset.y -= DOOR_WIDTH
+    }
+    if (doors.downleft) {
+        upleft_offset.x += DOOR_WIDTH
+    }
+    if (doors.downright) {
+        upright_offset.x -= DOOR_WIDTH
+    }
+    if (doors.rightdown) {
+        rightup_offset.y -= DOOR_WIDTH
+    }
+    if (doors.rightup) {
+        rightdown_offset.y += DOOR_WIDTH
+    }
+    if (doors.upleft) {
+        downleft_offset.x += DOOR_WIDTH
+    }
+    if (doors.upright) {
+        downright_offset.x -= DOOR_WIDTH
+    }
+
+    group.add(
+        createWall(
+            lower_left.clone().add(leftdown_offset),
+            upper_left.clone().add(leftup_offset)
+        )
+    )
+    group.add(
+        createWall(
+            upper_left.clone().add(upleft_offset),
+            upper_right.clone().add(upright_offset)
+        )
+    )
+    group.add(
+        createWall(
+            upper_right.clone().add(rightup_offset),
+            lower_right.clone().add(rightdown_offset)
+        )
+    )
+    group.add(
+        createWall(
+            lower_left.clone().add(downleft_offset),
+            lower_right.clone().add(downright_offset)
+        )
+    )
+
+    return group
+}
+
 export function createRoom(corner, other_corner) {
     let lower_left = corner.clone()
     let upper_right = other_corner.clone()

@@ -8,6 +8,7 @@ import {
     createDoorWall,
     createWall,
     createRoom,
+    createQuadRoom,
     createOpenRoom,
     WALL_THICKNESS,
 } from "./objects.js"
@@ -166,8 +167,7 @@ function generateHilbertQuad(
     indexFingerBendiness
 ) {
     console.log("quad")
-    console.log(lowerLeft)
-    console.log(upperRight)
+    console.log(openDirection)
     let group = new THREE.Group()
 
     let width = upperRight.x - lowerLeft.x
@@ -177,7 +177,51 @@ function generateHilbertQuad(
         // place objects
     } else if (chapter.sections?.length === 1) {
         // repeat with subsection
-        group.add(createRoom(lowerLeft, upperRight))
+        let doors = {
+            downright:
+                (openDirection === DOWN && thumbBendiness == false) ||
+                (openDirection === RIGHT && indexFingerBendiness == true),
+            downleft:
+                (openDirection === DOWN && indexFingerBendiness == false) ||
+                (openDirection === LEFT && thumbBendiness == true),
+            upright:
+                (openDirection === RIGHT && thumbBendiness == true) ||
+                (openDirection === UP && indexFingerBendiness == false),
+            upleft:
+                (openDirection === LEFT && indexFingerBendiness == true) ||
+                (openDirection === UP && thumbBendiness == false),
+            rightup:
+                (openDirection === RIGHT && thumbBendiness == false) ||
+                (openDirection === UP && indexFingerBendiness == true),
+            rightdown:
+                (openDirection === DOWN && thumbBendiness == true) ||
+                (openDirection === RIGHT && indexFingerBendiness == false),
+            leftup:
+                (openDirection === UP && thumbBendiness == true) ||
+                (openDirection === LEFT && indexFingerBendiness == false),
+            leftdown:
+                (openDirection === DOWN && indexFingerBendiness == true) ||
+                (openDirection === LEFT && thumbBendiness == false),
+        }
+        console.log(doors)
+
+        if (chapter.sections[0].name && chapter.sections?.length > 0) {
+            // Add a sign to the sky.
+            let sign = createTextPlane(
+                {text: chapter.sections[0].name, links: []},
+                100,
+                8
+            )
+            sign.rotateX(-Math.PI / 2)
+            sign.position.set(
+                lowerLeft.x + width / 2,
+                25,
+                lowerLeft.y + height / 2
+            )
+            group.add(sign)
+        }
+
+        group.add(createQuadRoom(lowerLeft, upperRight, doors))
     } else {
         let totalArea = treemapArea(chapter)
 
@@ -291,9 +335,7 @@ function generateHilbertDomino(
     bendiness
 ) {
     console.log("domino")
-    console.log(chapter)
-    console.log(lowerLeft)
-    console.log(upperRight)
+
     //return createRoom(lowerLeft, upperRight)
 
     var group = new THREE.Group()
@@ -305,16 +347,44 @@ function generateHilbertDomino(
         // place objects
     } else if (chapter.sections?.length === 1) {
         // repeat with subsection
-        group.add(createRoom(lowerLeft, upperRight))
+        let doors = {
+            downright: corner === LOWER_RIGHT && vertical != bendiness,
+            downleft: corner === LOWER_LEFT && vertical != bendiness,
+            upright: corner === UPPER_RIGHT && vertical != bendiness,
+            upleft: corner === UPPER_LEFT && vertical != bendiness,
+            rightup: corner === UPPER_RIGHT && vertical == bendiness,
+            rightdown: corner === LOWER_RIGHT && vertical == bendiness,
+            leftup: corner === UPPER_LEFT && vertical == bendiness,
+            leftdown: corner === LOWER_LEFT && vertical == bendiness,
+        }
+
+        if (chapter.sections[0].name && chapter.sections?.length > 0) {
+            // Add a sign to the sky.
+            let sign = createTextPlane(
+                {text: chapter.sections[0].name, links: []},
+                100,
+                8
+            )
+            sign.rotateX(-Math.PI / 2)
+            sign.position.set(
+                lowerLeft.x + width / 2,
+                25,
+                lowerLeft.y + height / 2
+            )
+            group.add(sign)
+        }
+
+        group.add(createQuadRoom(lowerLeft, upperRight, doors))
     } else {
         let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
-        let inEdgeDirection = corner === UPPER_RIGHT || corner === LOWER_LEFT
+        let inEdgeDirection = corner === UPPER_LEFT || corner === LOWER_RIGHT
 
         if (inEdgeDirection) {
             // swap parts
             let tmp = parts[0]
             parts[0] = parts[1]
             parts[1] = tmp
+            console.log("swap")
         }
 
         // figure out corners
@@ -322,9 +392,9 @@ function generateHilbertDomino(
         if (vertical) {
             if (corner === LOWER_LEFT || corner === UPPER_LEFT) {
                 if (inEdgeDirection) {
-                    leftOrLowerPartIndex = 1
-                } else {
                     leftOrLowerPartIndex = 0
+                } else {
+                    leftOrLowerPartIndex = 1
                 }
             } else {
                 if (inEdgeDirection) {
@@ -336,15 +406,15 @@ function generateHilbertDomino(
         } else {
             if (corner === UPPER_LEFT || corner === UPPER_RIGHT) {
                 if (inEdgeDirection) {
-                    leftOrLowerPartIndex = 0
-                } else {
                     leftOrLowerPartIndex = 1
+                } else {
+                    leftOrLowerPartIndex = 0
                 }
             } else {
                 if (inEdgeDirection) {
-                    leftOrLowerPartIndex = 1
-                } else {
                     leftOrLowerPartIndex = 0
+                } else {
+                    leftOrLowerPartIndex = 1
                 }
             }
         }
@@ -408,7 +478,7 @@ function generateHilbertDomino(
         let openDirection, thumbBendiness, indexFingerBendiness
 
         // quad at the corner
-        if (vertical) {
+        if (!vertical) {
             if (corner === UPPER_LEFT || corner === LOWER_LEFT) {
                 openDirection = LEFT
             } else {
@@ -421,7 +491,7 @@ function generateHilbertDomino(
                 openDirection = DOWN
             }
         }
-        if (vertical !== inEdgeDirection) {
+        if (!vertical !== inEdgeDirection) {
             thumbBendiness = bendiness
             indexFingerBendiness = true
         } else {
@@ -444,7 +514,7 @@ function generateHilbertDomino(
         //group.add(createRoom(p0ll, p0ur))
 
         // other quad
-        if (vertical) {
+        if (!vertical) {
             if (corner === LOWER_LEFT || corner === LOWER_RIGHT) {
                 openDirection = DOWN
             } else {
@@ -457,7 +527,7 @@ function generateHilbertDomino(
                 openDirection = RIGHT
             }
         }
-        if (vertical !== (corner === LOWER_RIGHT || corner === UPPER_LEFT)) {
+        if (!vertical !== (corner === LOWER_RIGHT || corner === UPPER_LEFT)) {
             thumbBendiness = true
             indexFingerBendiness = false
         } else {
