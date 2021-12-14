@@ -19,6 +19,15 @@ import {PointerLockControls} from "three/examples/jsm/controls/PointerLockContro
 import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 
+const UP = 0
+const RIGHT = 1
+const DOWN = 2
+const LEFT = 3
+const UPPER_LEFT = 0
+const UPPER_RIGHT = 1
+const LOWER_RIGHT = 2
+const LOWER_LEFT = 3
+
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
 }
@@ -106,8 +115,16 @@ export async function render(exhibition) {
     let sideLength = Math.sqrt(totalArea)
     let lowerLeft = new THREE.Vector2(0, 0)
     let upperRight = new THREE.Vector2(sideLength, sideLength)
-    everything = await generateTreemap(exhibition, lowerLeft, upperRight)
+    everything = generateHilbertQuad(
+        exhibition,
+        lowerLeft,
+        upperRight,
+        DOWN,
+        false,
+        false
+    )
 
+    //everything = await generateTreemap(exhibition, lowerLeft, upperRight)
     //everything = await generateChapter(exhibition, false)
 
     //if (exhibition.previous) {
@@ -138,6 +155,332 @@ function treemapArea(chapter) {
         value += chapter.sections?.map((child) => treemapArea(child) || 0).sum()
     }
     return value
+}
+
+function generateHilbertQuad(
+    chapter,
+    lowerLeft,
+    upperRight,
+    openDirection,
+    thumbBendiness,
+    indexFingerBendiness
+) {
+    console.log("quad")
+    console.log(lowerLeft)
+    console.log(upperRight)
+    let group = new THREE.Group()
+
+    let width = upperRight.x - lowerLeft.x
+    let height = upperRight.y - lowerLeft.y
+
+    if (chapter.sections?.length === 0) {
+        // place objects
+    } else if (chapter.sections?.length === 1) {
+        // repeat with subsection
+        group.add(createRoom(lowerLeft, upperRight))
+    } else {
+        let totalArea = treemapArea(chapter)
+
+        let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
+
+        let vertical = openDirection === DOWN || openDirection === UP
+
+        // figure out corners
+        let leftOrLowerPartIndex
+        if (openDirection === DOWN || openDirection === LEFT) {
+            leftOrLowerPartIndex = 0
+        } else {
+            leftOrLowerPartIndex = 1
+        }
+
+        let firstArea = parts[leftOrLowerPartIndex]
+            .map((p) => treemapArea(p))
+            .sum()
+        let splitRatio = firstArea / totalArea
+
+        let p1, p2
+
+        if (vertical) {
+            p1 = new THREE.Vector2(
+                lowerLeft.x + width * splitRatio,
+                lowerLeft.y
+            )
+            p2 = new THREE.Vector2(
+                lowerLeft.x + width * splitRatio,
+                upperRight.y
+            )
+        } else {
+            p1 = new THREE.Vector2(
+                lowerLeft.x,
+                lowerLeft.y + height * splitRatio
+            )
+            p2 = new THREE.Vector2(
+                upperRight.x,
+                lowerLeft.y + height * splitRatio
+            )
+        }
+
+        let p0ll, p0ur, p1ll, p1ur
+
+        if (openDirection === DOWN) {
+            p0ll = lowerLeft
+            p0ur = p2
+            p1ll = p1
+            p1ur = upperRight
+        } else if (openDirection === UP) {
+            p0ll = p1
+            p0ur = upperRight
+            p1ll = lowerLeft
+            p1ur = p2
+        } else if (openDirection === LEFT) {
+            p0ll = lowerLeft
+            p0ur = p2
+            p1ll = p1
+            p1ur = upperRight
+        } else if (openDirection === RIGHT) {
+            p0ll = p1
+            p0ur = upperRight
+            p1ll = lowerLeft
+            p1ur = p2
+        }
+
+        if (!vertical) {
+            // swap parts
+            let tmp = parts[0]
+            parts[0] = parts[1]
+            parts[1] = tmp
+        }
+
+        // domino at index finger
+        let corner = (openDirection + 1) % 4
+        group.add(
+            generateHilbertDomino(
+                {sections: parts[0]},
+                p0ll,
+                p0ur,
+                !vertical,
+                corner,
+                !indexFingerBendiness
+            )
+        )
+
+        // domino at thumb
+        corner = openDirection % 4
+        group.add(
+            generateHilbertDomino(
+                {sections: parts[1]},
+                p1ll,
+                p1ur,
+                !vertical,
+                corner,
+                !thumbBendiness
+            )
+        )
+    }
+
+    return group
+}
+
+// vertical: should this domino be split vertically?
+function generateHilbertDomino(
+    chapter,
+    lowerLeft,
+    upperRight,
+    vertical,
+    corner,
+    bendiness
+) {
+    console.log("domino")
+    console.log(chapter)
+    console.log(lowerLeft)
+    console.log(upperRight)
+    //return createRoom(lowerLeft, upperRight)
+
+    var group = new THREE.Group()
+
+    let width = upperRight.x - lowerLeft.x
+    let height = upperRight.y - lowerLeft.y
+
+    if (chapter.sections === undefined || chapter.sections?.length === 0) {
+        // place objects
+    } else if (chapter.sections?.length === 1) {
+        // repeat with subsection
+        group.add(createRoom(lowerLeft, upperRight))
+    } else {
+        let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
+        let inEdgeDirection = corner === UPPER_RIGHT || corner === LOWER_LEFT
+
+        if (inEdgeDirection) {
+            // swap parts
+            let tmp = parts[0]
+            parts[0] = parts[1]
+            parts[1] = tmp
+        }
+
+        // figure out corners
+        var leftOrLowerPartIndex
+        if (vertical) {
+            if (corner === LOWER_LEFT || corner === UPPER_LEFT) {
+                if (inEdgeDirection) {
+                    leftOrLowerPartIndex = 1
+                } else {
+                    leftOrLowerPartIndex = 0
+                }
+            } else {
+                if (inEdgeDirection) {
+                    leftOrLowerPartIndex = 0
+                } else {
+                    leftOrLowerPartIndex = 1
+                }
+            }
+        } else {
+            if (corner === UPPER_LEFT || corner === UPPER_RIGHT) {
+                if (inEdgeDirection) {
+                    leftOrLowerPartIndex = 0
+                } else {
+                    leftOrLowerPartIndex = 1
+                }
+            } else {
+                if (inEdgeDirection) {
+                    leftOrLowerPartIndex = 1
+                } else {
+                    leftOrLowerPartIndex = 0
+                }
+            }
+        }
+
+        let totalArea = treemapArea(chapter)
+        let firstArea = parts[leftOrLowerPartIndex]
+            .map((p) => treemapArea(p))
+            .sum()
+        let splitRatio = firstArea / totalArea
+
+        let p1, p2
+
+        if (vertical) {
+            p1 = new THREE.Vector2(
+                lowerLeft.x + width * splitRatio,
+                lowerLeft.y
+            )
+            p2 = new THREE.Vector2(
+                lowerLeft.x + width * splitRatio,
+                upperRight.y
+            )
+        } else {
+            p1 = new THREE.Vector2(
+                lowerLeft.x,
+                lowerLeft.y + height * splitRatio
+            )
+            p2 = new THREE.Vector2(
+                upperRight.x,
+                lowerLeft.y + height * splitRatio
+            )
+        }
+
+        let p0ll, p0ur, p1ll, p1ur
+
+        if (vertical) {
+            if (corner === LOWER_LEFT || corner === UPPER_LEFT) {
+                p0ll = lowerLeft
+                p0ur = p2
+                p1ll = p1
+                p1ur = upperRight
+            } else {
+                p0ll = p1
+                p0ur = upperRight
+                p1ll = lowerLeft
+                p1ur = p2
+            }
+        } else {
+            if (corner === LOWER_LEFT || corner === LOWER_RIGHT) {
+                p0ll = lowerLeft
+                p0ur = p2
+                p1ll = p1
+                p1ur = upperRight
+            } else {
+                p0ll = p1
+                p0ur = upperRight
+                p1ll = lowerLeft
+                p1ur = p2
+            }
+        }
+
+        let openDirection, thumbBendiness, indexFingerBendiness
+
+        // quad at the corner
+        if (vertical) {
+            if (corner === UPPER_LEFT || corner === LOWER_LEFT) {
+                openDirection = LEFT
+            } else {
+                openDirection = RIGHT
+            }
+        } else {
+            if (corner === UPPER_LEFT || corner === UPPER_RIGHT) {
+                openDirection = UP
+            } else {
+                openDirection = DOWN
+            }
+        }
+        if (vertical !== inEdgeDirection) {
+            thumbBendiness = bendiness
+            indexFingerBendiness = true
+        } else {
+            thumbBendiness = true
+            indexFingerBendiness = bendiness
+        }
+        group.add(
+            generateHilbertQuad(
+                {sections: parts[0]},
+                p0ll,
+                p0ur,
+                openDirection,
+                thumbBendiness,
+                indexFingerBendiness
+            )
+        )
+        //console.log("room")
+        //console.log(p0ll)
+        //console.log(p0ur)
+        //group.add(createRoom(p0ll, p0ur))
+
+        // other quad
+        if (vertical) {
+            if (corner === LOWER_LEFT || corner === LOWER_RIGHT) {
+                openDirection = DOWN
+            } else {
+                openDirection = UP
+            }
+        } else {
+            if (corner === UPPER_LEFT || corner === LOWER_LEFT) {
+                openDirection = LEFT
+            } else {
+                openDirection = RIGHT
+            }
+        }
+        if (vertical !== (corner === LOWER_RIGHT || corner === UPPER_LEFT)) {
+            thumbBendiness = true
+            indexFingerBendiness = false
+        } else {
+            thumbBendiness = false
+            indexFingerBendiness = true
+        }
+        group.add(
+            generateHilbertQuad(
+                {sections: parts[1]},
+                p1ll,
+                p1ur,
+                openDirection,
+                thumbBendiness,
+                indexFingerBendiness
+            )
+        )
+        //console.log("room")
+        //console.log(p1ll)
+        //console.log(p1ur)
+        //group.add(createRoom(p1ll, p1ur))
+    }
+
+    return group
 }
 
 async function generateTreemap(chapter, lowerLeft, upperRight) {
