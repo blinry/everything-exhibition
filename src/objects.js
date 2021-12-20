@@ -208,6 +208,8 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
 export function createWall(a, b) {
     a = a.clone()
     b = b.clone()
+    //a.y *= -1
+    //b.y *= -1
     const l = a.distanceTo(b) + WALL_THICKNESS
     var planeGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
     var planeMaterial = WALL_TEXTURE
@@ -244,28 +246,28 @@ export function createQuadRoom(corner, other_corner, doors) {
     let downright_offset = new THREE.Vector2(0, 0)
 
     //hacky workaround for flipped y-axis
-    if (doors.leftup) {
+    if (doors.leftdown) {
         leftdown_offset.y += DOOR_WIDTH
     }
-    if (doors.leftdown) {
+    if (doors.leftup) {
         leftup_offset.y -= DOOR_WIDTH
     }
-    if (doors.downleft) {
+    if (doors.upleft) {
         upleft_offset.x += DOOR_WIDTH
     }
-    if (doors.downright) {
+    if (doors.upright) {
         upright_offset.x -= DOOR_WIDTH
     }
-    if (doors.rightdown) {
+    if (doors.rightup) {
         rightup_offset.y -= DOOR_WIDTH
     }
-    if (doors.rightup) {
+    if (doors.rightdown) {
         rightdown_offset.y += DOOR_WIDTH
     }
-    if (doors.upleft) {
+    if (doors.downleft) {
         downleft_offset.x += DOOR_WIDTH
     }
-    if (doors.upright) {
+    if (doors.downright) {
         downright_offset.x -= DOOR_WIDTH
     }
 

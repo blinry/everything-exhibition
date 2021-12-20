@@ -128,10 +128,15 @@ export async function generateExhibition(topic) {
 
     location.hash = `https://${lang}.wikipedia.org/wiki/${topic}`
 
-    var exhibition = await generateExhibitionDescriptionFromWikipedia(
-        topic,
-        lang
-    )
+    //var exhibition = await generateExhibitionDescriptionFromWikipedia(
+    //    topic,
+    //    lang
+    //)
+    let exhibition = {sections: []}
+    for (let i = 1; i < 10; i++) {
+        exhibition.sections.push({name: "" + i})
+    }
+
     exhibition.previous = previousTopic
     await initializeMultiplayer(exhibition.name)
     await render(exhibition)

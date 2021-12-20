@@ -21,13 +21,27 @@ import {Sky} from "three/examples/jsm/objects/Sky"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 
 const UP = 0
-const RIGHT = 1
+const LEFT = 1
 const DOWN = 2
-const LEFT = 3
-const UPPER_LEFT = 0
-const UPPER_RIGHT = 1
-const LOWER_RIGHT = 2
-const LOWER_LEFT = 3
+const RIGHT = 3
+const UPPER_RIGHT = 0
+const UPPER_LEFT = 1
+const LOWER_LEFT = 2
+const LOWER_RIGHT = 3
+
+function dir(d) {
+    if (d == 0) return "UP"
+    if (d == 1) return "RIGHT"
+    if (d == 2) return "DOWN"
+    if (d == 3) return "LEFT"
+}
+
+function cor(c) {
+    if (c == 0) return "UL"
+    if (c == 1) return "UR"
+    if (c == 2) return "LR"
+    if (c == 3) return "LL"
+}
 
 Array.prototype.sum = function () {
     return this.reduce((partial_sum, a) => partial_sum + a, 0)
@@ -120,7 +134,7 @@ export async function render(exhibition) {
         exhibition,
         lowerLeft,
         upperRight,
-        DOWN,
+        RIGHT,
         false,
         false
     )
@@ -208,7 +222,7 @@ function generateHilbertQuad(
         if (chapter.sections[0].name && chapter.sections?.length > 0) {
             // Add a sign to the sky.
             let sign = createTextPlane(
-                {text: chapter.sections[0].name, links: []},
+                {text: chapter.sections[0].name+" quad "+dir(openDirection), links: []},
                 100,
                 8
             )
@@ -288,15 +302,33 @@ function generateHilbertQuad(
             p1ur = p2
         }
 
-        if (!vertical) {
-            // swap parts
-            let tmp = parts[0]
-            parts[0] = parts[1]
-            parts[1] = tmp
-        }
+        //if (!vertical) {
+        //    // swap parts
+        //    let tmp = parts[0]
+        //    parts[0] = parts[1]
+        //    parts[1] = tmp
+        //}
 
+        // shift away from each other
+        if (vertical) {
+            var offset = new THREE.Vector3(-2, 0, 0)
+        } else {
+            var offset = new THREE.Vector3(0, 0, 0)
+        }
+        p0ll.add(offset)
+        p0ur.add(offset)
+        p1ll.sub(offset)
+        p1ur.sub(offset)
+
+        console.log(dir(openDirection))
         // domino at index finger
-        let corner = (openDirection + 1) % 4
+        let corner
+        if (vertical) {
+            corner = (openDirection ) % 4
+        } else {
+            corner = (openDirection+1) % 4
+        }
+        console.log(cor(corner)+" at if")
         group.add(
             generateHilbertDomino(
                 {sections: parts[0]},
@@ -309,7 +341,12 @@ function generateHilbertQuad(
         )
 
         // domino at thumb
-        corner = openDirection % 4
+        if (vertical) {
+            corner = (openDirection+1) % 4
+        } else {
+            corner = (openDirection) % 4
+        }
+        console.log(cor(corner)+" at t")
         group.add(
             generateHilbertDomino(
                 {sections: parts[1]},
@@ -348,20 +385,20 @@ function generateHilbertDomino(
     } else if (chapter.sections?.length === 1) {
         // repeat with subsection
         let doors = {
-            downright: corner === LOWER_RIGHT && vertical != bendiness,
-            downleft: corner === LOWER_LEFT && vertical != bendiness,
-            upright: corner === UPPER_RIGHT && vertical != bendiness,
-            upleft: corner === UPPER_LEFT && vertical != bendiness,
-            rightup: corner === UPPER_RIGHT && vertical == bendiness,
-            rightdown: corner === LOWER_RIGHT && vertical == bendiness,
-            leftup: corner === UPPER_LEFT && vertical == bendiness,
-            leftdown: corner === LOWER_LEFT && vertical == bendiness,
+            downright: (corner === LOWER_RIGHT && vertical != bendiness) || (corner===UPPER_LEFT && vertical),
+            downleft: (corner === LOWER_LEFT && vertical != bendiness) || (corner===UPPER_RIGHT && vertical),
+            upright: (corner === UPPER_RIGHT && vertical != bendiness) ||  (corner===LOWER_LEFT && vertical),
+            upleft: (corner === UPPER_LEFT && vertical != bendiness) || (corner===LOWER_RIGHT && vertical),
+            rightup: (corner === UPPER_RIGHT && vertical == bendiness) || (corner===LOWER_LEFT && !vertical),
+            rightdown: (corner === LOWER_RIGHT && vertical == bendiness) || (corner===UPPER_LEFT && !vertical),
+            leftup: (corner === UPPER_LEFT && vertical == bendiness) || (corner===LOWER_RIGHT && !vertical),
+            leftdown: (corner === LOWER_LEFT && vertical == bendiness) || (corner===UPPER_RIGHT && !vertical),
         }
 
         if (chapter.sections[0].name && chapter.sections?.length > 0) {
             // Add a sign to the sky.
             let sign = createTextPlane(
-                {text: chapter.sections[0].name, links: []},
+                {text: chapter.sections[0].name+" dom "+cor(corner), links: []},
                 100,
                 8
             )
@@ -377,14 +414,13 @@ function generateHilbertDomino(
         group.add(createQuadRoom(lowerLeft, upperRight, doors))
     } else {
         let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
-        let inEdgeDirection = corner === UPPER_LEFT || corner === LOWER_RIGHT
+        let inEdgeDirection = corner === UPPER_LEFT || corner === LOWER_RIGHT)
 
         if (inEdgeDirection) {
             // swap parts
             let tmp = parts[0]
             parts[0] = parts[1]
             parts[1] = tmp
-            console.log("swap")
         }
 
         // figure out corners
