@@ -158,7 +158,7 @@ export async function render(exhibition) {
 function treemapArea(chapter) {
     let value = 0
 
-    if (chapter.sections) {
+    if (chapter.sections?.length > 0) {
         value += chapter.sections?.map((child) => treemapArea(child) || 0).sum()
     } else {
         let widthPerObject = 30 * 2
@@ -185,7 +185,7 @@ function generateHilbertQuad(
     indexFingerBendiness
 ) {
     console.log("quad")
-    console.log(openDirection)
+    console.log(chapter)
     let group = new THREE.Group()
 
     let width = upperRight.x - lowerLeft.x
@@ -370,6 +370,7 @@ function generateHilbertDomino(
     bendiness
 ) {
     console.log("domino")
+    console.log(chapter)
 
     //return createRoom(lowerLeft, upperRight)
 
