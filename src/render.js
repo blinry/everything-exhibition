@@ -143,6 +143,16 @@ export async function render(exhibition) {
             false,
             false
         )
+
+        // Add a sign.
+        let sign = createTextPlane({text: section.name, links: []}, 40, 4)
+        sign.position.set(
+            sideLength / 2 - DOOR_WIDTH / 2,
+            20,
+            WALL_THICKNESS / 2 + 0.001
+        )
+        quad.add(sign)
+
         //quad.rotateY(Math.PI)
         quad.myWidth = sideLength
         quad.safetyWidth = sideLength
@@ -280,8 +290,6 @@ async function generateHilbertQuad(
     thumbBendiness,
     indexFingerBendiness
 ) {
-    console.log("quad")
-    console.log(chapter)
     let group = new THREE.Group()
 
     let width = upperRight.x - lowerLeft.x
@@ -318,6 +326,46 @@ async function generateHilbertQuad(
 
         group.add(createQuadRoom(lowerLeft, upperRight, doors))
 
+        //if (chapter.name) {
+        //    // Add a sign to the sky.
+        //    let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
+        //    //sign.rotateX(-Math.PI / 2)
+        //    if (openDirection === DOWN) {
+        //        if (indexFingerBendiness == true) {
+        //            sign.rotateY(Math.PI/2)
+        //        } else {
+        //            sign.rotateY(0)
+        //        }
+        //    }
+        //    else if (openDirection === RIGHT) {
+        //        if (thumbBendiness == true) {
+        //            sign.rotateY(Math.PI)
+        //        } else {
+        //            sign.rotateY(-Math.PI/2)
+        //        }
+        //    }
+        //    //else if (openDirection === UP) {
+        //    //    if (indexFingerBendiness == true) {
+        //    //        sign.rotateY(-Math.PI/2)
+        //    //    } else {
+        //    //        sign.rotateY(Math.PI)
+        //    //    }
+        //    //} else if (openDirection === LEFT) {
+        //    //    if (thumbBendiness == true) {
+        //    //        sign.rotateY(Math.PI/2)
+        //    //    } else {
+        //    //        sign.rotateY(0)
+        //    //    }
+        //    //}
+
+        //    sign.position.set(
+        //        lowerLeft.x + width / 2,
+        //        25,
+        //        lowerLeft.y + height / 2
+        //    )
+        //    group.add(sign)
+        //}
+
         await placeObjects(group, chapter, lowerLeft, upperRight)
     } else if (chapter.sections?.length === 1) {
         // repeat with subsection
@@ -331,18 +379,6 @@ async function generateHilbertQuad(
                 indexFingerBendiness
             )
         )
-
-        if (chapter.name) {
-            // Add a sign to the sky.
-            let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
-            sign.rotateX(-Math.PI / 2)
-            sign.position.set(
-                lowerLeft.x + width / 2,
-                25,
-                lowerLeft.y + height / 2
-            )
-            group.add(sign)
-        }
     } else {
         let totalArea = treemapArea(chapter)
 
@@ -507,9 +543,6 @@ async function generateHilbertDomino(
     corner,
     bendiness
 ) {
-    console.log("domino")
-    console.log(chapter)
-
     //return createRoom(lowerLeft, upperRight)
 
     var group = new THREE.Group()
@@ -561,17 +594,17 @@ async function generateHilbertDomino(
             )
         )
 
-        if (chapter.name) {
-            // Add a sign to the sky.
-            let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
-            sign.rotateX(-Math.PI / 2)
-            sign.position.set(
-                lowerLeft.x + width / 2,
-                25,
-                lowerLeft.y + height / 2
-            )
-            group.add(sign)
-        }
+        //if (chapter.name) {
+        //    // Add a sign to the sky.
+        //    let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
+        //    sign.rotateX(-Math.PI / 2)
+        //    sign.position.set(
+        //        lowerLeft.x + width / 2,
+        //        25,
+        //        lowerLeft.y + height / 2
+        //    )
+        //    group.add(sign)
+        //}
     } else {
         let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
         let inEdgeDirection = corner === UPPER_LEFT || corner === LOWER_RIGHT

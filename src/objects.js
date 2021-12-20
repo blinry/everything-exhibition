@@ -245,7 +245,6 @@ export function createQuadRoom(corner, other_corner, doors) {
     let downleft_offset = new THREE.Vector2(0, 0)
     let downright_offset = new THREE.Vector2(0, 0)
 
-    //hacky workaround for flipped y-axis
     if (doors.leftdown) {
         leftdown_offset.y += DOOR_WIDTH
     }
