@@ -123,21 +123,33 @@ export async function render(exhibition) {
     if (everything) {
         clearObjects(everything)
         everything.removeFromParent()
+    } else {
+        everything = new THREE.Group()
     }
     clearObjects(sketch)
 
-    let totalArea = treemapArea(exhibition)
-    let sideLength = Math.sqrt(totalArea)
-    let lowerLeft = new THREE.Vector2(0, 0)
-    let upperRight = new THREE.Vector2(sideLength, sideLength)
-    everything = await generateHilbertQuad(
-        exhibition,
-        lowerLeft,
-        upperRight,
-        DOWN,
-        false,
-        false
-    )
+    let sections = []
+
+    for (let section of exhibition.sections) {
+        let totalArea = treemapArea(section)
+        let sideLength = Math.sqrt(totalArea)
+        let lowerLeft = new THREE.Vector2(-sideLength / 2, -sideLength)
+        let upperRight = new THREE.Vector2(sideLength / 2, 0)
+        let quad = await generateHilbertQuad(
+            section,
+            lowerLeft,
+            upperRight,
+            UP,
+            false,
+            false
+        )
+        //quad.rotateY(Math.PI)
+        quad.myWidth = sideLength
+        quad.safetyWidth = sideLength
+        sections.push(quad)
+    }
+
+    distributeObjects(sections, everything, 10, false)
 
     //everything = await generateTreemap(exhibition, lowerLeft, upperRight)
     //everything = await generateChapter(exhibition, false)
