@@ -133,7 +133,7 @@ export async function generateExhibition(topic) {
     //    lang
     //)
     let exhibition = {sections: []}
-    for (let i = 1; i < 10; i++) {
+    for (let i = 1; i <= 3; i++) {
         exhibition.sections.push({name: "" + i})
     }
 
