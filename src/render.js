@@ -130,7 +130,7 @@ export async function render(exhibition) {
     let sideLength = Math.sqrt(totalArea)
     let lowerLeft = new THREE.Vector2(0, 0)
     let upperRight = new THREE.Vector2(sideLength, sideLength)
-    everything = generateHilbertQuad(
+    everything = await generateHilbertQuad(
         exhibition,
         lowerLeft,
         upperRight,
@@ -176,7 +176,91 @@ function treemapArea(chapter) {
     return value
 }
 
-function generateHilbertQuad(
+async function placeObjects(group, chapter, lowerLeft, upperRight) {
+    let width = upperRight.x - lowerLeft.x
+    let height = upperRight.y - lowerLeft.y
+
+    let picturePromises = generateImageData(chapter)
+    var objects = await Promise.all(picturePromises)
+
+    let parts = splitIntoKey(
+        objects,
+        [width, height, width, height],
+        treemapArea // TODO: other function
+    )
+
+    let margin = DOOR_WIDTH + 10
+
+    // On lower wall
+    parts[0].forEach((o, i) => {
+        o.position.z = upperRight.y - WALL_THICKNESS / 1.99 // upperRight is a Vector2, so we need to use y.
+        if (parts[0].length > 1) {
+            o.position.x =
+                lowerLeft.x +
+                margin +
+                (i * (width - margin * 2)) / (parts[0].length - 1)
+        } else {
+            o.position.x = (lowerLeft.x + upperRight.x) / 2
+        }
+
+        //o.position.y = 100
+        o.rotateY(Math.PI)
+        group.add(o)
+    })
+
+    // On left wall
+    parts[1].forEach((o, i) => {
+        o.position.x = lowerLeft.x + WALL_THICKNESS / 1.99
+        if (parts[1].length > 1) {
+            o.position.z =
+                lowerLeft.y +
+                margin +
+                (i * (height - margin * 2)) / (parts[1].length - 1)
+        } else {
+            o.position.z = (lowerLeft.y + upperRight.y) / 2
+        }
+        o.rotateY(Math.PI / 2)
+        group.add(o)
+    })
+
+    // On upper wall
+    parts[2].forEach((o, i) => {
+        o.position.z = lowerLeft.y + WALL_THICKNESS / 1.99
+        if (parts[2].length > 1) {
+            o.position.x =
+                lowerLeft.x +
+                margin +
+                (i * (width - margin * 2)) / (parts[2].length - 1)
+        } else {
+            o.position.x = (lowerLeft.x + upperRight.x) / 2
+        }
+        //o.position.y = 100
+        group.add(o)
+    })
+
+    // On right wall
+    parts[3].forEach((o, i) => {
+        o.position.x = upperRight.x - WALL_THICKNESS / 1.99
+        if (parts[3].length > 1) {
+            o.position.z =
+                lowerLeft.y +
+                margin +
+                (i * (height - margin * 2)) / (parts[3].length - 1)
+        } else {
+            o.position.z = (lowerLeft.y + upperRight.y) / 2
+        }
+        o.rotateY(-Math.PI / 2)
+        group.add(o)
+    })
+
+    // Add a sign to the floor.
+    let sign = createTextPlane({text: chapter.name, links: []}, 40, 4)
+    sign.rotateX(-Math.PI / 2)
+    sign.position.set(lowerLeft.x + width / 2, -24.9, lowerLeft.y + height / 2)
+    group.add(sign)
+}
+
+async function generateHilbertQuad(
     chapter,
     lowerLeft,
     upperRight,
@@ -191,10 +275,7 @@ function generateHilbertQuad(
     let width = upperRight.x - lowerLeft.x
     let height = upperRight.y - lowerLeft.y
 
-    if (chapter.sections?.length === 0) {
-        // place objects
-    } else if (chapter.sections?.length === 1) {
-        // repeat with subsection
+    if (chapter.sections == undefined || chapter.sections?.length === 0) {
         let doors = {
             downright:
                 (openDirection === DOWN && thumbBendiness == false) ||
@@ -223,13 +304,25 @@ function generateHilbertQuad(
         }
         console.log(doors)
 
-        if (chapter.sections[0].name && chapter.sections?.length > 0) {
-            // Add a sign to the sky.
-            let sign = createTextPlane(
-                {text: chapter.sections[0].name, links: []},
-                100,
-                8
+        group.add(createQuadRoom(lowerLeft, upperRight, doors))
+
+        await placeObjects(group, chapter, lowerLeft, upperRight)
+    } else if (chapter.sections?.length === 1) {
+        // repeat with subsection
+        group.add(
+            await generateHilbertQuad(
+                chapter.sections[0],
+                lowerLeft,
+                upperRight,
+                openDirection,
+                thumbBendiness,
+                indexFingerBendiness
             )
+        )
+
+        if (chapter.name) {
+            // Add a sign to the sky.
+            let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
             sign.rotateX(-Math.PI / 2)
             sign.position.set(
                 lowerLeft.x + width / 2,
@@ -238,8 +331,6 @@ function generateHilbertQuad(
             )
             group.add(sign)
         }
-
-        group.add(createQuadRoom(lowerLeft, upperRight, doors))
     } else {
         let totalArea = treemapArea(chapter)
 
@@ -284,7 +375,11 @@ function generateHilbertQuad(
 
         let p0ll, p0ur, p1ll, p1ur
 
-        let shift = DOOR_WIDTH / 2
+        let shift = 0
+        if (parts[0].length > 1 || parts[1].length > 1) {
+            shift = DOOR_WIDTH / 2
+        }
+
         if (openDirection === DOWN) {
             p0ll = lowerLeft
             p0ur = p2
@@ -315,6 +410,37 @@ function generateHilbertQuad(
             p1ur.y -= shift
         }
 
+        // connection tunnel
+        if (openDirection === DOWN) {
+            var w00 = p0ur
+            var w01 = p0ur.clone().add(new THREE.Vector2(shift * 2, 0))
+            group.add(createWall(w00, w01))
+            var w10 = p1ll
+            var w11 = p1ll.clone().sub(new THREE.Vector2(shift * 2, 0))
+            group.add(createWall(w10, w11))
+        } else if (openDirection === UP) {
+            var w00 = p0ll
+            var w01 = p0ll.clone().sub(new THREE.Vector2(shift * 2, 0))
+            group.add(createWall(w00, w01))
+            var w10 = p1ur
+            var w11 = p1ur.clone().add(new THREE.Vector2(shift * 2, 0))
+            group.add(createWall(w10, w11))
+        } else if (openDirection === LEFT) {
+            var w00 = p0ur
+            var w01 = p0ur.clone().add(new THREE.Vector2(0, shift * 2))
+            group.add(createWall(w00, w01))
+            var w10 = p1ll
+            var w11 = p1ll.clone().sub(new THREE.Vector2(0, shift * 2))
+            group.add(createWall(w10, w11))
+        } else if (openDirection === RIGHT) {
+            var w00 = p0ll
+            var w01 = p0ll.clone().sub(new THREE.Vector2(0, shift * 2))
+            group.add(createWall(w00, w01))
+            var w10 = p1ur
+            var w11 = p1ur.clone().add(new THREE.Vector2(0, shift * 2))
+            group.add(createWall(w10, w11))
+        }
+
         //if (!vertical) {
         //    // swap parts
         //    let tmp = parts[0]
@@ -329,7 +455,7 @@ function generateHilbertQuad(
         } else {
             corner = (openDirection + 1) % 4
         }
-        let domino0 = generateHilbertDomino(
+        let domino0 = await generateHilbertDomino(
             {sections: parts[0]},
             p0ll,
             p0ur,
@@ -346,7 +472,7 @@ function generateHilbertQuad(
         } else {
             corner = openDirection % 4
         }
-        let domino1 = generateHilbertDomino(
+        let domino1 = await generateHilbertDomino(
             {sections: parts[1]},
             p1ll,
             p1ur,
@@ -361,7 +487,7 @@ function generateHilbertQuad(
 }
 
 // vertical: should this domino be split vertically?
-function generateHilbertDomino(
+async function generateHilbertDomino(
     chapter,
     lowerLeft,
     upperRight,
@@ -380,9 +506,6 @@ function generateHilbertDomino(
     let height = upperRight.y - lowerLeft.y
 
     if (chapter.sections === undefined || chapter.sections?.length === 0) {
-        // place objects
-    } else if (chapter.sections?.length === 1) {
-        // repeat with subsection
         let doors = {
             downright:
                 (corner === LOWER_RIGHT && vertical != bendiness) ||
@@ -410,13 +533,25 @@ function generateHilbertDomino(
                 (corner === UPPER_RIGHT && !vertical),
         }
 
-        if (chapter.sections[0].name && chapter.sections?.length > 0) {
-            // Add a sign to the sky.
-            let sign = createTextPlane(
-                {text: chapter.sections[0].name, links: []},
-                100,
-                8
+        group.add(createQuadRoom(lowerLeft, upperRight, doors))
+
+        await placeObjects(group, chapter, lowerLeft, upperRight)
+    } else if (chapter.sections?.length === 1) {
+        // repeat with subsection
+        group.add(
+            await generateHilbertDomino(
+                chapter.sections[0],
+                lowerLeft,
+                upperRight,
+                vertical,
+                corner,
+                bendiness
             )
+        )
+
+        if (chapter.name) {
+            // Add a sign to the sky.
+            let sign = createTextPlane({text: chapter.name, links: []}, 100, 8)
             sign.rotateX(-Math.PI / 2)
             sign.position.set(
                 lowerLeft.x + width / 2,
@@ -425,8 +560,6 @@ function generateHilbertDomino(
             )
             group.add(sign)
         }
-
-        group.add(createQuadRoom(lowerLeft, upperRight, doors))
     } else {
         let parts = splitIntoKey(chapter.sections, [1, 1], treemapArea)
         let inEdgeDirection = corner === UPPER_LEFT || corner === LOWER_RIGHT
@@ -550,7 +683,7 @@ function generateHilbertDomino(
             indexFingerBendiness = bendiness
         }
         group.add(
-            generateHilbertQuad(
+            await generateHilbertQuad(
                 {sections: parts[0]},
                 p0ll,
                 p0ur,
@@ -585,20 +718,15 @@ function generateHilbertDomino(
             thumbBendiness = false
             indexFingerBendiness = true
         }
-        group.add(
-            generateHilbertQuad(
-                {sections: parts[1]},
-                p1ll,
-                p1ur,
-                openDirection,
-                thumbBendiness,
-                indexFingerBendiness
-            )
+        let quad = await generateHilbertQuad(
+            {sections: parts[1]},
+            p1ll,
+            p1ur,
+            openDirection,
+            thumbBendiness,
+            indexFingerBendiness
         )
-        //console.log("room")
-        //console.log(p1ll)
-        //console.log(p1ur)
-        //group.add(createRoom(p1ll, p1ur))
+        group.add(quad)
     }
 
     return group
@@ -1340,7 +1468,7 @@ function setupSceneOnce() {
 
 function setupScene(everything) {
     // Set players on a random position in a half circle around the entrance.
-    let randomAngle = Math.random() * Math.PI
+    let randomAngle = Math.PI + Math.random() * Math.PI
     let distance = 60
     var initialCameraPosition = new THREE.Vector3(
         Math.cos(randomAngle) * distance,
