@@ -279,7 +279,7 @@ window.onload = async function () {
 
         if (match) {
             lang = match[1]
-            topic = match[2]
+            let topic = match[2]
             document.getElementById("language").value = lang
             document.getElementById("topic").value = topic
             startGeneration()
