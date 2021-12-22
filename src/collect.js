@@ -61,7 +61,7 @@ async function parseArticle(article, lang) {
 
     // Explicitly add introduction section.
     let intro = createSection(article.sections[0], imageURLs, fileNamespace)
-    intro.name = " "
+    intro.name = "Intro"
 
     let exhibition = {
         name: capitalizeFirstLetter(article.title),

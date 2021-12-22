@@ -680,12 +680,12 @@ function setupSceneOnce() {
 
 function setupScene(everything) {
     // Set players on a random position in a half circle around the entrance.
-    let randomAngle = Math.random() * Math.PI
+    let angle = Math.PI / 4 //Math.PI/2 + Math.random() * Math.PI/2
     let distance = 60
     var initialCameraPosition = new THREE.Vector3(
-        Math.cos(randomAngle) * distance,
+        Math.cos(angle) * distance,
         0,
-        Math.sin(randomAngle) * distance
+        Math.sin(angle) * distance
     )
     camera.position.x = initialCameraPosition.x
     camera.position.y = initialCameraPosition.y
