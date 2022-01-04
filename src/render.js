@@ -234,6 +234,16 @@ export function animate() {
     if (moveUp || moveDown)
         velocity.y -= direction.y * movementSpeed * 3 * delta
 
+    if (cursorLocation) {
+        let distanceFromCursor = controls
+            .getObject()
+            .position.distanceTo(cursorLocation)
+        if (distanceFromCursor < 10) {
+            velocity.z = Math.max(velocity.z, 0)
+            console.log("stop!")
+        }
+    }
+
     controls.moveRight(-velocity.x * delta)
     controls.moveForward(-velocity.z * delta)
     controls.getObject().position.y += velocity.y * delta
