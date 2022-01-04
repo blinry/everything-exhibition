@@ -8,10 +8,20 @@ const DOOR_WIDTH = 20
 
 const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.5, 0xcccccc)
 var FLOOR_TEXTURE = loadMaterial("plywood", 0.5, 0x665d48)
+var GROUND_TEXTURE = loadMaterial("beach", 0.5, 0x665d48)
 
 var LINK_TEXTURE = new THREE.MeshBasicMaterial({
     color: 0xcce0ff,
 })
+
+export function createGround() {
+    const geometry = new THREE.BoxGeometry(10000, 0.1, 10000)
+    fixUVs(geometry)
+    const ground = new THREE.Mesh(geometry, GROUND_TEXTURE)
+    ground.position.y = -30
+
+    return ground
+}
 
 export function createAudio(audio, listener) {
     var textPlane = createTextPlane({text: "audio", links: []}, 10, 1)
