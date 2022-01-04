@@ -24,3 +24,9 @@ export function timeReset() {
 export function timeDump() {
     console.log(timings)
 }
+
+export function lerp(a, b, amount) {
+    amount = amount < 0 ? 0 : amount
+    amount = amount > 1 ? 1 : amount
+    return a + (b - a) * amount
+}

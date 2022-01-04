@@ -1,6 +1,6 @@
 import {updateStatus, generateExhibition} from "./main.js"
 import {setPosition, addSketch, clearSketch} from "./multiplayer.js"
-import {timeStart, timeEnd} from "./utils.js"
+import {timeStart, timeEnd, lerp} from "./utils.js"
 import {
     createPicture,
     createAudio,
@@ -65,6 +65,8 @@ const prevGamePads = new Map()
 
 let players = {}
 let sketch = new THREE.Group()
+
+let fps = 0
 
 preloadFont({font: null}, () => {})
 
@@ -187,6 +189,10 @@ function generateImageData(chapter) {
 
 export function animate() {
     const delta = clock.getDelta()
+    if (delta > 0) {
+        fps = lerp(fps, Math.round(1 / delta), 0.01)
+        document.querySelector("#fps").innerHTML = Math.round(fps)
+    }
 
     if (delta > 0.1) {
         // Moving with a delta this big would jump too wide. Do nothing.
