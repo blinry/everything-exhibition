@@ -249,7 +249,7 @@ window.onload = async function () {
     document.getElementById("topic").addEventListener("input", (e) => {
         let text = e.target.value
         if (text === "") {
-            goodSuggestions()
+            //goodSuggestions()
         } else {
             getSuggestions(text)
         }
@@ -270,7 +270,7 @@ window.onload = async function () {
         localStorage.setItem("face", e.target.value)
     })
 
-    goodSuggestions()
+    //goodSuggestions()
 
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
 
