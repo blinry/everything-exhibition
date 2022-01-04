@@ -1,3 +1,5 @@
+import * as THREE from "three"
+
 import {updateStatus, generateExhibition} from "./main.js"
 import {setPosition, addSketch, clearSketch} from "./multiplayer.js"
 import {timeStart, timeEnd, lerp} from "./utils.js"
@@ -7,10 +9,10 @@ import {
     createTextPlane,
     createDoorWall,
     createWall,
+    createFloor,
     WALL_THICKNESS,
 } from "./objects.js"
 
-import * as THREE from "three"
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
 //import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
 //import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
@@ -31,8 +33,6 @@ function isIterable(obj) {
 
 const CANVAS_WIDTH = 1280
 const CANVAS_HEIGHT = 720
-
-var FLOOR_TEXTURE = loadMaterial("plywood", 256, 0x665d48)
 
 let everything
 
@@ -618,36 +618,27 @@ export function setup() {
 }
 
 export function loadMaterial(path, scaling, fallbackColor) {
-    if (window?.SETTINGS?.textures) {
-        let materialData = {
-            map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
-            normal: new THREE.TextureLoader().load(
-                `textures/${path}_nor_gl.png`
-            ),
-            rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
-            arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
-            ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
-        }
-
-        for (const [_, value] of Object.entries(materialData)) {
-            value.wrapS = THREE.RepeatWrapping
-            value.wrapT = THREE.RepeatWrapping
-            value.repeat.set(scaling, scaling)
-        }
-
-        return new THREE.MeshStandardMaterial({
-            map: materialData.map,
-            normalMap: materialData.normal,
-            roughnessMap: materialData.rough,
-            aoMap: materialData.ao,
-            side: THREE.DoubleSide,
-        })
-    } else {
-        return new THREE.MeshStandardMaterial({
-            color: fallbackColor,
-            side: THREE.DoubleSide,
-        })
+    let materialData = {
+        map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
+        normal: new THREE.TextureLoader().load(`textures/${path}_nor_gl.png`),
+        /*rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
+        arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
+        ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),*/
     }
+
+    for (const [_, value] of Object.entries(materialData)) {
+        value.wrapS = THREE.RepeatWrapping
+        value.wrapT = THREE.RepeatWrapping
+        value.repeat.set(scaling, scaling)
+    }
+
+    return new THREE.MeshStandardMaterial({
+        map: materialData.map,
+        normalMap: materialData.normal,
+        /**roughnessMap: materialData.rough,
+        aoMap: materialData.ao,
+        side: THREE.DoubleSide,*/
+    })
 }
 
 function setupSceneOnce() {
@@ -670,14 +661,14 @@ function setupSceneOnce() {
     }
     scene.add(ambient)
 
-    const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
-    const ground = new THREE.Mesh(geometry, FLOOR_TEXTURE)
-    if (window.SETTINGS.shadows) {
-        ground.receiveShadow = true
-    }
-    scene.add(ground)
-    ground.position.y = -30
-    ground.layers.enable(1)
+    //const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
+    //const ground = new THREE.Mesh(geometry, FLOOR_TEXTURE)
+    //if (window.SETTINGS.shadows) {
+    //    ground.receiveShadow = true
+    //}
+    //scene.add(ground)
+    //ground.position.y = -30
+    //ground.layers.enable(1)
 
     const crosshairMaterial = new THREE.MeshBasicMaterial({color: 0xbcc0ef})
     var crosshair = new THREE.Mesh(
@@ -836,13 +827,10 @@ function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
     let roomWidth = Math.max(...wallWidths)
 
     // Add floor.
-    //let floor = new THREE.Mesh(
-    //    new THREE.BoxGeometry(roomWidth, 0.1, roomWidth),
-    //    FLOOR_TEXTURE
-    //)
-    //floor.position.y = -25
-    //floor.position.z = -roomWidth / 2
-    //group.add(floor)
+    let floor = createFloor(roomWidth)
+    floor.position.y = -25
+    floor.position.z = -roomWidth / 2
+    group.add(floor)
 
     // Clone, and add as ceiling.
     //let ceiling = floor.clone()
@@ -1042,7 +1030,10 @@ export async function updateMultiplayer(states, myId) {
     for (let [id, values] of states) {
         if (!players[id]) {
             const geometry = new THREE.CylinderGeometry(5, 5, 10, 32)
-            const material = loadMaterial("plywood", 1, 0xee3333)
+            const material = new THREE.MeshStandardMaterial({
+                color: 0xee3333,
+            })
+
             const player = new THREE.Mesh(geometry, material)
 
             // Add a big marker for the minimap camera.

@@ -1,13 +1,13 @@
 import * as THREE from "three"
 import {Text, getSelectionRects} from "troika-three-text"
 import escapeStringRegexp from "escape-string-regexp"
+import {loadMaterial} from "./render.js"
 
 export const WALL_THICKNESS = 2
 const DOOR_WIDTH = 20
 
-const WALL_TEXTURE = new THREE.MeshStandardMaterial({
-    color: 0xb3b3b3,
-})
+const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.5, 0xcccccc)
+var FLOOR_TEXTURE = loadMaterial("plywood", 0.5, 0x665d48)
 
 var LINK_TEXTURE = new THREE.MeshBasicMaterial({
     color: 0xcce0ff,
@@ -204,20 +204,68 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
     )
 }
 
+function fixUVs(bufferGeometry) {
+    // Iterate through faces and scale the UV coordinates according to their position.
+    for (var i = 0; i < bufferGeometry.attributes.uv.count; i++) {
+        let normalX = bufferGeometry.attributes.normal.getX(i)
+        let normalY = bufferGeometry.attributes.normal.getY(i)
+        let normalZ = bufferGeometry.attributes.normal.getZ(i)
+
+        let positionX = bufferGeometry.attributes.position.getX(i)
+        let positionY = bufferGeometry.attributes.position.getY(i)
+        let positionZ = bufferGeometry.attributes.position.getZ(i)
+
+        var u = bufferGeometry.attributes.uv.getX(i)
+        var v = bufferGeometry.attributes.uv.getY(i)
+
+        let uvScale = 5
+        if (normalX === 1 && normalY === 0 && normalZ === 0) {
+            u *= -positionZ / uvScale
+            v *= positionY / uvScale
+        } else if (normalX === 0 && normalY === 1 && normalZ === 0) {
+            u *= positionX / uvScale
+            v *= -positionZ / uvScale
+        } else if (normalX === 0 && normalY === 0 && normalZ === 1) {
+            u *= positionX / uvScale
+            v *= positionY / uvScale
+        } else if (normalX === -1 && normalY === 0 && normalZ === 0) {
+            u *= positionZ / uvScale
+            v *= -positionY / uvScale
+        } else if (normalX === 0 && normalY === -1 && normalZ === 0) {
+            u *= -positionX / uvScale
+            v *= positionZ / uvScale
+        } else if (normalX === 0 && normalY === 0 && normalZ === -1) {
+            u *= -positionX / uvScale
+            v *= -positionY / uvScale
+        }
+
+        bufferGeometry.attributes.uv.setXY(i, u, v)
+    }
+}
+
+export function createFloor(width) {
+    let floorGeometry = new THREE.BoxGeometry(width, 0.1, width)
+    fixUVs(floorGeometry)
+    let floor = new THREE.Mesh(floorGeometry, FLOOR_TEXTURE)
+    return floor
+}
+
 export function createWall(a, b) {
     const l = a.distanceTo(b) + WALL_THICKNESS
-    var planeGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
-    var planeMaterial = WALL_TEXTURE
-    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    var boxGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
+    fixUVs(boxGeometry)
+
+    var boxMaterial = WALL_TEXTURE
+    var box = new THREE.Mesh(boxGeometry, boxMaterial)
     if (SETTINGS.shadows) {
-        plane.castShadow = true
-        plane.receiveShadow = true
+        box.castShadow = true
+        box.receiveShadow = true
     }
     var center = a.add(b).divideScalar(2)
-    plane.position.x = center.x
-    plane.position.z = center.y
+    box.position.x = center.x
+    box.position.z = center.y
     let rotationAngle = Math.atan2(a.y - b.y, a.x - b.x)
-    plane.rotateY(rotationAngle)
-    plane.layers.enable(1)
-    return plane
+    box.rotateY(rotationAngle)
+    box.layers.enable(1)
+    return box
 }
