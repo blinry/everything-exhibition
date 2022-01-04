@@ -96,6 +96,20 @@ function startGeneration() {
     generateExhibition(topic)
 }
 
+function startRandom() {
+    window
+        .fetch(
+            `${apiURL(
+                lang
+            )}?action=query&format=json&list=random&rnlimit=1&rnnamespace=0&origin=*`
+        )
+        .then((response) => {
+            response.json().then(function (data) {
+                generateExhibition(data.query.random[0].title)
+            })
+        })
+}
+
 export async function generateExhibition(topic) {
     localStorage.setItem("topic", topic)
 
@@ -227,6 +241,10 @@ window.onload = async function () {
     document.getElementById("generate-button").addEventListener("click", () => {
         topicStack = []
         startGeneration()
+    })
+    document.getElementById("random-button").addEventListener("click", () => {
+        topicStack = []
+        startRandom()
     })
     document.getElementById("topic").addEventListener("input", (e) => {
         let text = e.target.value
