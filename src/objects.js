@@ -7,7 +7,6 @@ const DOOR_WIDTH = 20
 
 const WALL_TEXTURE = new THREE.MeshStandardMaterial({
     color: 0xb3b3b3,
-    side: THREE.DoubleSide,
 })
 
 var LINK_TEXTURE = new THREE.MeshBasicMaterial({

@@ -228,21 +228,31 @@ export function animate() {
     direction.y = Number(moveUp) - Number(moveDown)
     direction.normalize()
 
+    // Wall collision detection
+    if (direction.length() > 0) {
+        let rayOrigin = camera.position.clone()
+        let realDirection = direction.clone()
+        realDirection.z *= -1
+        let rayDirection = realDirection.clone()
+        rayDirection.transformDirection(camera.matrixWorld)
+        rayDirection.y = 0
+        rayDirection.normalize()
+
+        raycaster.set(rayOrigin, rayDirection)
+        let intersections = raycaster.intersectObjects(scene.children, true)
+        if (intersections.length > 0) {
+            let closest = intersections[0]
+            if (closest.distance < 12) {
+                direction.set(0, 0, 0)
+            }
+        }
+    }
+
     if (moveForward || moveBackward)
         velocity.z -= direction.z * movementSpeed * delta
     if (moveLeft || moveRight) velocity.x -= direction.x * movementSpeed * delta
     if (moveUp || moveDown)
         velocity.y -= direction.y * movementSpeed * 3 * delta
-
-    if (cursorLocation) {
-        let distanceFromCursor = controls
-            .getObject()
-            .position.distanceTo(cursorLocation)
-        if (distanceFromCursor < 10) {
-            velocity.z = Math.max(velocity.z, 0)
-            console.log("stop!")
-        }
-    }
 
     controls.moveRight(-velocity.x * delta)
     controls.moveForward(-velocity.z * delta)
