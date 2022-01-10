@@ -74,11 +74,8 @@ async function fetchWikiText(article, lang) {
 
 function resolveLink(a, lang) {
     var href = a.href
-    console.log(href)
-    console.log(window.location.origin)
     if (href.startsWith(window.location.origin)) {
         href = href.substring(window.location.origin.length)
-        href = `https://${lang}.wikipedia.org${href}`
     }
     return {text: a.textContent, page: href}
 }
@@ -89,6 +86,25 @@ function parseParagraph(node, lang) {
         text: node.textContent,
         links: links,
     }
+}
+
+function parseList(node) {
+    let paragraph = {text: "", links: []}
+    let lis = node.querySelectorAll("li")
+    if (lis) {
+        for (const li of lis) {
+            paragraph.text += "• " + li.textContent + "\n"
+            for (const a of li.querySelectorAll("a")) {
+                paragraph.links.push({
+                    text: a.textContent,
+                    page: a.href,
+                })
+            }
+        }
+    } else {
+        console.log("Got an empty list?", node)
+    }
+    return paragraph
 }
 
 async function parseArticle(html, lang) {
@@ -128,6 +144,14 @@ async function parseArticle(html, lang) {
                     }
                     currentSection.images.push(image)
                 }
+            } else if (node.classList.contains("reflist")) {
+                if (node.textContent.trim() != "") {
+                    currentSection.paragraphs.push(
+                        parseList(node.querySelector("ol"))
+                    )
+                }
+            } else {
+                console.log("Skipping div with classes " + node.classList)
             }
         } else if (node.nodeName == "#text") {
             if (!node.textContent.match(/^\s*$/)) {
@@ -138,17 +162,7 @@ async function parseArticle(html, lang) {
         } else if (["STYLE", "LINK", "#comment"].includes(node.nodeName)) {
             // Skip, we can't really use those.
         } else if (node.nodeName == "UL") {
-            let paragraph = {text: "", links: []}
-            for (const li of node.querySelectorAll("li")) {
-                paragraph.text += "• " + li.textContent + "\n"
-                for (const a of li.querySelectorAll("a")) {
-                    paragraph.links.push({
-                        text: a.textContent,
-                        page: a.href,
-                    })
-                }
-            }
-            currentSection.paragraphs.push(paragraph)
+            currentSection.paragraphs.push(parseList(node))
         } else {
             console.log("Skipping node of type " + node.nodeName)
             console.log(node)

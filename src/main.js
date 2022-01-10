@@ -93,7 +93,7 @@ function startGeneration() {
     let topicDiv = document.getElementById("topic")
     topicDiv.blur()
 
-    generateExhibition(topic)
+    generateExhibition(`https://${lang}.wikipedia.org/wiki/${topic}`)
 }
 
 function startRandom() {
@@ -105,12 +105,28 @@ function startRandom() {
         )
         .then((response) => {
             response.json().then(function (data) {
-                generateExhibition(data.query.random[0].title)
+                generateExhibition(
+                    `https://${lang}.wikipedia.org/wiki/${data.query.random[0].title}`
+                )
             })
         })
 }
 
-export async function generateExhibition(topic) {
+export async function generateExhibition(url) {
+    if (url.startsWith("/")) {
+        url = `https://${lang}.wikipedia.org${url}`
+    }
+
+    let matches = url.match(/^https:\/\/([a-z]{2}).wikipedia.org\/wiki\/(.+)$/)
+
+    if (!matches) {
+        window.open(url, "_blank")
+        return
+    }
+
+    lang = matches[1]
+    topic = matches[2]
+
     localStorage.setItem("topic", topic)
 
     if (topicStack[topicStack.length - 1] === topic) {
