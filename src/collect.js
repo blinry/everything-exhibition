@@ -13,15 +13,15 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
     let response = await window.fetch(
         `${apiURL(
             lang
-        )}?action=parse&format=json&prop=text&page=${topic}&origin=*`
+        )}?action=parse&format=json&prop=text&page=${topic}&redirects=1&origin=*`
     )
-    let html = await response.json()
+    let json = await response.json()
     let parser = new DOMParser()
     let content = parser
-        .parseFromString(html.parse.text["*"], "text/html")
+        .parseFromString(json.parse.text["*"], "text/html")
         .querySelector(".mw-parser-output")
     console.log(content)
-    let exhibition = await parseArticle(content, lang)
+    let exhibition = await parseArticle(json.parse.title, content, lang)
     console.log(exhibition)
     return exhibition
 }
@@ -107,8 +107,8 @@ function parseList(node) {
     return paragraph
 }
 
-async function parseArticle(html, lang) {
-    let exhibition = {name: "TBD", sections: [], paragraphs: [], images: []}
+async function parseArticle(title, html, lang) {
+    let exhibition = {name: title, sections: [], paragraphs: [], images: []}
     var stack = [exhibition]
     html.childNodes.forEach((node) => {
         var currentSection = stack[stack.length - 1]
@@ -130,6 +130,8 @@ async function parseArticle(html, lang) {
         } else if (node.nodeName == "DIV") {
             if (node.classList.contains("thumb")) {
                 let img = node.querySelector("img")
+                let width = img.dataset.fileWidth
+                let height = img.dataset.fileHeight
                 let caption = node.querySelector(".thumbcaption")
                 let description = undefined
                 if (caption) {
@@ -139,8 +141,8 @@ async function parseArticle(html, lang) {
                     let image = {
                         url: img.src,
                         description: description,
-                        width: 100,
-                        height: 100,
+                        width: width,
+                        height: height,
                     }
                     currentSection.images.push(image)
                 }
@@ -151,7 +153,7 @@ async function parseArticle(html, lang) {
                     )
                 }
             } else {
-                console.log("Skipping div with classes " + node.classList)
+                currentSection.paragraphs.push(parseParagraph(node, lang))
             }
         } else if (node.nodeName == "#text") {
             if (!node.textContent.match(/^\s*$/)) {
