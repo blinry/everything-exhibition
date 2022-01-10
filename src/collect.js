@@ -10,6 +10,23 @@ export function apiURL(languageCode) {
 }
 
 export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
+    let response = await window.fetch(
+        `${apiURL(
+            lang
+        )}?action=parse&format=json&prop=text&page=${topic}&origin=*`
+    )
+    let html = await response.json()
+    let parser = new DOMParser()
+    let content = parser
+        .parseFromString(html.parse.text["*"], "text/html")
+        .querySelector(".mw-parser-output")
+    console.log(content)
+    let exhibition = await parseArticle(content, lang)
+    console.log(exhibition)
+    return exhibition
+}
+
+export async function generateExhibitionDescriptionFromWikipedia2(topic, lang) {
     var tf = timeStart("fetch")
     var wikiText = await fetchWikiText(topic, lang)
     timeEnd(tf)
@@ -55,7 +72,92 @@ async function fetchWikiText(article, lang) {
     return data.query.pages[0].revisions[0].slots.main.content
 }
 
-async function parseArticle(article, lang) {
+function resolveLink(a, lang) {
+    var href = a.href
+    console.log(href)
+    console.log(window.location.origin)
+    if (href.startsWith(window.location.origin)) {
+        href = href.substring(window.location.origin.length)
+        href = `https://${lang}.wikipedia.org${href}`
+    }
+    return {text: a.textContent, page: href}
+}
+
+function parseParagraph(node, lang) {
+    var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a, lang))
+    return {
+        text: node.textContent,
+        links: links,
+    }
+}
+
+async function parseArticle(html, lang) {
+    let exhibition = {name: "TBD", sections: [], paragraphs: [], images: []}
+    var stack = [exhibition]
+    html.childNodes.forEach((node) => {
+        var currentSection = stack[stack.length - 1]
+        if (node.nodeName.match(/^H\d$/)) {
+            let level = parseInt(node.nodeName[1]) - 2
+            let section = {
+                name: node.querySelector(".mw-headline").textContent,
+                paragraphs: [],
+                sections: [],
+                images: [],
+            }
+            const depthIncrease = level - (stack.length - 2)
+            const removeHowMany = -depthIncrease + 1
+            stack.splice(stack.length - removeHowMany, removeHowMany)
+            stack[stack.length - 1].sections.push(section)
+            stack.push(section)
+        } else if (["P", "BLOCKQUOTE"].includes(node.nodeName)) {
+            currentSection.paragraphs.push(parseParagraph(node, lang))
+        } else if (node.nodeName == "DIV") {
+            if (node.classList.contains("thumb")) {
+                let img = node.querySelector("img")
+                let caption = node.querySelector(".thumbcaption")
+                let description = undefined
+                if (caption) {
+                    description = caption.textContent
+                }
+                if (img) {
+                    let image = {
+                        url: img.src,
+                        description: description,
+                        width: 100,
+                        height: 100,
+                    }
+                    currentSection.images.push(image)
+                }
+            }
+        } else if (node.nodeName == "#text") {
+            if (!node.textContent.match(/^\s*$/)) {
+                console.log("Skipping #text node: " + node.textContent)
+            }
+        } else if (node.nodeName == "TABLE") {
+            currentSection.paragraphs.push(parseParagraph(node, lang))
+        } else if (["STYLE", "LINK", "#comment"].includes(node.nodeName)) {
+            // Skip, we can't really use those.
+        } else if (node.nodeName == "UL") {
+            let paragraph = {text: "", links: []}
+            for (const li of node.querySelectorAll("li")) {
+                paragraph.text += "• " + li.textContent + "\n"
+                for (const a of li.querySelectorAll("a")) {
+                    paragraph.links.push({
+                        text: a.textContent,
+                        page: a.href,
+                    })
+                }
+            }
+            currentSection.paragraphs.push(paragraph)
+        } else {
+            console.log("Skipping node of type " + node.nodeName)
+            console.log(node)
+        }
+    })
+    return exhibition
+}
+
+async function parseArticle2(article, lang) {
     const imageURLs = await getImageURLs(article.title, lang)
     const fileNamespace = await getFileNamespace(lang)
 
