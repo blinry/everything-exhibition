@@ -126,25 +126,38 @@ async function parseArticle(title, html, lang) {
             stack[stack.length - 1].sections.push(section)
             stack.push(section)
         } else if (["P", "BLOCKQUOTE"].includes(node.nodeName)) {
-            currentSection.paragraphs.push(parseParagraph(node, lang))
+            if (node.textContent.trim() !== "") {
+                currentSection.paragraphs.push(parseParagraph(node, lang))
+            }
         } else if (node.nodeName == "DIV") {
             if (node.classList.contains("thumb")) {
                 let img = node.querySelector("img")
-                let width = img.dataset.fileWidth
-                let height = img.dataset.fileHeight
-                let caption = node.querySelector(".thumbcaption")
-                let description = undefined
-                if (caption) {
-                    description = caption.textContent
-                }
                 if (img) {
+                    let width =
+                        img.dataset.fileWidth ||
+                        img.style.width.replace("px", "")
+                    let height =
+                        img.dataset.fileHeight ||
+                        img.style.height.replace("px", "")
+                    if (!width) {
+                        console.log(node)
+                        console.log(img)
+                    }
+                    let caption = node.querySelector(".thumbcaption")
+                    let description = undefined
+                    if (caption) {
+                        description = caption.textContent
+                    }
+                    let src = img.src.replace(/\/[0-9]*px-/, `/${width}px-`)
                     let image = {
-                        url: img.src,
+                        url: src,
                         description: description,
                         width: width,
                         height: height,
                     }
                     currentSection.images.push(image)
+                } else {
+                    console.log("No image found in thumb div", node)
                 }
             } else if (node.classList.contains("reflist")) {
                 if (node.textContent.trim() != "") {
