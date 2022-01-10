@@ -129,13 +129,13 @@ export async function generateExhibition(url) {
 
     localStorage.setItem("topic", topic)
 
-    if (topicStack[topicStack.length - 1] === topic) {
+    if (topicStack[topicStack.length - 1] === url) {
         // The user likely refreshed the page, do nothing.
-    } else if (topicStack[topicStack.length - 2] === topic) {
+    } else if (topicStack[topicStack.length - 2] === url) {
         // The user likely clicked on the "back" sign.
         topicStack.pop()
     } else {
-        topicStack.push(topic)
+        topicStack.push(url)
     }
     var previousTopic = topicStack[topicStack.length - 2]
     localStorage.setItem("topicStack", JSON.stringify(topicStack))

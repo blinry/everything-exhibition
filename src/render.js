@@ -491,6 +491,7 @@ export function setup() {
         if (controls.isLocked) {
             mouseDown = true
             if (selectedObject?.myLink) {
+                console.log("clicked ", selectedObject.myLink)
                 generateExhibition(selectedObject.myLink)
             }
         }
