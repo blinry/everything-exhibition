@@ -93,9 +93,6 @@ function resolveLink(a) {
 }
 
 function parseParagraph(node) {
-    node.querySelectorAll("sup.reference").forEach((sup) => {
-        sup.remove()
-    })
     var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a))
     return {
         text: node.textContent.trim(),
@@ -159,7 +156,7 @@ async function parseArticle(title, html) {
     let exhibition = {name: title, sections: [], paragraphs: [], images: []}
     var stack = [exhibition]
 
-    let selectors = ["style", ".mw-cite-backlink"]
+    let selectors = ["style", ".mw-cite-backlink", "sup.reference"]
     selectors.forEach((selector) => {
         html.querySelectorAll(selector).forEach((node) => {
             node.remove()
