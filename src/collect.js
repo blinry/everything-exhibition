@@ -98,7 +98,7 @@ function parseParagraph(node) {
     })
     var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a))
     return {
-        text: node.textContent,
+        text: node.textContent.trim(),
         links: links,
     }
 }
@@ -119,9 +119,53 @@ function parseList(node) {
     return paragraph
 }
 
+function parseImage(node, selector) {
+    if (node.nodeName == "IMG") {
+        var img = node
+    } else {
+        var img = node.querySelector("img")
+    }
+    if (img) {
+        let width = img.dataset.fileWidth || img.style.width.replace("px", "")
+        let height =
+            img.dataset.fileHeight || img.style.height.replace("px", "")
+        if (!width) {
+            console.log(node)
+            console.log(img)
+        }
+
+        let description
+        if (selector) {
+            let caption = node.querySelector(selector)
+            if (caption) {
+                description = parseParagraph(caption)
+            }
+        }
+
+        let src = img.src.replace(/\/[0-9]*px-/, `/${width}px-`)
+        return {
+            url: src,
+            description: description,
+            width: width,
+            height: height,
+        }
+    } else {
+        console.log("No image found in node", node)
+        return undefined
+    }
+}
+
 async function parseArticle(title, html) {
     let exhibition = {name: title, sections: [], paragraphs: [], images: []}
     var stack = [exhibition]
+
+    let selectors = ["style", ".mw-cite-backlink"]
+    selectors.forEach((selector) => {
+        html.querySelectorAll(selector).forEach((node) => {
+            node.remove()
+        })
+    })
+
     html.childNodes.forEach((node) => {
         var currentSection = stack[stack.length - 1]
         if (node.nodeName.match(/^H\d$/)) {
@@ -146,33 +190,29 @@ async function parseArticle(title, html) {
             }
         } else if (node.nodeName == "DIV") {
             if (node.classList.contains("thumb")) {
-                let img = node.querySelector("img")
-                if (img) {
-                    let width =
-                        img.dataset.fileWidth ||
-                        img.style.width.replace("px", "")
-                    let height =
-                        img.dataset.fileHeight ||
-                        img.style.height.replace("px", "")
-                    if (!width) {
-                        console.log(node)
-                        console.log(img)
+                let imgs = node.querySelectorAll("img")
+                if (imgs.length <= 1) {
+                    let image = parseImage(node, ".thumbcaption")
+                    if (image) {
+                        currentSection.images.push(image)
                     }
-                    let caption = node.querySelector(".thumbcaption")
-                    let description = undefined
-                    if (caption) {
-                        description = parseParagraph(caption)
-                    }
-                    let src = img.src.replace(/\/[0-9]*px-/, `/${width}px-`)
-                    let image = {
-                        url: src,
-                        description: description,
-                        width: width,
-                        height: height,
-                    }
-                    currentSection.images.push(image)
                 } else {
-                    console.log("No image found in thumb div", node)
+                    let caption = parseParagraph(
+                        node.querySelector(".thumbcaption")
+                    )
+                    let gallerySection = {
+                        name: caption.text,
+                        paragraphs: [],
+                        sections: [],
+                        images: [],
+                    }
+                    for (const img of imgs) {
+                        let image = parseImage(img, null)
+                        if (image) {
+                            gallerySection.images.push(image)
+                        }
+                    }
+                    currentSection.sections.push(gallerySection)
                 }
             } else if (node.classList.contains("reflist")) {
                 if (node.textContent.trim() != "") {
@@ -181,12 +221,15 @@ async function parseArticle(title, html) {
                     )
                 }
             } else if (
-                node.classList.contains("shortdescription") ||
-                node.classList.contains("toc")
+                ["shortdescription", "toc"].some((c) =>
+                    node.classList.contains(c)
+                )
             ) {
                 // This element is not helpful, skip it.
             } else {
-                currentSection.paragraphs.push(parseParagraph(node))
+                if (node.textContent.trim() != "") {
+                    currentSection.paragraphs.push(parseParagraph(node))
+                }
             }
         } else if (node.nodeName == "#text") {
             if (!node.textContent.match(/^\s*$/)) {
@@ -194,10 +237,19 @@ async function parseArticle(title, html) {
             }
         } else if (node.nodeName == "TABLE") {
             currentSection.paragraphs.push(parseParagraph(node))
-        } else if (["STYLE", "LINK", "#comment"].includes(node.nodeName)) {
+        } else if (["LINK", "#comment"].includes(node.nodeName)) {
             // Skip, we can't really use those.
         } else if (node.nodeName == "UL") {
-            currentSection.paragraphs.push(parseList(node))
+            if (node.classList.contains("gallery")) {
+                node.querySelectorAll(".gallerybox").forEach((box) => {
+                    let image = parseImage(box, ".gallerytext")
+                    if (image) {
+                        currentSection.images.push(image)
+                    }
+                })
+            } else {
+                currentSection.paragraphs.push(parseList(node))
+            }
         } else {
             console.log("Skipping node of type " + node.nodeName)
             console.log(node)
