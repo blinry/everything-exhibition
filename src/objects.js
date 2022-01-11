@@ -49,11 +49,7 @@ export function createAudio(audio, listener) {
 export function createPicture(img) {
     var plane = createImagePlane(img.url, 30, null, img.width, img.height)
     if (img.description) {
-        var textPlane = createTextPlane(
-            {text: img.description, links: []},
-            10,
-            0.5
-        )
+        var textPlane = createTextPlane(img.description, 10, 0.5)
         textPlane.position.z = 1
         textPlane.position.y = -5
         plane.add(textPlane)

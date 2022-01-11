@@ -8,6 +8,8 @@ function capitalizeFirstLetter(string) {
 export function apiURL(domain) {
     if (domain.match(/wikipedia\.org$/)) {
         return `${domain}/w/api.php`
+    } else if (domain.match(/fandom\.com$/)) {
+        return `${domain}/api.php`
     } else if (domain.match(/stratum0\.org$/)) {
         return `${domain}/mediawiki/api.php`
     } else {
@@ -91,6 +93,9 @@ function resolveLink(a) {
 }
 
 function parseParagraph(node) {
+    node.querySelectorAll("sup.reference").forEach((sup) => {
+        sup.remove()
+    })
     var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a))
     return {
         text: node.textContent,
@@ -156,7 +161,7 @@ async function parseArticle(title, html) {
                     let caption = node.querySelector(".thumbcaption")
                     let description = undefined
                     if (caption) {
-                        description = caption.textContent
+                        description = parseParagraph(caption)
                     }
                     let src = img.src.replace(/\/[0-9]*px-/, `/${width}px-`)
                     let image = {
@@ -175,6 +180,11 @@ async function parseArticle(title, html) {
                         parseList(node.querySelector("ol"))
                     )
                 }
+            } else if (
+                node.classList.contains("shortdescription") ||
+                node.classList.contains("toc")
+            ) {
+                // This element is not helpful, skip it.
             } else {
                 currentSection.paragraphs.push(parseParagraph(node))
             }
