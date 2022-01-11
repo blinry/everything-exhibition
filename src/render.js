@@ -1100,6 +1100,10 @@ export async function updateMultiplayer(states, myId) {
             }
 
             if (players[id].myName !== values.name) {
+                const match = values.name.match(
+                    /[\uac00-\ud7af]|[\u1100-\u11ff]|[\u3130-\u318f]|[\ua960-\ua97f]|[\ud7b0-\ud7ff]/g
+                )
+
                 if (players[id].getObjectByName("name")) {
                     players[id].remove(players[id].getObjectByName("name"))
                 }
@@ -1107,6 +1111,9 @@ export async function updateMultiplayer(states, myId) {
                 textObject.text = values.name
                 textObject.fontSize = 2
                 textObject.font = "/fonts/Roboto-Regular.ttf"
+                if (match) {
+                    textObject.font = "/fonts/NotoSansKR-Regular.otf"
+                }
                 textObject.anchorX = "center"
                 textObject.anchorY = "middle"
                 textObject.color = 0x000000

@@ -115,10 +115,17 @@ export function createTextPlane(paragraph, width, scale = 1) {
     //    plane.myLink = link
     //}
 
+    const match = text.match(
+        /[\uac00-\ud7af]|[\u1100-\u11ff]|[\u3130-\u318f]|[\ua960-\ua97f]|[\ud7b0-\ud7ff]/g
+    )
+
     var textObject = new Text()
     textObject.text = text
     textObject.fontSize = 1 * scale
-    textObject.font = "/fonts/Roboto-Regular.ttf"
+    textObject.font = "/fonts/GoNotoCurrent.ttf"
+    if (match) {
+        textObject.font = "/fonts/NotoSansKR-Regular.otf"
+    }
     textObject.anchorX = "center"
     textObject.anchorY = "middle"
     textObject.color = 0x000000
