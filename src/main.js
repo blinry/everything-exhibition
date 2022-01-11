@@ -118,12 +118,47 @@ function startRandom() {
         })
 }
 
+function pickCorrectDomainOption(url) {
+    let regex = /^(https:\/\/[^\/]*)\/wiki\/([^#]*)$/
+    let match = url.match(regex)
+
+    if (match) {
+        domain = match[1]
+        let topic = match[2]
+        console.log(domain)
+        // Scan through available options and check whether domain is one of them.
+        let languageSelect = document.getElementById("language")
+        console.log(languageSelect.children)
+        languageSelect.selectedIndex = -1
+        for (let i = 0; i < languageSelect.children.length; i++) {
+            console.log(languageSelect.children[i].value)
+            if (languageSelect.children[i].value === domain) {
+                languageSelect.selectedIndex = i
+                break
+            }
+        }
+        console.log(languageSelect.selectedIndex)
+        if (languageSelect.selectedIndex === -1) {
+            let option = document.createElement("option")
+            option.innerHTML = domain
+            option.value = domain
+            languageSelect.appendChild(option)
+            languageSelect.value = domain
+        }
+
+        document.getElementById("language").value = domain
+        document.getElementById("topic").value = topic
+    }
+}
+
 export async function generateExhibition(url) {
     if (url.startsWith("/")) {
         url = `${domain}${url}`
     }
 
-    let matches = url.match(/^(https:\/\/[^\/]*)\/wiki\/(.+)$/)
+    pickCorrectDomainOption(url)
+
+    let matches = url.match(/^(https:\/\/[^\/]*)\/wiki\/([^?]+)(\?.*)?$/)
 
     if (!matches) {
         window.open(url, "_blank")
@@ -183,28 +218,20 @@ async function initializeMultiplayer(topic) {
     document.getElementById("color").dispatchEvent(new Event("input"))
 }
 
-function runQuery(query, callback) {
+async function runQuery(query) {
     query = query.replace(/%/g, "%25")
     query = query.replace(/&/g, "%26")
 
-    window
-        .fetch(WIKIDATA_API_URL + query)
-        .then(function (response) {
-            if (response.status !== 200) {
-                updateStatus(
-                    `The query took too long or failed. This is probably a bug, let us know! (Status code: ${response.status})`
-                )
-                return
-            }
-            response.json().then(function (data) {
-                callback(data.results.bindings)
-            })
-        })
-        .catch(function (err) {
-            updateStatus(
-                'An error occurred while running the query: "' + err + '"'
-            )
-        })
+    let response = await window.fetch(WIKIDATA_API_URL + query)
+
+    if (response.status !== 200) {
+        updateStatus(
+            `The query took too long or failed. This is probably a bug, let us know! (Status code: ${response.status})`
+        )
+        return
+    }
+    let data = await response.json()
+    return data.results.bindings
 }
 
 function populateFaceOptions() {
@@ -215,7 +242,14 @@ function populateFaceOptions() {
     addFaceOption("UwU")
 }
 
-function populateLanguageOptions() {
+async function populateLanguageOptions() {
+    let select = document.querySelector("select")
+
+    let option = document.createElement("option")
+    option.innerHTML = "Wikimedia Commons"
+    option.value = "https://commons.wikimedia.org"
+    select.appendChild(option)
+
     const langQuery = `
 SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
   ?wiki wdt:P31 wd:Q10876391;
@@ -228,24 +262,24 @@ SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARAT
 }
 GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
     `
-    runQuery(langQuery, (results) => {
-        let select = document.querySelector("select")
-        for (let line of results) {
-            let option = document.createElement("option")
-            option.innerHTML =
-                `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
-                    40
-                )
-            option.value = `https://${line.languageCode.value}.wikipedia.org`
-            select.appendChild(option)
-        }
+    let results = await runQuery(langQuery)
+    console.log(results)
 
-        document.querySelector("#language").value = domain
-    })
+    for (let line of results) {
+        let option = document.createElement("option")
+        option.innerHTML =
+            `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
+                40
+            )
+        option.value = `https://${line.languageCode.value}.wikipedia.org`
+        select.appendChild(option)
+    }
+
+    document.querySelector("#language").value = domain
 }
 
 window.onload = async function () {
-    populateLanguageOptions()
+    await populateLanguageOptions()
     populateFaceOptions()
     document.getElementById("language").addEventListener("change", function () {
         domain = this.value
@@ -313,32 +347,7 @@ window.onload = async function () {
     console.log(url)
 
     if (url) {
-        let regex = /^(https:\/\/[^\/]*)\/wiki\/([^#]*)$/
-        let match = url.match(regex)
-
-        if (match) {
-            domain = match[1]
-            let topic = match[2]
-            // Scan through available options and check whether domain is one of them.
-            let languageSelect = document.getElementById("language")
-            for (let i = 0; i < languageSelect.length; i++) {
-                if (languageSelect[i].value === domain) {
-                    languageSelect.selectedIndex = i
-                    break
-                }
-            }
-            if (languageSelect.selectedIndex === -1) {
-                let option = document.createElement("option")
-                option.innerHTML = domain
-                option.value = domain
-                languageSelect.appendChild(option)
-                languageSelect.value = domain
-            }
-
-            document.getElementById("language").value = domain
-            document.getElementById("topic").value = topic
-        }
-
+        pickCorrectDomainOption(url)
         startGeneration()
     } else {
         domain = "https://en.wikipedia.org"
