@@ -5,14 +5,24 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-export function apiURL(languageCode) {
-    return `https://${languageCode}.wikipedia.org/w/api.php`
+export function apiURL(domain) {
+    if (domain.match(/wikipedia\.org$/)) {
+        return `${domain}/w/api.php`
+    } else if (domain.match(/stratum0\.org$/)) {
+        return `${domain}/mediawiki/api.php`
+    } else {
+        console.log("Unknown domain, guessing API endpoint:", domain)
+        return `${domain}/w/api.php`
+    }
 }
 
-export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
+export async function generateExhibitionDescriptionFromWikipedia(
+    topic,
+    domain
+) {
     let response = await window.fetch(
         `${apiURL(
-            lang
+            domain
         )}?action=parse&format=json&prop=text&page=${topic}&redirects=1&origin=*`
     )
     let json = await response.json()
@@ -21,7 +31,7 @@ export async function generateExhibitionDescriptionFromWikipedia(topic, lang) {
         .parseFromString(json.parse.text["*"], "text/html")
         .querySelector(".mw-parser-output")
     console.log(content)
-    let exhibition = await parseArticle(json.parse.title, content, lang)
+    let exhibition = await parseArticle(json.parse.title, content)
     console.log(exhibition)
     return exhibition
 }
@@ -61,10 +71,10 @@ export async function generateExhibitionDescriptionFromWikipedia2(topic, lang) {
     return exhibition
 }
 
-async function fetchWikiText(article, lang) {
+async function fetchWikiText(article, domain) {
     let response = await window.fetch(
         `${apiURL(
-            lang
+            domain
         )}?action=query&format=json&prop=revisions&titles=${article}&formatversion=2&rvprop=content&rvslots=*&origin=*`
     )
     let data = await response.json()
@@ -72,7 +82,7 @@ async function fetchWikiText(article, lang) {
     return data.query.pages[0].revisions[0].slots.main.content
 }
 
-function resolveLink(a, lang) {
+function resolveLink(a) {
     var href = a.href
     if (href.startsWith(window.location.origin)) {
         href = href.substring(window.location.origin.length)
@@ -80,8 +90,8 @@ function resolveLink(a, lang) {
     return {text: a.textContent, page: href}
 }
 
-function parseParagraph(node, lang) {
-    var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a, lang))
+function parseParagraph(node) {
+    var links = [...node.querySelectorAll("a")].map((a) => resolveLink(a))
     return {
         text: node.textContent,
         links: links,
@@ -95,10 +105,7 @@ function parseList(node) {
         for (const li of lis) {
             paragraph.text += "• " + li.textContent + "\n"
             for (const a of li.querySelectorAll("a")) {
-                paragraph.links.push({
-                    text: a.textContent,
-                    page: a.href,
-                })
+                paragraph.links.push(resolveLink(a))
             }
         }
     } else {
@@ -107,7 +114,7 @@ function parseList(node) {
     return paragraph
 }
 
-async function parseArticle(title, html, lang) {
+async function parseArticle(title, html) {
     let exhibition = {name: title, sections: [], paragraphs: [], images: []}
     var stack = [exhibition]
     html.childNodes.forEach((node) => {
@@ -121,13 +128,16 @@ async function parseArticle(title, html, lang) {
                 images: [],
             }
             const depthIncrease = level - (stack.length - 2)
-            const removeHowMany = -depthIncrease + 1
+            let removeHowMany = -depthIncrease + 1
+            if (removeHowMany > stack.length - 1) {
+                removeHowMany = stack.length - 1
+            }
             stack.splice(stack.length - removeHowMany, removeHowMany)
             stack[stack.length - 1].sections.push(section)
             stack.push(section)
         } else if (["P", "BLOCKQUOTE"].includes(node.nodeName)) {
             if (node.textContent.trim() !== "") {
-                currentSection.paragraphs.push(parseParagraph(node, lang))
+                currentSection.paragraphs.push(parseParagraph(node))
             }
         } else if (node.nodeName == "DIV") {
             if (node.classList.contains("thumb")) {
@@ -166,14 +176,14 @@ async function parseArticle(title, html, lang) {
                     )
                 }
             } else {
-                currentSection.paragraphs.push(parseParagraph(node, lang))
+                currentSection.paragraphs.push(parseParagraph(node))
             }
         } else if (node.nodeName == "#text") {
             if (!node.textContent.match(/^\s*$/)) {
                 console.log("Skipping #text node: " + node.textContent)
             }
         } else if (node.nodeName == "TABLE") {
-            currentSection.paragraphs.push(parseParagraph(node, lang))
+            currentSection.paragraphs.push(parseParagraph(node))
         } else if (["STYLE", "LINK", "#comment"].includes(node.nodeName)) {
             // Skip, we can't really use those.
         } else if (node.nodeName == "UL") {

@@ -7,7 +7,7 @@ import {setup, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
-var lang = localStorage.getItem("lang") || "en"
+var domain
 var topicStack
 
 String.prototype.trunc =
@@ -20,7 +20,7 @@ function getSuggestions(value) {
     window
         .fetch(
             `${apiURL(
-                lang
+                domain
             )}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
         )
         .then((response) => {
@@ -39,7 +39,7 @@ function randomSuggestions() {
     window
         .fetch(
             `${apiURL(
-                lang
+                domain
             )}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
         )
         .then((response) => {
@@ -88,25 +88,31 @@ export function updateStatus(text) {
 }
 
 function startGeneration() {
-    let topic = document.getElementById("topic").value
+    let domainDiv = document.getElementById("language")
+    domain = domainDiv.value
 
     let topicDiv = document.getElementById("topic")
     topicDiv.blur()
 
-    generateExhibition(`https://${lang}.wikipedia.org/wiki/${topic}`)
+    let topic = topicDiv.value
+
+    console.log(domain)
+    let url = `${domain}/wiki/${topic}`
+    localStorage.setItem("url", url)
+    generateExhibition(url)
 }
 
 function startRandom() {
     window
         .fetch(
             `${apiURL(
-                lang
+                domain
             )}?action=query&format=json&list=random&rnlimit=1&rnnamespace=0&origin=*`
         )
         .then((response) => {
             response.json().then(function (data) {
                 generateExhibition(
-                    `https://${lang}.wikipedia.org/wiki/${data.query.random[0].title}`
+                    `${domain}/wiki/${data.query.random[0].title}`
                 )
             })
         })
@@ -114,20 +120,18 @@ function startRandom() {
 
 export async function generateExhibition(url) {
     if (url.startsWith("/")) {
-        url = `https://${lang}.wikipedia.org${url}`
+        url = `${domain}${url}`
     }
 
-    let matches = url.match(/^https:\/\/([a-z]{2}).wikipedia.org\/wiki\/(.+)$/)
+    let matches = url.match(/^(https:\/\/[^\/]*)\/wiki\/(.+)$/)
 
     if (!matches) {
         window.open(url, "_blank")
         return
     }
 
-    lang = matches[1]
+    domain = matches[1]
     topic = matches[2]
-
-    localStorage.setItem("topic", topic)
 
     if (topicStack[topicStack.length - 1] === url) {
         // The user likely refreshed the page, do nothing.
@@ -156,11 +160,11 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    location.hash = `https://${lang}.wikipedia.org/wiki/${topic}`
+    location.hash = `${domain}/wiki/${topic}`
 
     var exhibition = await generateExhibitionDescriptionFromWikipedia(
         topic,
-        lang
+        domain
     )
     exhibition.previous = previousTopic
     await initializeMultiplayer(exhibition.name)
@@ -232,11 +236,11 @@ GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
                 `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
                     40
                 )
-            option.value = line.languageCode.value
+            option.value = `https://${line.languageCode.value}.wikipedia.org`
             select.appendChild(option)
         }
 
-        document.querySelector("#language").value = lang
+        document.querySelector("#language").value = domain
     })
 }
 
@@ -244,8 +248,7 @@ window.onload = async function () {
     populateLanguageOptions()
     populateFaceOptions()
     document.getElementById("language").addEventListener("change", function () {
-        lang = this.value
-        localStorage.setItem("lang", lang)
+        domain = this.value
     })
 
     document.getElementById("topic").addEventListener("keyup", (e) => {
@@ -301,27 +304,45 @@ window.onload = async function () {
                 .padStart(6, "0")
     document.getElementById("color").value = color
 
-    // Set or load name.
-
     if (location.hash) {
         // Parse language and topic from Wikipedia URL.
-        let url = decodeURIComponent(location.hash.substr(1))
-        console.log(url)
+        var url = decodeURIComponent(location.hash.substr(1))
+    } else {
+        var url = localStorage.getItem("url")
+    }
+    console.log(url)
 
-        let regex = /^https:\/\/([^.]*)\.wikipedia\.org\/wiki\/([^#]*)$/
+    if (url) {
+        let regex = /^(https:\/\/[^\/]*)\/wiki\/([^#]*)$/
         let match = url.match(regex)
 
         if (match) {
-            lang = match[1]
+            domain = match[1]
             let topic = match[2]
-            document.getElementById("language").value = lang
+            // Scan through available options and check whether domain is one of them.
+            let languageSelect = document.getElementById("language")
+            for (let i = 0; i < languageSelect.length; i++) {
+                if (languageSelect[i].value === domain) {
+                    languageSelect.selectedIndex = i
+                    break
+                }
+            }
+            if (languageSelect.selectedIndex === -1) {
+                let option = document.createElement("option")
+                option.innerHTML = domain
+                option.value = domain
+                languageSelect.appendChild(option)
+                languageSelect.value = domain
+            }
+
+            document.getElementById("language").value = domain
             document.getElementById("topic").value = topic
-            startGeneration()
         }
-    } else {
-        document.getElementById("topic").value =
-            localStorage.getItem("topic") || "Lebkuchen"
+
         startGeneration()
+    } else {
+        domain = "https://en.wikipedia.org"
+        startRandom()
     }
 
     let name = localStorage.getItem("name") || "squirrel"
