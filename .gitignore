@@ -2,3 +2,5 @@
 /dist/index.*
 /.parcel-cache/
 *.kdev4
+
+*.kate-swp

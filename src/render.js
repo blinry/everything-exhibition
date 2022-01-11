@@ -10,6 +10,7 @@ import {
     createDoorWall,
     createWall,
     createFloor,
+    createGround,
     WALL_THICKNESS,
 } from "./objects.js"
 
@@ -662,8 +663,7 @@ function setupSceneOnce() {
     }
     scene.add(ambient)
 
-    //const geometry = new THREE.CylinderGeometry(4000, 4000, 10, 128)
-    //const ground = new THREE.Mesh(geometry, FLOOR_TEXTURE)
+    scene.add(createGround())
     //if (window.SETTINGS.shadows) {
     //    ground.receiveShadow = true
     //}
