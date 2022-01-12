@@ -2,7 +2,12 @@ window.SETTINGS = {}
 
 const WIKIDATA_API_URL =
     "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
-import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
+import {
+    apiURL,
+    prefixOfDomain,
+    mainArticle,
+    generateExhibitionDescriptionFromWikipedia,
+} from "./collect.js"
 import {setup, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
@@ -16,10 +21,10 @@ String.prototype.trunc =
         return this.length > n ? this.substr(0, n - 1) + "&hellip;" : this
     }
 
-function getSuggestions(value) {
+async function getSuggestions(value) {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
         )
@@ -35,10 +40,10 @@ function getSuggestions(value) {
         })
 }
 
-function randomSuggestions() {
+async function randomSuggestions() {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
         )
@@ -87,7 +92,7 @@ export function updateStatus(text) {
     document.querySelector("#status").innerHTML = text
 }
 
-function startGeneration() {
+async function startGeneration() {
     let domainDiv = document.getElementById("language")
     domain = domainDiv.value
 
@@ -97,25 +102,71 @@ function startGeneration() {
     let topic = topicDiv.value
 
     console.log(domain)
-    let url = `${domain}/wiki/${topic}`
+    let prefix = await prefixOfDomain(domain)
+    let url = `${domain}/${prefix}${topic}`
     localStorage.setItem("url", url)
     generateExhibition(url)
 }
 
-function startRandom() {
+async function startRandom() {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=query&format=json&list=random&rnlimit=1&rnnamespace=0&origin=*`
         )
         .then((response) => {
-            response.json().then(function (data) {
+            response.json().then(async function (data) {
+                let prefix = await prefixOfDomain(domain)
                 generateExhibition(
-                    `${domain}/wiki/${data.query.random[0].title}`
+                    `${domain}/${prefix}${data.query.random[0].title}`
                 )
             })
         })
+}
+
+async function parseURL(url) {
+    let parts = url.split("/")
+    let domain = "https://" + parts[2]
+    let remaining = parts.slice(3).join("/")
+    let topic = remaining.replace(/^(index\.php|wiki)\//, "")
+
+    if (topic == null || topic == "") {
+        topic = await mainArticle(domain)
+    }
+
+    return {domain, topic}
+}
+
+async function pickCorrectDomainOption(url) {
+    let parsedURL = await parseURL(url)
+
+    if (parsedURL.domain) {
+        domain = parsedURL.domain
+    }
+
+    if (parsedURL.topic) {
+        let topic = parsedURL.topic
+        // Scan through available options and check whether domain is one of them.
+        let languageSelect = document.getElementById("language")
+        languageSelect.selectedIndex = -1
+        for (let i = 0; i < languageSelect.children.length; i++) {
+            if (languageSelect.children[i].value === domain) {
+                languageSelect.selectedIndex = i
+                break
+            }
+        }
+        if (languageSelect.selectedIndex === -1) {
+            let option = document.createElement("option")
+            option.innerHTML = domain
+            option.value = domain
+            languageSelect.appendChild(option)
+            languageSelect.value = domain
+        }
+
+        document.getElementById("language").value = domain
+        document.getElementById("topic").value = topic
+    }
 }
 
 export async function generateExhibition(url) {
@@ -123,15 +174,20 @@ export async function generateExhibition(url) {
         url = `${domain}${url}`
     }
 
-    let matches = url.match(/^(https:\/\/[^\/]*)\/wiki\/(.+)$/)
+    let parsedURL = await parseURL(url)
 
-    if (!matches) {
+    let api = await apiURL(parsedURL.domain)
+
+    if (!api) {
         window.open(url, "_blank")
         return
     }
 
-    domain = matches[1]
-    topic = matches[2]
+    domain = parsedURL.domain
+
+    let topic = parsedURL.topic
+
+    await pickCorrectDomainOption(url)
 
     if (topicStack[topicStack.length - 1] === url) {
         // The user likely refreshed the page, do nothing.
@@ -160,7 +216,7 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    location.hash = `${domain}/wiki/${topic}`
+    location.hash = url
 
     var exhibition = await generateExhibitionDescriptionFromWikipedia(
         topic,
@@ -183,28 +239,20 @@ async function initializeMultiplayer(topic) {
     document.getElementById("color").dispatchEvent(new Event("input"))
 }
 
-function runQuery(query, callback) {
+async function runQuery(query) {
     query = query.replace(/%/g, "%25")
     query = query.replace(/&/g, "%26")
 
-    window
-        .fetch(WIKIDATA_API_URL + query)
-        .then(function (response) {
-            if (response.status !== 200) {
-                updateStatus(
-                    `The query took too long or failed. This is probably a bug, let us know! (Status code: ${response.status})`
-                )
-                return
-            }
-            response.json().then(function (data) {
-                callback(data.results.bindings)
-            })
-        })
-        .catch(function (err) {
-            updateStatus(
-                'An error occurred while running the query: "' + err + '"'
-            )
-        })
+    let response = await window.fetch(WIKIDATA_API_URL + query)
+
+    if (response.status !== 200) {
+        updateStatus(
+            `The query took too long or failed. This is probably a bug, let us know! (Status code: ${response.status})`
+        )
+        return
+    }
+    let data = await response.json()
+    return data.results.bindings
 }
 
 function populateFaceOptions() {
@@ -215,7 +263,14 @@ function populateFaceOptions() {
     addFaceOption("UwU")
 }
 
-function populateLanguageOptions() {
+async function populateLanguageOptions() {
+    let select = document.querySelector("select")
+
+    let option = document.createElement("option")
+    option.innerHTML = "Wikimedia Commons"
+    option.value = "https://commons.wikimedia.org"
+    select.appendChild(option)
+
     const langQuery = `
 SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
   ?wiki wdt:P31 wd:Q10876391;
@@ -228,49 +283,52 @@ SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARAT
 }
 GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
     `
-    runQuery(langQuery, (results) => {
-        let select = document.querySelector("select")
-        for (let line of results) {
-            let option = document.createElement("option")
-            option.innerHTML =
-                `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
-                    40
-                )
-            option.value = `https://${line.languageCode.value}.wikipedia.org`
-            select.appendChild(option)
-        }
+    let results = await runQuery(langQuery)
 
-        document.querySelector("#language").value = domain
-    })
+    for (let line of results) {
+        let option = document.createElement("option")
+        option.innerHTML =
+            `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
+                40
+            )
+        option.value = `https://${line.languageCode.value}.wikipedia.org`
+        select.appendChild(option)
+    }
+
+    document.querySelector("#language").value = domain
 }
 
 window.onload = async function () {
-    populateLanguageOptions()
+    await populateLanguageOptions()
     populateFaceOptions()
     document.getElementById("language").addEventListener("change", function () {
         domain = this.value
     })
 
-    document.getElementById("topic").addEventListener("keyup", (e) => {
+    document.getElementById("topic").addEventListener("keyup", async (e) => {
         if (e.key === "Enter") {
             topicStack = []
-            startGeneration()
+            await startGeneration()
         }
     })
-    document.getElementById("generate-button").addEventListener("click", () => {
-        topicStack = []
-        startGeneration()
-    })
-    document.getElementById("random-button").addEventListener("click", () => {
-        topicStack = []
-        startRandom()
-    })
-    document.getElementById("topic").addEventListener("input", (e) => {
+    document
+        .getElementById("generate-button")
+        .addEventListener("click", async () => {
+            topicStack = []
+            await startGeneration()
+        })
+    document
+        .getElementById("random-button")
+        .addEventListener("click", async function () {
+            topicStack = []
+            await startRandom()
+        })
+    document.getElementById("topic").addEventListener("input", async (e) => {
         let text = e.target.value
         if (text === "") {
             //goodSuggestions()
         } else {
-            getSuggestions(text)
+            await getSuggestions(text)
         }
     })
 
@@ -310,40 +368,22 @@ window.onload = async function () {
     } else {
         var url = localStorage.getItem("url")
     }
-    console.log(url)
 
     if (url) {
-        let regex = /^(https:\/\/[^\/]*)\/wiki\/([^#]*)$/
-        let match = url.match(regex)
-
-        if (match) {
-            domain = match[1]
-            let topic = match[2]
-            // Scan through available options and check whether domain is one of them.
-            let languageSelect = document.getElementById("language")
-            for (let i = 0; i < languageSelect.length; i++) {
-                if (languageSelect[i].value === domain) {
-                    languageSelect.selectedIndex = i
-                    break
-                }
-            }
-            if (languageSelect.selectedIndex === -1) {
-                let option = document.createElement("option")
-                option.innerHTML = domain
-                option.value = domain
-                languageSelect.appendChild(option)
-                languageSelect.value = domain
-            }
-
-            document.getElementById("language").value = domain
-            document.getElementById("topic").value = topic
-        }
-
-        startGeneration()
+        await pickCorrectDomainOption(url)
+        generateExhibition(url) // TODO also put in localstorage
     } else {
         domain = "https://en.wikipedia.org"
-        startRandom()
+        await startRandom()
     }
+
+    window.addEventListener("hashchange", async function () {
+        if (location.hash) {
+            let url = decodeURIComponent(location.hash.substr(1))
+            await pickCorrectDomainOption(url)
+            generateExhibition(url) // TODO also put in localstorage
+        }
+    })
 
     let name = localStorage.getItem("name") || "squirrel"
     document.getElementById("name").value = name
