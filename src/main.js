@@ -160,7 +160,7 @@ export async function generateExhibition(url) {
     console.log(matches)
 
     domain = matches[1]
-    topic = matches[3]
+    let topic = matches[3]
 
     let api = await apiURL(domain)
 
