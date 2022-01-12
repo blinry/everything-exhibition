@@ -382,6 +382,14 @@ window.onload = async function () {
         await startRandom()
     }
 
+    window.addEventListener("hashchange", async function () {
+        if (location.hash) {
+            let url = decodeURIComponent(location.hash.substr(1))
+            await pickCorrectDomainOption(url)
+            generateExhibition(url) // TODO also put in localstorage
+        }
+    })
+
     let name = localStorage.getItem("name") || "squirrel"
     document.getElementById("name").value = name
 
