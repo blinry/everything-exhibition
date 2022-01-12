@@ -16,10 +16,10 @@ String.prototype.trunc =
         return this.length > n ? this.substr(0, n - 1) + "&hellip;" : this
     }
 
-function getSuggestions(value) {
+async function getSuggestions(value) {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=opensearch&format=json&formatversion=2&search=${value}&namespace=0&limit=10&origin=*`
         )
@@ -35,10 +35,10 @@ function getSuggestions(value) {
         })
 }
 
-function randomSuggestions() {
+async function randomSuggestions() {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=query&format=json&list=random&rnlimit=10&rnnamespace=0&origin=*`
         )
@@ -102,10 +102,10 @@ function startGeneration() {
     generateExhibition(url)
 }
 
-function startRandom() {
+async function startRandom() {
     window
         .fetch(
-            `${apiURL(
+            `${await apiURL(
                 domain
             )}?action=query&format=json&list=random&rnlimit=1&rnnamespace=0&origin=*`
         )
@@ -119,7 +119,7 @@ function startRandom() {
 }
 
 function pickCorrectDomainOption(url) {
-    let regex = /^(https:\/\/[^\/]*)\/wiki\/([^#]*)$/
+    let regex = /^(https:\/\/[^\/]*)\/(wiki\/)?([^#]*)$/
     let match = url.match(regex)
 
     if (match) {
@@ -131,7 +131,6 @@ function pickCorrectDomainOption(url) {
         console.log(languageSelect.children)
         languageSelect.selectedIndex = -1
         for (let i = 0; i < languageSelect.children.length; i++) {
-            console.log(languageSelect.children[i].value)
             if (languageSelect.children[i].value === domain) {
                 languageSelect.selectedIndex = i
                 break
@@ -156,17 +155,21 @@ export async function generateExhibition(url) {
         url = `${domain}${url}`
     }
 
-    pickCorrectDomainOption(url)
+    console.log(url)
+    let matches = url.match(/^(https:\/\/[^\/]*)\/(wiki\/)?([^?]+)(\?.*)?$/)
+    console.log(matches)
 
-    let matches = url.match(/^(https:\/\/[^\/]*)\/wiki\/([^?]+)(\?.*)?$/)
+    domain = matches[1]
+    topic = matches[3]
 
-    if (!matches) {
+    let api = await apiURL(domain)
+
+    if (!api) {
         window.open(url, "_blank")
         return
     }
 
-    domain = matches[1]
-    topic = matches[2]
+    pickCorrectDomainOption(url)
 
     if (topicStack[topicStack.length - 1] === url) {
         // The user likely refreshed the page, do nothing.
@@ -195,7 +198,7 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    location.hash = `${domain}/wiki/${topic}`
+    location.hash = url
 
     var exhibition = await generateExhibitionDescriptionFromWikipedia(
         topic,
@@ -295,16 +298,18 @@ window.onload = async function () {
         topicStack = []
         startGeneration()
     })
-    document.getElementById("random-button").addEventListener("click", () => {
-        topicStack = []
-        startRandom()
-    })
-    document.getElementById("topic").addEventListener("input", (e) => {
+    document
+        .getElementById("random-button")
+        .addEventListener("click", async function () {
+            topicStack = []
+            await startRandom()
+        })
+    document.getElementById("topic").addEventListener("input", async (e) => {
         let text = e.target.value
         if (text === "") {
             //goodSuggestions()
         } else {
-            getSuggestions(text)
+            await getSuggestions(text)
         }
     })
 
@@ -348,10 +353,10 @@ window.onload = async function () {
 
     if (url) {
         pickCorrectDomainOption(url)
-        startGeneration()
+        generateExhibition(url) // TODO also put in localstorage
     } else {
         domain = "https://en.wikipedia.org"
-        startRandom()
+        await startRandom()
     }
 
     let name = localStorage.getItem("name") || "squirrel"

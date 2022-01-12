@@ -5,17 +5,38 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
 }
 
-export function apiURL(domain) {
-    if (domain.match(/wikipedia\.org$/)) {
-        return `${domain}/w/api.php`
-    } else if (domain.match(/fandom\.com$/)) {
-        return `${domain}/api.php`
-    } else if (domain.match(/stratum0\.org$/)) {
-        return `${domain}/mediawiki/api.php`
-    } else {
-        console.log("Unknown domain, guessing API endpoint:", domain)
-        return `${domain}/w/api.php`
+// Oof, why is this not standardized?
+let apiLocations = {
+    "/w/api.php": ["wikipedia.org"],
+    "/api.php": ["fandom.com"],
+    "/mediawiki/api.php": [],
+}
+
+export async function apiURL(domain) {
+    // Check if domain is one of these.
+    for (const [url, domains] of Object.entries(apiLocations)) {
+        if (domains.some((d) => domain.endsWith(d))) {
+            return `${domain}${url}`
+        }
     }
+
+    // Otherwise, try to fetch all of them, and return the first one that works.
+    console.log("Unknown domain! Have to guess...")
+    for (const [url, _] of Object.entries(apiLocations)) {
+        try {
+            let response = await window.fetch(`${domain}${url}?origin=*`)
+            if (response.ok) {
+                apiLocations[url].push(domain)
+                return `${domain}${url}`
+            }
+        } catch (e) {
+            // It's okay! <3 Hide error.
+            const mute = e
+        }
+    }
+
+    // Still here? Fail horribly.
+    console.log("Failed to find API URL for domain", domain)
 }
 
 export async function generateExhibitionDescriptionFromWikipedia(
@@ -23,10 +44,11 @@ export async function generateExhibitionDescriptionFromWikipedia(
     domain
 ) {
     let response = await window.fetch(
-        `${apiURL(
+        `${await apiURL(
             domain
         )}?action=parse&format=json&prop=text&page=${topic}&redirects=1&origin=*`
     )
+    console.log(response)
     let json = await response.json()
     let parser = new DOMParser()
     let content = parser
@@ -75,7 +97,7 @@ export async function generateExhibitionDescriptionFromWikipedia2(topic, lang) {
 
 async function fetchWikiText(article, domain) {
     let response = await window.fetch(
-        `${apiURL(
+        `${await apiURL(
             domain
         )}?action=query&format=json&prop=revisions&titles=${article}&formatversion=2&rvprop=content&rvslots=*&origin=*`
     )
@@ -297,7 +319,7 @@ async function parseArticle2(article, lang) {
 
 async function getImageURLs(title, lang) {
     let response = await window.fetch(
-        `${apiURL(
+        `${await apiURL(
             lang
         )}?action=query&format=json&prop=imageinfo&iiprop=url|size&generator=images&gimlimit=max&titles=${title}&origin=*`
     )
@@ -322,7 +344,7 @@ async function getImageURLs(title, lang) {
 
 async function getFileNamespace(lang) {
     let response = await window.fetch(
-        `${apiURL(
+        `${await apiURL(
             lang
         )}?action=query&format=json&meta=siteinfo&siprop=namespaces&origin=*`
     )
@@ -480,7 +502,7 @@ function createSection(section, imageURLs, fileNamespace) {
 
 async function getContributors(topic, lang) {
     let response = await window.fetch(
-        `${apiURL(
+        `${await apiURL(
             lang
         )}?action=query&titles=${topic}&prop=contributors&pclimit=max&format=json&origin=*`
     )
