@@ -7,13 +7,14 @@ function capitalizeFirstLetter(string) {
 
 // Oof, why is this not standardized?
 let apiLocations = {
-    "/w/api.php": ["wikipedia.org"],
+    "/w/api.php": ["wikipedia.org", "wikimedia.org"],
     "/api.php": ["fandom.com"],
     "/mediawiki/api.php": [],
 }
 
 export async function apiURL(domain) {
     // Check if domain is one of these.
+    console.log(domain)
     for (const [url, domains] of Object.entries(apiLocations)) {
         if (domains.some((d) => domain.endsWith(d))) {
             return `${domain}${url}`
@@ -39,6 +40,37 @@ export async function apiURL(domain) {
     console.log("Failed to find API URL for domain", domain)
 }
 
+let domainPrefixes = {
+    "wiki/": ["wikipedia.org", "wikimedia.org"],
+    "": ["fandom.com"],
+}
+
+export async function prefixOfDomain(domain) {
+    // Check if domain is one of these.
+    for (const [prefix, domains] of Object.entries(domainPrefixes)) {
+        if (domains.some((d) => domain.endsWith(d))) {
+            return prefix
+        }
+    }
+
+    // Otherwise, do an API call to find out.
+    let response = await window.fetch(
+        `${await apiURL(
+            domain
+        )}?action=query&format=json&meta=siteinfo&origin=*`
+    )
+    let data = await response.json()
+    let prefix = data.query.general.articlepath
+        .replace(/\$1$/, "")
+        .replace(/^\//, "")
+    if (!domainPrefixes[prefix]) {
+        domainPrefixes[prefix] = []
+    }
+    domainPrefixes[prefix].push(domain)
+
+    return prefix
+}
+
 export async function generateExhibitionDescriptionFromWikipedia(
     topic,
     domain
@@ -51,6 +83,10 @@ export async function generateExhibitionDescriptionFromWikipedia(
     console.log(response)
     let json = await response.json()
     let parser = new DOMParser()
+    if (json?.parse?.text?.["*"] == undefined) {
+        console.log("Article not found: ", topic)
+        return
+    }
     let content = parser
         .parseFromString(json.parse.text["*"], "text/html")
         .querySelector(".mw-parser-output")

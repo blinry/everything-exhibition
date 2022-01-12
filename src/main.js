@@ -2,7 +2,11 @@ window.SETTINGS = {}
 
 const WIKIDATA_API_URL =
     "https://query.wikidata.org/bigdata/namespace/wdq/sparql?format=json&query="
-import {apiURL, generateExhibitionDescriptionFromWikipedia} from "./collect.js"
+import {
+    apiURL,
+    prefixOfDomain,
+    generateExhibitionDescriptionFromWikipedia,
+} from "./collect.js"
 import {setup, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
@@ -87,7 +91,7 @@ export function updateStatus(text) {
     document.querySelector("#status").innerHTML = text
 }
 
-function startGeneration() {
+async function startGeneration() {
     let domainDiv = document.getElementById("language")
     domain = domainDiv.value
 
@@ -97,7 +101,8 @@ function startGeneration() {
     let topic = topicDiv.value
 
     console.log(domain)
-    let url = `${domain}/wiki/${topic}`
+    let prefix = await prefixOfDomain(domain)
+    let url = `${domain}/${prefix}${topic}`
     localStorage.setItem("url", url)
     generateExhibition(url)
 }
@@ -110,21 +115,39 @@ async function startRandom() {
             )}?action=query&format=json&list=random&rnlimit=1&rnnamespace=0&origin=*`
         )
         .then((response) => {
-            response.json().then(function (data) {
+            response.json().then(async function (data) {
+                let prefix = await prefixOfDomain(domain)
                 generateExhibition(
-                    `${domain}/wiki/${data.query.random[0].title}`
+                    `${domain}/${prefix}${data.query.random[0].title}`
                 )
             })
         })
 }
 
-function pickCorrectDomainOption(url) {
-    let regex = /^(https:\/\/[^\/]*)\/(wiki\/)?([^#]*)$/
-    let match = url.match(regex)
+async function parseURL(url) {
+    let parts = url.split("/")
+    console.log(url)
+    console.log(parts)
+    let domain = "https://" + parts[2]
+    let remaining = parts.slice(3).join("/")
+    //let prefix = await prefixOfDomain(domain)
+    //console.log(prefix)
+    console.log(remaining)
+    let topic = remaining.replace(/^(index\.php|wiki)\//, "")
+    console.log(url)
+    console.log({domain, topic})
+    return {domain, topic}
+}
 
-    if (match) {
-        domain = match[1]
-        let topic = match[2]
+async function pickCorrectDomainOption(url) {
+    let parsedURL = await parseURL(url)
+
+    if (parsedURL.domain) {
+        domain = parsedURL.domain
+    }
+
+    if (parsedURL.topic) {
+        let topic = parsedURL.topic
         console.log(domain)
         // Scan through available options and check whether domain is one of them.
         let languageSelect = document.getElementById("language")
@@ -155,21 +178,19 @@ export async function generateExhibition(url) {
         url = `${domain}${url}`
     }
 
-    console.log(url)
-    let matches = url.match(/^(https:\/\/[^\/]*)\/(wiki\/)?([^?]+)(\?.*)?$/)
-    console.log(matches)
+    let parsedURL = await parseURL(url)
 
-    domain = matches[1]
-    let topic = matches[3]
-
-    let api = await apiURL(domain)
+    let api = await apiURL(parsedURL.domain)
 
     if (!api) {
         window.open(url, "_blank")
         return
     }
 
-    pickCorrectDomainOption(url)
+    domain = parsedURL.domain
+    let topic = parsedURL.topic
+
+    await pickCorrectDomainOption(url)
 
     if (topicStack[topicStack.length - 1] === url) {
         // The user likely refreshed the page, do nothing.
@@ -288,16 +309,18 @@ window.onload = async function () {
         domain = this.value
     })
 
-    document.getElementById("topic").addEventListener("keyup", (e) => {
+    document.getElementById("topic").addEventListener("keyup", async (e) => {
         if (e.key === "Enter") {
             topicStack = []
-            startGeneration()
+            await startGeneration()
         }
     })
-    document.getElementById("generate-button").addEventListener("click", () => {
-        topicStack = []
-        startGeneration()
-    })
+    document
+        .getElementById("generate-button")
+        .addEventListener("click", async () => {
+            topicStack = []
+            await startGeneration()
+        })
     document
         .getElementById("random-button")
         .addEventListener("click", async function () {
@@ -352,7 +375,7 @@ window.onload = async function () {
     console.log(url)
 
     if (url) {
-        pickCorrectDomainOption(url)
+        await pickCorrectDomainOption(url)
         generateExhibition(url) // TODO also put in localstorage
     } else {
         domain = "https://en.wikipedia.org"
