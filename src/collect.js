@@ -27,7 +27,9 @@ export async function generateExhibitionDescriptionFromWikipedia(
             domain
         )}?action=parse&format=json&prop=text&page=${topic}&redirects=1&origin=*`
     )
+
     let json = await response.json()
+    console.log(json)
     let parser = new DOMParser()
     let content = parser
         .parseFromString(json.parse.text["*"], "text/html")
@@ -160,6 +162,13 @@ async function parseArticle(title, html) {
     selectors.forEach((selector) => {
         html.querySelectorAll(selector).forEach((node) => {
             node.remove()
+        })
+    })
+
+    selectors = ["center"]
+    selectors.forEach((selector) => {
+        html.querySelectorAll(selector).forEach((node) => {
+            node.replaceWith(...node.children)
         })
     })
 
