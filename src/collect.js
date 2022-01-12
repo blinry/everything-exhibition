@@ -14,7 +14,6 @@ let apiLocations = {
 
 export async function apiURL(domain) {
     // Check if domain is one of these.
-    console.log(domain)
     for (const [url, domains] of Object.entries(apiLocations)) {
         if (domains.some((d) => domain.endsWith(d))) {
             return `${domain}${url}`
@@ -71,6 +70,16 @@ export async function prefixOfDomain(domain) {
     return prefix
 }
 
+export async function mainArticle(domain) {
+    let response = await window.fetch(
+        `${await apiURL(
+            domain
+        )}?action=query&format=json&origin=*&meta=siteinfo`
+    )
+    let data = await response.json()
+    return data.query.general.mainpage
+}
+
 export async function generateExhibitionDescriptionFromWikipedia(
     topic,
     domain
@@ -80,7 +89,6 @@ export async function generateExhibitionDescriptionFromWikipedia(
             domain
         )}?action=parse&format=json&prop=text&page=${topic}&redirects=1&origin=*`
     )
-    console.log(response)
     let json = await response.json()
     let parser = new DOMParser()
     if (json?.parse?.text?.["*"] == undefined) {
@@ -181,12 +189,16 @@ function parseImage(node, selector) {
         var img = node.querySelector("img")
     }
     if (img) {
-        let width = img.dataset.fileWidth || img.style.width.replace("px", "")
+        let width =
+            img.dataset.fileWidth ||
+            img.style.width.replace("px", "") ||
+            img.width
         let height =
-            img.dataset.fileHeight || img.style.height.replace("px", "")
+            img.dataset.fileHeight ||
+            img.style.height.replace("px", "") ||
+            img.height
         if (!width) {
-            console.log(node)
-            console.log(img)
+            console.log("Image has no size: ", node)
         }
 
         let description
@@ -197,7 +209,14 @@ function parseImage(node, selector) {
             }
         }
 
-        let src = img.src.replace(/\/[0-9]*px-/, `/${width}px-`)
+        let src = img.src
+
+        // For fandom.com:
+        if (src.startsWith("data:image")) {
+            src = img.dataset.src.replace(/\/revision\/.*$/, "")
+        }
+
+        src = src.replace(/\/[0-9]*px-/, `/${width}px-`)
         return {
             url: src,
             description: description,
@@ -239,9 +258,14 @@ async function parseArticle(title, html) {
             stack.splice(stack.length - removeHowMany, removeHowMany)
             stack[stack.length - 1].sections.push(section)
             stack.push(section)
-        } else if (["P", "BLOCKQUOTE"].includes(node.nodeName)) {
+        } else if (["P", "BLOCKQUOTE", "DL"].includes(node.nodeName)) {
             if (node.textContent.trim() !== "") {
                 currentSection.paragraphs.push(parseParagraph(node))
+            }
+        } else if (node.nodeName == "FIGURE") {
+            let image = parseImage(node, ".thumbcaption")
+            if (image) {
+                currentSection.images.push(image)
             }
         } else if (node.nodeName == "DIV") {
             if (node.classList.contains("thumb")) {

@@ -5,6 +5,7 @@ const WIKIDATA_API_URL =
 import {
     apiURL,
     prefixOfDomain,
+    mainArticle,
     generateExhibitionDescriptionFromWikipedia,
 } from "./collect.js"
 import {setup, animate, render} from "./render.js"
@@ -126,16 +127,14 @@ async function startRandom() {
 
 async function parseURL(url) {
     let parts = url.split("/")
-    console.log(url)
-    console.log(parts)
     let domain = "https://" + parts[2]
     let remaining = parts.slice(3).join("/")
-    //let prefix = await prefixOfDomain(domain)
-    //console.log(prefix)
-    console.log(remaining)
     let topic = remaining.replace(/^(index\.php|wiki)\//, "")
-    console.log(url)
-    console.log({domain, topic})
+
+    if (topic == null || topic == "") {
+        topic = await mainArticle(domain)
+    }
+
     return {domain, topic}
 }
 
@@ -148,10 +147,8 @@ async function pickCorrectDomainOption(url) {
 
     if (parsedURL.topic) {
         let topic = parsedURL.topic
-        console.log(domain)
         // Scan through available options and check whether domain is one of them.
         let languageSelect = document.getElementById("language")
-        console.log(languageSelect.children)
         languageSelect.selectedIndex = -1
         for (let i = 0; i < languageSelect.children.length; i++) {
             if (languageSelect.children[i].value === domain) {
@@ -159,7 +156,6 @@ async function pickCorrectDomainOption(url) {
                 break
             }
         }
-        console.log(languageSelect.selectedIndex)
         if (languageSelect.selectedIndex === -1) {
             let option = document.createElement("option")
             option.innerHTML = domain
@@ -188,6 +184,7 @@ export async function generateExhibition(url) {
     }
 
     domain = parsedURL.domain
+
     let topic = parsedURL.topic
 
     await pickCorrectDomainOption(url)
@@ -287,7 +284,6 @@ SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARAT
 GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
     `
     let results = await runQuery(langQuery)
-    console.log(results)
 
     for (let line of results) {
         let option = document.createElement("option")
@@ -372,7 +368,6 @@ window.onload = async function () {
     } else {
         var url = localStorage.getItem("url")
     }
-    console.log(url)
 
     if (url) {
         await pickCorrectDomainOption(url)
