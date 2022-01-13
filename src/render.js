@@ -179,11 +179,33 @@ function generateImageData(chapter) {
         things.unshift(...audio.map((audio) => createAudio(audio, listener)))
     }
     if (window.SETTINGS.texts && chapter.paragraphs) {
-        things.unshift(
-            ...chapter.paragraphs.map((paragraph) =>
-                createTextPlane(paragraph, 20)
-            )
-        )
+        let maxTextLength = 600
+        function tooLong(text) {
+            return text.length > maxTextLength || text.split("\n").length > 30
+        }
+        for (let paragraph of chapter.paragraphs) {
+            // Make sure the paragraphs don't get too long.
+            if (tooLong(paragraph.text)) {
+                let lines = paragraph.text.split("\n")
+
+                let currentP = {text: "", links: paragraph.links}
+                for (let line of lines) {
+                    if (tooLong(currentP.text + line)) {
+                        if (currentP.text.length > 0) {
+                            things.push(createTextPlane(currentP, 20))
+                        }
+                        currentP = {text: line, links: paragraph.links}
+                    } else {
+                        currentP.text += "\n" + line
+                    }
+                }
+                if (currentP.text.length > 0) {
+                    things.push(createTextPlane(currentP, 20))
+                }
+            } else {
+                things.push(createTextPlane(paragraph, 20))
+            }
+        }
     }
     return things
 }
