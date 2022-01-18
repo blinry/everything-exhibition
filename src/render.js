@@ -841,15 +841,27 @@ function distributeObjects(objects) {
     let group = new THREE.Group()
     group.isChapter = true
 
-    let parts = splitIntoKey(objects, [2, 1, 2], calculateObjectWidth)
+    let parts
 
-    for (let side of parts) {
+    if (
+        objects.length > 2 ||
+        (objects.length == 2 &&
+            (isFullRoom(objects[0]) || isFullRoom(objects[1])))
+    ) {
+        parts = splitIntoKey(objects, [2, 1, 2], calculateObjectWidth)
+    } else {
+        parts = [[], objects, []]
+    }
+
+    for (let [idx, side] of parts.entries()) {
         for (let i = 0; i < side.length; i++) {
             let aabb = new THREE.Box3().setFromObject(side[i])
             if (!side[i].widthL) {
                 side[i].widthL = -aabb.min.x
             }
             side[i].widthR = aabb.max.x
+            side[i].originalR = aabb.max.x
+            side[i].originalL = -aabb.min.x
             if (side[i + 1]) {
                 if (isFullRoom(side[i]) && !isFullRoom(side[i + 1])) {
                     side[i].widthR = DOOR_WIDTH
@@ -858,6 +870,44 @@ function distributeObjects(objects) {
                     side[i + 1].widthL = DOOR_WIDTH
                 }
             }
+        }
+
+        //fix rooms that overlap because we shrink collapsed rooms too much
+        let lastFullRoom
+        let flatWidth = 0
+        for (let i = 0; i < side.length; i++) {
+            if (isFullRoom(side[i])) {
+                if (lastFullRoom != undefined) {
+                    // we found a spot to possible fix
+                    if (
+                        side[lastFullRoom].widthR + flatWidth + side[i].widthL <
+                        side[lastFullRoom].originalR + side[i].originalL
+                    ) {
+                        let newWidth =
+                            (side[lastFullRoom].originalR +
+                                side[i].originalL -
+                                flatWidth) /
+                            2
+                        side[lastFullRoom].widthR = newWidth
+                        side[i].widthL = newWidth
+                    }
+                } else {
+                    if (side[i].widthL < flatWidth) {
+                        side[i].widthL = side[i].originalL - flatWidth
+                        //side[0].widthL = (side[i].originalL - flatWidth)/2
+                    }
+                    if (idx == 2) {
+                        side[i].widthL = DOOR_WIDTH
+                    }
+                }
+                lastFullRoom = i
+                flatWidth = 0
+            } else {
+                flatWidth += calculateObjectWidth(side[i])
+            }
+        }
+        if (idx == 0 && lastFullRoom) {
+            side[lastFullRoom].widthR = DOOR_WIDTH
         }
     }
 
