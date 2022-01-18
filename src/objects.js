@@ -4,7 +4,7 @@ import escapeStringRegexp from "escape-string-regexp"
 import {loadMaterial} from "./render.js"
 
 export const WALL_THICKNESS = 2
-const DOOR_WIDTH = 20
+export const DOOR_WIDTH = 20
 
 const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.5, 0xcccccc)
 var FLOOR_TEXTURE = loadMaterial("plywood", 0.5, 0x665d48)
@@ -12,6 +12,11 @@ var GROUND_TEXTURE = loadMaterial("beach", 0.5, 0x665d48)
 
 var LINK_TEXTURE = new THREE.MeshBasicMaterial({
     color: 0xcce0ff,
+})
+
+var INVISIBLE_TEXTURE = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
 })
 
 export function createGround() {
@@ -64,6 +69,8 @@ export function createImagePlane(
     knownWidth = null,
     knownHeight = null
 ) {
+    var margin = 4
+
     var texture = new THREE.TextureLoader().load(url)
 
     let ratio = knownWidth / knownHeight
@@ -86,8 +93,15 @@ export function createImagePlane(
 
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
     // Store the width in the Mesh object. This is a bit of a hack.
-    plane.myWidth = width
-    plane.safetyWidth = width
+
+    var invisibleBoxGeometry = new THREE.BoxGeometry(
+        width + 2 * margin,
+        height,
+        0.1
+    )
+    var invisibleBox = new THREE.Mesh(invisibleBoxGeometry, INVISIBLE_TEXTURE)
+    plane.add(invisibleBox)
+
     if (window.SETTINGS.shadows) {
         plane.receiveShadow = true
     }
@@ -95,26 +109,29 @@ export function createImagePlane(
 }
 
 export function createTextPlane(paragraph, width, scale = 1) {
+    var group = new THREE.Group()
+
     var text = paragraph.text
     var links = paragraph.links || []
 
-    var margin = scale
+    var padding = scale
+    var margin = scale * 4
 
     var height = width / 10
 
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
-
     var plane = new THREE.Mesh(planeGeometry)
+    group.add(plane)
 
-    plane.myWidth = width
-    plane.safetyWidth = width
-    //plane.layers.enable(1)
+    var invisibleBoxGeometry = new THREE.BoxGeometry(
+        width + 2 * margin,
+        height,
+        0.1
+    )
+    var invisibleBox = new THREE.Mesh(invisibleBoxGeometry, INVISIBLE_TEXTURE)
+    group.add(invisibleBox)
 
-    //var link = "Philosophy"//text.match(/<a\s+(?:[^>]*?\s+)?href=(["'])(.*?)\1/)
-    //if (link) {
-    //    plane.myLink = link
-    //}
-
+    // Hangul hack :D
     const match = text.match(
         /[\uac00-\ud7af]|[\u1100-\u11ff]|[\u3130-\u318f]|[\ua960-\ua97f]|[\ud7b0-\ud7ff]/g
     )
@@ -130,11 +147,11 @@ export function createTextPlane(paragraph, width, scale = 1) {
     textObject.anchorY = "middle"
     textObject.color = 0x000000
 
-    textObject.maxWidth = width - 2 * margin
+    textObject.maxWidth = width - 2 * padding
 
     textObject.position.z = 0.2
 
-    plane.add(textObject)
+    group.add(textObject)
     textObject.sync(() => {
         var bbox = new THREE.Box3().setFromObject(textObject)
 
@@ -175,22 +192,16 @@ export function createTextPlane(paragraph, width, scale = 1) {
         }
 
         linkGroup.position.z = 0.1
-        plane.add(linkGroup)
+        group.add(linkGroup)
 
         if (boxWidth > 0) {
-            plane.scale.y = (boxHeight + 2 * margin) / height
-            textObject.scale.y = height / (boxHeight + 2 * margin)
-            linkGroup.scale.y = height / (boxHeight + 2 * margin)
-            linkGroup.position.y *= height / (boxHeight + 2 * margin)
+            plane.scale.y = (boxHeight + 2 * padding) / height
 
-            plane.scale.x = (boxWidth + 2 * margin) / width
-            textObject.scale.x = width / (boxWidth + 2 * margin)
-            linkGroup.scale.x = width / (boxWidth + 2 * margin)
-            linkGroup.position.x *= (boxWidth + 2 * margin) / width
+            plane.scale.x = (boxWidth + 2 * padding) / width
         }
     })
 
-    return plane
+    return group
 }
 
 export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
@@ -264,6 +275,13 @@ export function createFloor(width) {
 }
 
 export function createWall(a, b) {
+    if (a instanceof THREE.Vector3) {
+        a = new THREE.Vector2(a.x, a.z)
+    }
+    if (b instanceof THREE.Vector3) {
+        b = new THREE.Vector2(b.x, b.z)
+    }
+
     const l = a.distanceTo(b) + WALL_THICKNESS
     var boxGeometry = new THREE.BoxGeometry(l, 50, WALL_THICKNESS)
     fixUVs(boxGeometry)

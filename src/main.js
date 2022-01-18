@@ -222,6 +222,13 @@ export async function generateExhibition(url) {
         topic,
         domain
     )
+
+    //var exhibition = {name: "Test", sections: [
+    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+    //    {name: "B", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+    //    {name: "C", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+    //]}
+
     exhibition.previous = previousTopic
     await initializeMultiplayer(exhibition.name)
     await render(exhibition)

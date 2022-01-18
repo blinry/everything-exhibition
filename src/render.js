@@ -12,6 +12,7 @@ import {
     createFloor,
     createGround,
     WALL_THICKNESS,
+    DOOR_WIDTH,
 } from "./objects.js"
 
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
@@ -120,18 +121,7 @@ export async function render(exhibition) {
 }
 
 async function generateChapter(chapter, stack = false) {
-    var te = timeStart("entrance")
-    let group = new THREE.Group()
-
     updateStatus(`Generating "${chapter.name}"...`)
-
-    // Generate entrance sign.
-    let text = createTextPlane({text: chapter.name, links: []}, 50, 3)
-    text.position.x = 0
-    text.position.y = 20
-    text.position.z = 1
-    group.add(text)
-    timeEnd(te)
 
     // Generate subrooms.
     let roomPromises = []
@@ -150,18 +140,18 @@ async function generateChapter(chapter, stack = false) {
     var objects = await Promise.all(objectPromises)
     timeEnd(tp)
 
+    // Distribute the objects into a new room.
     var td = timeStart("distribute")
-    if (stack) {
-        let floorHeight = 50
-
-        for (let i = 0; i < objects.length; i++) {
-            objects[i].position.y = i * floorHeight
-            group.add(objects[i])
-        }
-    } else {
-        distributeObjects(objects, group, 10, false)
-    }
+    let group = distributeObjects(objects)
     timeEnd(td)
+
+    // Generate entrance sign.
+    let text = createTextPlane({text: chapter.name, links: []}, 50, 3)
+    text.position.x = 0
+    text.position.y = 20
+    text.position.z = 1
+    group.add(text)
+
     return group
 }
 
@@ -780,272 +770,169 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight)
 }
 
-function splitIntoEqualParts(lengths) {
-    let totalLength = lengths.sum()
-    let searchLength = totalLength / 3
-
-    function findBestSplit(searchPoint) {
-        let lengthProgress = 0
-        for (const [i, l] of lengths.entries()) {
-            if (lengthProgress + l >= searchPoint) {
-                let startPoint = lengthProgress
-                let endPoint = lengthProgress + l
-
-                if (
-                    Math.abs(startPoint - searchPoint) <
-                    Math.abs(endPoint - searchPoint)
-                ) {
-                    return i
-                } else {
-                    return i + 1
-                }
-            }
-
-            lengthProgress += l
-        }
+// The key defines the ratios of the resulting split.
+function splitIntoKey(objects, key, criterion) {
+    if (key.length == 1) {
+        return [objects]
     }
 
-    let firstSplit = findBestSplit(searchLength)
-    let secondSplit = findBestSplit(2 * searchLength)
-
-    return [firstSplit, secondSplit]
-}
-
-function calculateObjectWidths(objects) {
-    let widths = objects.map((obj) => obj.safetyWidth)
-    return widths
-}
-
-/**
- * @param {THREE.Group} group The group to put the generated walls in.
- * @param {bool} singleRoomMode Are we placing images in a single room?
- */
-function distributeObjects(objects, group, gapWidth, singleRoomMode = true) {
-    let widths = calculateObjectWidths(objects)
-
-    let groupObjects = objects.filter((o) => o instanceof THREE.Group)
-    let groupWidths = calculateObjectWidths(groupObjects)
-
-    let largestGroupObjectWidth =
-        groupObjects.length === 0 ? 0 : Math.max(...groupWidths)
-
-    let partIdx = splitIntoEqualParts(widths)
-
-    let parts = [
-        objects.slice(0, partIdx[0]),
-        objects.slice(partIdx[0], partIdx[1]),
-        objects.slice(partIdx[1]),
-    ]
-
-    let widthParts = [
-        widths.slice(0, partIdx[0]),
-        widths.slice(partIdx[0], partIdx[1]),
-        widths.slice(partIdx[1]),
-    ]
-
-    let wallWidths = widthParts.map(
-        (widths) => widths.sum() + (widths.length + 1) * gapWidth
+    let totalLength = objects.map(criterion).sum()
+    let totalKey = key.sum()
+    let searchLength = (key[0] / totalKey) * totalLength
+    let splitIndex = findBestSplitWithCriterion(
+        objects,
+        searchLength,
+        criterion
     )
 
-    let roomWidth = Math.max(...wallWidths)
+    let firstPart = objects.slice(0, splitIndex)
+    let secondPart = objects.slice(splitIndex)
 
-    // Add floor.
-    let floor = createFloor(roomWidth)
-    floor.position.y = -25
-    floor.position.z = -roomWidth / 2
-    group.add(floor)
+    let v = [firstPart]
+    v.push(...splitIntoKey(secondPart, key.slice(1), criterion))
+    return v
+}
 
-    // Clone, and add as ceiling.
-    //let ceiling = floor.clone()
-    //ceiling.position.y = 25
-    //ceiling.position.z = -roomWidth / 2
-    //group.add(ceiling)
+function findBestSplitWithCriterion(objects, searchPoint, criterion) {
+    let lengthProgress = 0
+    for (const [i, o] of objects.entries()) {
+        let l = criterion(o)
+        if (lengthProgress + l >= searchPoint) {
+            let startPoint = lengthProgress
+            let endPoint = lengthProgress + l
 
-    let wallCenters = [
-        new THREE.Vector3(-roomWidth / 2, 0, -roomWidth / 2),
-        new THREE.Vector3(0, 0, -roomWidth),
-        new THREE.Vector3(+roomWidth / 2, 0, -roomWidth / 2),
-    ]
-
-    let wallStarts = [
-        new THREE.Vector3(-roomWidth / 2, 0, 0),
-        new THREE.Vector3(-roomWidth / 2, 0, -roomWidth),
-        new THREE.Vector3(+roomWidth / 2, 0, -roomWidth),
-    ]
-
-    let wallDirections = [
-        new THREE.Vector3(0, 0, -1),
-        new THREE.Vector3(1, 0, 0),
-        new THREE.Vector3(0, 0, 1),
-    ]
-
-    let wallNormals = [
-        new THREE.Vector3(1, 0, 0),
-        new THREE.Vector3(0, 0, 1),
-        new THREE.Vector3(-1, 0, 0),
-    ]
-
-    createDoorWall(wallCenters, wallDirections, roomWidth, group)
-
-    parts.forEach((part, i) => {
-        // Wall from left edge to first object.
-        let wallProgress = (roomWidth - wallWidths[i]) / 2
-        if (wallProgress > 0 && !singleRoomMode) {
-            const a = wallStarts[i]
-            var wallLength = wallProgress
-            if (part[0]) {
-                wallLength += (part[0].safetyWidth - part[0].myWidth) / 2
+            if (
+                Math.abs(startPoint - searchPoint) <
+                Math.abs(endPoint - searchPoint)
+            ) {
+                return i
+            } else {
+                return i + 1
             }
-            const b = wallStarts[i]
-                .clone()
-                .add(wallDirections[i].clone().multiplyScalar(wallLength))
-            group.add(
-                createWall(
-                    new THREE.Vector2(a.x, a.z),
-                    new THREE.Vector2(b.x, b.z)
-                )
-            )
         }
-        // Walls between objects.
-        for (const [j, obj] of part.entries()) {
-            const isImage = !(obj instanceof THREE.Group)
-            if (!singleRoomMode) {
-                // Add wall into front gap
-                const a = wallStarts[i]
+
+        lengthProgress += l
+    }
+}
+
+function calculateObjectWidth(obj) {
+    let aabb = new THREE.Box3().setFromObject(obj)
+    return aabb.max.x - aabb.min.x
+}
+
+function calculateObjectWidthLR(obj) {
+    let aabb = new THREE.Box3().setFromObject(obj)
+    return [-aabb.min.x, aabb.max.x]
+}
+
+function distributeObjects(objects) {
+    let group = new THREE.Group()
+    group.isChapter = true
+
+    let parts = splitIntoKey(objects, [1, 1, 1], calculateObjectWidth)
+    let depth = Math.max(
+        parts[0].map(calculateObjectWidth).sum(),
+        parts[2].map(calculateObjectWidth).sum()
+    )
+    let width = Math.max(
+        parts[1].map(calculateObjectWidth).sum(),
+        50 + 4 * 3 * 2
+    )
+
+    let sides = [
+        {
+            start: new THREE.Vector3(-width / 2, 0, 0),
+            dir: new THREE.Vector3(0, 0, -1),
+            length: depth,
+            objects: parts[0],
+            angle: Math.PI / 2,
+        },
+        {
+            start: new THREE.Vector3(-width / 2, 0, -depth),
+            dir: new THREE.Vector3(1, 0, 0),
+            length: width,
+            objects: parts[1],
+            angle: 0,
+        },
+        {
+            start: new THREE.Vector3(width / 2, 0, -depth),
+            dir: new THREE.Vector3(0, 0, 1),
+            length: depth,
+            objects: parts[2],
+            angle: -Math.PI / 2,
+        },
+    ]
+
+    for (let side of sides) {
+        let widthOfAllObjects = side.objects.map(calculateObjectWidth).sum()
+        let runningWidth = (side.length - widthOfAllObjects) / 2
+        let lastWallEnd = side.start.clone()
+        for (let o of side.objects) {
+            let width = calculateObjectWidth(o)
+            let widthLR = calculateObjectWidthLR(o)
+
+            o.position.copy(
+                side.start
                     .clone()
-                    .add(wallDirections[i].clone().multiplyScalar(wallProgress))
-                const b = wallStarts[i]
+                    .addScaledVector(side.dir, runningWidth + widthLR[0])
+            )
+
+            if (!o.isChapter) {
+                // This is an image thing, offset it a bit.
+                let normal = side.dir
                     .clone()
-                    .add(
-                        wallDirections[i]
-                            .clone()
-                            .multiplyScalar(
-                                wallProgress +
-                                    gapWidth +
-                                    (obj.safetyWidth - obj.myWidth) / 2
-                            )
-                    )
-                group.add(
-                    createWall(
-                        new THREE.Vector2(a.x, a.z),
-                        new THREE.Vector2(b.x, b.z)
-                    )
-                )
-                if (isImage) {
-                    // Add wall into gap behind object.
-                    const a3 = wallStarts[i]
-                        .clone()
-                        .add(
-                            wallDirections[i]
-                                .clone()
-                                .multiplyScalar(
-                                    wallProgress +
-                                        gapWidth +
-                                        (obj.safetyWidth - obj.myWidth) / 2
-                                )
-                        )
-                    const b3 = wallStarts[i]
-                        .clone()
-                        .add(
-                            wallDirections[i]
-                                .clone()
-                                .multiplyScalar(
-                                    wallProgress +
-                                        gapWidth +
-                                        obj.safetyWidth / 2 +
-                                        obj.myWidth / 2
-                                )
-                        )
-                    group.add(
-                        createWall(
-                            new THREE.Vector2(a3.x, a3.z),
-                            new THREE.Vector2(b3.x, b3.z)
-                        )
-                    )
-                }
-                // Add wall into gap behind object.
-                const a2 = wallStarts[i]
-                    .clone()
-                    .add(
-                        wallDirections[i]
-                            .clone()
-                            .multiplyScalar(
-                                wallProgress +
-                                    gapWidth +
-                                    obj.safetyWidth / 2 +
-                                    obj.myWidth / 2
-                            )
-                    )
-                const b2 = wallStarts[i]
-                    .clone()
-                    .add(
-                        wallDirections[i]
-                            .clone()
-                            .multiplyScalar(
-                                wallProgress + gapWidth + obj.safetyWidth
-                            )
-                    )
-                group.add(
-                    createWall(
-                        new THREE.Vector2(a2.x, a2.z),
-                        new THREE.Vector2(b2.x, b2.z)
-                    )
-                )
+                    .applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2)
+                o.position.add(normal.multiplyScalar(1.1))
             }
 
-            // Place the actual object.
-            const indentation = isImage ? 1 : 0
-            obj.position.x = wallStarts[i].x + indentation * wallNormals[i].x
-            obj.position.z = wallStarts[i].z + indentation * wallNormals[i].z
-            obj.translateOnAxis(
-                wallDirections[i],
-                wallProgress + gapWidth + widthParts[i][j] / 2
-            )
+            o.rotateY(side.angle)
 
-            wallProgress += gapWidth + widthParts[i][j]
-            obj.rotateY((1 - i) * (Math.PI / 2))
+            runningWidth += width
 
-            // Add the object!
-            group.add(obj)
-        }
-        // Wall to right edge.
-        if (wallProgress < roomWidth && !singleRoomMode) {
-            const a = wallStarts[i]
+            let thisWallEnd = side.start
                 .clone()
-                .add(wallDirections[i].clone().multiplyScalar(wallProgress))
-            const b = wallStarts[i]
-                .clone()
-                .add(wallDirections[i].clone().multiplyScalar(roomWidth))
-            group.add(
-                createWall(
-                    new THREE.Vector2(a.x, a.z),
-                    new THREE.Vector2(b.x, b.z)
+                .addScaledVector(side.dir, runningWidth)
+            if (o.isChapter) {
+                // Build walls at both sides of the chapter.
+                let diffL = side.dir.clone().multiplyScalar(widthLR[0])
+                let diffR = side.dir.clone().multiplyScalar(widthLR[1])
+                group.add(
+                    createWall(lastWallEnd, o.position.clone().sub(diffL))
                 )
-            )
-        }
-    })
+                group.add(
+                    createWall(o.position.clone().add(diffR), thisWallEnd)
+                )
+            } else {
+                group.add(createWall(lastWallEnd, thisWallEnd))
+            }
 
-    if (window.SETTINGS.lights) {
-        const light = new THREE.PointLight(
-            0xffffff,
-            1,
-            Math.sqrt(2) * roomWidth,
-            1
-        )
-        //light.position.x += 3
-        light.position.y += 3
-        light.position.z -= roomWidth / 2
-        if (window.SETTINGS.shadows) {
-            light.castShadow = true
-            //light.shadow.mapSize.width = 4 * 512
-            //light.shadow.mapSize.height = 4 * 512
-            light.shadow.bias = -0.005
+            lastWallEnd = thisWallEnd
+            group.add(o)
         }
-        group.add(light)
+        if (runningWidth < side.length) {
+            const wallEnd = side.start
+                .clone()
+                .addScaledVector(side.dir, side.length)
+            group.add(createWall(lastWallEnd, wallEnd))
+        }
     }
 
-    group.myWidth = roomWidth
-    group.safetyWidth = roomWidth + 2 * largestGroupObjectWidth
+    // Add front wall.
+    let aabb = new THREE.Box3().setFromObject(group)
+    group.add(
+        createWall(
+            new THREE.Vector3(aabb.min.x, 0, 0),
+            new THREE.Vector3(-DOOR_WIDTH / 2, 0, 0)
+        )
+    )
+    group.add(
+        createWall(
+            new THREE.Vector3(DOOR_WIDTH / 2, 0, 0),
+            new THREE.Vector3(aabb.max.x, 0, 0)
+        )
+    )
+
+    return group
 }
 
 export async function updateMultiplayer(states, myId) {
