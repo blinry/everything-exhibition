@@ -816,20 +816,51 @@ function findBestSplitWithCriterion(objects, searchPoint, criterion) {
 }
 
 function calculateObjectWidth(obj) {
+    if (obj.widthL) {
+        return obj.widthL + obj.widthR
+    }
     let aabb = new THREE.Box3().setFromObject(obj)
     return aabb.max.x - aabb.min.x
 }
 
-function calculateObjectWidthLR(obj) {
+function calculateObjectHeight(obj) {
+    let aabb = new THREE.Box3().setFromObject(obj)
+    return aabb.max.z - aabb.min.z
+}
+
+function isFullRoom(obj) {
+    return calculateObjectHeight(obj) > WALL_THICKNESS + 0.5
+}
+
+/*function calculateObjectWidthLR(obj) {
     let aabb = new THREE.Box3().setFromObject(obj)
     return [-aabb.min.x, aabb.max.x]
-}
+}*/
 
 function distributeObjects(objects) {
     let group = new THREE.Group()
     group.isChapter = true
 
-    let parts = splitIntoKey(objects, [1, 1, 1], calculateObjectWidth)
+    let parts = splitIntoKey(objects, [2, 1, 2], calculateObjectWidth)
+
+    for (let side of parts) {
+        for (let i = 0; i < side.length; i++) {
+            let aabb = new THREE.Box3().setFromObject(side[i])
+            if (!side[i].widthL) {
+                side[i].widthL = -aabb.min.x
+            }
+            side[i].widthR = aabb.max.x
+            if (side[i + 1]) {
+                if (isFullRoom(side[i]) && !isFullRoom(side[i + 1])) {
+                    side[i].widthR = DOOR_WIDTH
+                }
+                if (!isFullRoom(side[i]) && isFullRoom(side[i + 1])) {
+                    side[i + 1].widthL = DOOR_WIDTH
+                }
+            }
+        }
+    }
+
     let depth = Math.max(
         parts[0].map(calculateObjectWidth).sum(),
         parts[2].map(calculateObjectWidth).sum()
@@ -869,12 +900,12 @@ function distributeObjects(objects) {
         let lastWallEnd = side.start.clone()
         for (let o of side.objects) {
             let width = calculateObjectWidth(o)
-            let widthLR = calculateObjectWidthLR(o)
+            //let widthLR = calculateObjectWidthLR(o)
 
             o.position.copy(
                 side.start
                     .clone()
-                    .addScaledVector(side.dir, runningWidth + widthLR[0])
+                    .addScaledVector(side.dir, runningWidth + o.widthL)
             )
 
             if (!o.isChapter) {
@@ -894,8 +925,8 @@ function distributeObjects(objects) {
                 .addScaledVector(side.dir, runningWidth)
             if (o.isChapter) {
                 // Build walls at both sides of the chapter.
-                let diffL = side.dir.clone().multiplyScalar(widthLR[0])
-                let diffR = side.dir.clone().multiplyScalar(widthLR[1])
+                let diffL = side.dir.clone().multiplyScalar(o.widthL)
+                let diffR = side.dir.clone().multiplyScalar(o.widthR)
                 group.add(
                     createWall(lastWallEnd, o.position.clone().sub(diffL))
                 )
