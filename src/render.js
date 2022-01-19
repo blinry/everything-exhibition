@@ -892,10 +892,13 @@ function distributeObjects(objects) {
                         side[i].widthL = newWidth
                     }
                 } else {
-                    if (side[i].widthL < flatWidth) {
+                    // This is the first room. Don't allow it to grow beneath
+                    // the left side of the wall.
+                    if (flatWidth + side[i].widthL < side[i].originalL) {
                         side[i].widthL = side[i].originalL - flatWidth
                         //side[0].widthL = (side[i].originalL - flatWidth)/2
                     }
+                    // ... except when it's on the right wall.
                     if (idx == 2) {
                         side[i].widthL = DOOR_WIDTH
                     }

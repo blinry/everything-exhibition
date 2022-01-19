@@ -223,7 +223,9 @@ export async function generateExhibition(url) {
         domain
     )
 
-    //var exhibition = {name: "Test", sections: [
+    //var exhibition = {name: "Test", paragraphs: [{text: "!"}], sections: [
+    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "fu"}]},
+    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
     //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
     //    {name: "B", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
     //    {name: "C", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
