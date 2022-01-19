@@ -185,8 +185,15 @@ function parseImage(node, selector) {
 }
 
 async function parseArticle(title, html) {
-    let exhibition = {name: title, sections: [], paragraphs: [], images: []}
-    var stack = [exhibition]
+    let intro = {name: "Intro", sections: [], paragraphs: [], images: []}
+    let exhibition = {
+        name: title,
+        sections: [intro],
+        paragraphs: [],
+        images: [],
+    }
+
+    var stack = [exhibition, intro]
 
     let selectors = ["style", ".mw-cite-backlink", "sup.reference"]
     selectors.forEach((selector) => {
@@ -202,12 +209,21 @@ async function parseArticle(title, html) {
         })
     })
 
+    let navbox = html.querySelector(".navbox")
+    if (navbox) {
+        let header = document.createElement("h2")
+        header.innerText = "Related"
+        navbox.parentNode.insertBefore(header, navbox)
+    }
+
     html.childNodes.forEach((node) => {
         var currentSection = stack[stack.length - 1]
         if (node.nodeName.match(/^H\d$/)) {
             let level = parseInt(node.nodeName[1]) - 2
             let section = {
-                name: node.querySelector(".mw-headline").textContent,
+                name:
+                    node.querySelector(".mw-headline")?.textContent ||
+                    node.textContent,
                 paragraphs: [],
                 sections: [],
                 images: [],
@@ -262,11 +278,29 @@ async function parseArticle(title, html) {
                     )
                 }
             } else if (
-                ["shortdescription", "toc"].some((c) =>
-                    node.classList.contains(c)
-                )
+                [
+                    "shortdescription",
+                    "toc",
+                    "toclimit-1",
+                    "toclimit-2",
+                    "toclimit-3",
+                    "toclimit-4",
+                    "toclimit-5",
+                    "authority-control",
+                ].some((c) => node.classList.contains(c))
             ) {
                 // This element is not helpful, skip it.
+            } else if (node.classList.contains("navbox")) {
+                let titleChildren = node.querySelector(".navbox-title").children
+                title =
+                    titleChildren[titleChildren.length - 1].textContent.trim()
+                let navboxSection = {
+                    name: title,
+                    paragraphs: [parseParagraph(node)],
+                    sections: [],
+                    images: [],
+                }
+                currentSection.sections.push(navboxSection)
             } else {
                 if (node.textContent.trim() != "") {
                     currentSection.paragraphs.push(parseParagraph(node))

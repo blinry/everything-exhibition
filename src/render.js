@@ -103,7 +103,7 @@ export async function render(exhibition) {
     }
     clearObjects(sketch)
 
-    everything = await generateChapter(exhibition, false)
+    everything = await generateChapter(exhibition, 0, false)
 
     if (exhibition.previous) {
         addBackSign(everything, exhibition.previous)
@@ -120,13 +120,15 @@ export async function render(exhibition) {
     timeEnd(tf)
 }
 
-async function generateChapter(chapter, stack = false) {
+async function generateChapter(chapter, level, stack = false) {
     updateStatus(`Generating "${chapter.name}"...`)
 
     // Generate subrooms.
     let roomPromises = []
     if (chapter.sections) {
-        roomPromises = chapter.sections.map((c) => generateChapter(c))
+        roomPromises = chapter.sections.map((c) =>
+            generateChapter(c, level + 1)
+        )
     }
 
     var to = timeStart("imagedata")
@@ -142,7 +144,7 @@ async function generateChapter(chapter, stack = false) {
 
     // Distribute the objects into a new room.
     var td = timeStart("distribute")
-    let group = distributeObjects(objects)
+    let group = distributeObjects(objects, level)
     timeEnd(td)
 
     // Generate entrance sign.
@@ -829,7 +831,7 @@ function calculateObjectHeight(obj) {
 }
 
 function isFullRoom(obj) {
-    return calculateObjectHeight(obj) > WALL_THICKNESS + 0.5
+    return calculateObjectHeight(obj) > WALL_THICKNESS + 2
 }
 
 /*function calculateObjectWidthLR(obj) {
@@ -837,7 +839,7 @@ function isFullRoom(obj) {
     return [-aabb.min.x, aabb.max.x]
 }*/
 
-function distributeObjects(objects) {
+function distributeObjects(objects, level) {
     let group = new THREE.Group()
     group.isChapter = true
 
@@ -899,7 +901,7 @@ function distributeObjects(objects) {
                         //side[0].widthL = (side[i].originalL - flatWidth)/2
                     }
                     // ... except when it's on the right wall.
-                    if (idx == 2) {
+                    if (idx == 2 || (idx == 0 && level == 0)) {
                         side[i].widthL = DOOR_WIDTH
                     }
                 }
@@ -909,7 +911,10 @@ function distributeObjects(objects) {
                 flatWidth += calculateObjectWidth(side[i])
             }
         }
-        if (idx == 0 && lastFullRoom) {
+        if (
+            (idx == 0 || (idx == 2 && level == 0)) &&
+            lastFullRoom != undefined
+        ) {
             side[lastFullRoom].widthR = DOOR_WIDTH
         }
     }
@@ -1002,17 +1007,24 @@ function distributeObjects(objects) {
     }
 
     // Add front wall.
-    let aabb = new THREE.Box3().setFromObject(group)
+    if (level == 0) {
+        var widthL = width / 2
+        var widthR = width / 2
+    } else {
+        let aabb = new THREE.Box3().setFromObject(group)
+        var widthL = -aabb.min.x
+        var widthR = aabb.max.x
+    }
     group.add(
         createWall(
-            new THREE.Vector3(aabb.min.x, 0, 0),
+            new THREE.Vector3(-widthL, 0, 0),
             new THREE.Vector3(-DOOR_WIDTH / 2, 0, 0)
         )
     )
     group.add(
         createWall(
             new THREE.Vector3(DOOR_WIDTH / 2, 0, 0),
-            new THREE.Vector3(aabb.max.x, 0, 0)
+            new THREE.Vector3(widthR, 0, 0)
         )
     )
 
