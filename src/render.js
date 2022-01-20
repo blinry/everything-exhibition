@@ -1101,16 +1101,16 @@ export async function updateMultiplayer(states, myId) {
                 players[id].myFace = values.face
 
                 if (players[id].myColor) {
-                    textPlane.material.color = new THREE.Color(
+                    textPlane.children[0].material.color = new THREE.Color(
                         players[id].myColor
                     )
 
                     let col = new THREE.Color()
                     textPlane.material.color.getHSL(col)
                     if (col.l < 0.5) {
-                        textPlane.children[0].color = 0xffffff
+                        textPlane.children[2].color = 0xffffff
                     } else {
-                        textPlane.children[0].color = 0x000000
+                        textPlane.children[2].color = 0x000000
                     }
                 }
             }
@@ -1126,7 +1126,7 @@ export async function updateMultiplayer(states, myId) {
                 const textObject = new Text()
                 textObject.text = values.name
                 textObject.fontSize = 2
-                textObject.font = "/fonts/Roboto-Regular.ttf"
+                textObject.font = "/fonts/GoNotoCurrent.ttf"
                 if (match) {
                     textObject.font = "/fonts/NotoSansKR-Regular.otf"
                 }
@@ -1150,13 +1150,13 @@ export async function updateMultiplayer(states, myId) {
             }
             let face = players[id].getObjectByName("face")
             if (face) {
-                face.material.color = new THREE.Color(values.color)
+                face.children[0].material.color = new THREE.Color(values.color)
                 let col = new THREE.Color()
-                face.material.color.getHSL(col)
+                face.children[0].material.color.getHSL(col)
                 if (col.l < 0.5) {
-                    face.children[0].color = 0xffffff
+                    face.children[2].color = 0xffffff
                 } else {
-                    face.children[0].color = 0x000000
+                    face.children[2].color = 0x000000
                 }
             }
             players[id].myColor = values.color
