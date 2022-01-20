@@ -180,6 +180,11 @@ function generateImageData(chapter) {
             if (tooLong(paragraph.text)) {
                 let lines = paragraph.text.split("\n")
 
+                // If these are still too long, split them inot sentences.
+                lines = lines
+                    .map((l) => (tooLong(l) ? l.split(/(?<=\. )/) : l))
+                    .flat()
+
                 let currentP = {text: "", links: paragraph.links}
                 for (let line of lines) {
                     if (tooLong(currentP.text + line)) {
@@ -971,7 +976,7 @@ function distributeObjects(objects, level) {
                 let normal = side.dir
                     .clone()
                     .applyAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2)
-                o.position.add(normal.multiplyScalar(1.1))
+                o.position.add(normal.multiplyScalar(1))
             }
 
             o.rotateY(side.angle)
@@ -1027,6 +1032,12 @@ function distributeObjects(objects, level) {
             new THREE.Vector3(widthR, 0, 0)
         )
     )
+
+    // Add floor.
+    let floor = createFloor(width, depth)
+    floor.position.z = -depth / 2
+    floor.position.y = -25
+    group.add(floor)
 
     return group
 }

@@ -267,8 +267,8 @@ function fixUVs(bufferGeometry) {
     }
 }
 
-export function createFloor(width) {
-    let floorGeometry = new THREE.BoxGeometry(width, 0.1, width)
+export function createFloor(width, depth) {
+    let floorGeometry = new THREE.BoxGeometry(width, 0.1, depth)
     fixUVs(floorGeometry)
     let floor = new THREE.Mesh(floorGeometry, FLOOR_TEXTURE)
     return floor
