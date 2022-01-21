@@ -6,8 +6,9 @@ import {
     apiURL,
     prefixOfDomain,
     mainArticle,
-    generateExhibitionDescriptionFromWikipedia,
+    generateHTMLFromWikipedia,
 } from "./collect.js"
+import {parseHTML} from "./parse.js"
 import {setup, animate, render} from "./render.js"
 import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
@@ -218,10 +219,10 @@ export async function generateExhibition(url) {
 
     location.hash = url
 
-    var exhibition = await generateExhibitionDescriptionFromWikipedia(
-        topic,
-        domain
-    )
+    var html = await generateHTMLFromWikipedia(topic, domain)
+    console.log(html)
+    var exhibition = parseHTML(html, topic)
+    console.log(exhibition)
 
     //var exhibition = {name: "Test", paragraphs: [{text: "!"}], sections: [
     //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "fu"}]},

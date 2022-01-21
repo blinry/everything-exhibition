@@ -123,24 +123,8 @@ export async function render(exhibition) {
 async function generateChapter(chapter, level, stack = false) {
     updateStatus(`Generating "${chapter.name}"...`)
 
-    // Generate subrooms.
-    let roomPromises = []
-    if (chapter.sections) {
-        roomPromises = chapter.sections.map((c) =>
-            generateChapter(c, level + 1)
-        )
-    }
-
-    var to = timeStart("imagedata")
-    let picturePromises = generateImageData(chapter)
-    timeEnd(to)
-
-    var tp = timeStart("objectpromises")
-    var objectPromises = []
-    objectPromises.push(...picturePromises)
-    objectPromises.push(...roomPromises)
+    let objectPromises = generateObjectPromises(chapter, level)
     var objects = await Promise.all(objectPromises)
-    timeEnd(tp)
 
     // Distribute the objects into a new room.
     var td = timeStart("distribute")
@@ -157,41 +141,45 @@ async function generateChapter(chapter, level, stack = false) {
     return group
 }
 
-function generateImageData(chapter) {
+function generateObjectPromises(chapter, level) {
     let things = []
-    if (window.SETTINGS.images && chapter.images) {
-        const images = chapter.images.filter(
-            (image) => image && image.url.match(/\.(jpg|jpeg|png|svg)$/i)
-        )
-        things.unshift(...images.map((image) => createPicture(image)))
-
-        const audio = chapter.images.filter(
-            (audio) => audio && audio.url.match(/\.(ogg|mp3|wav)$/i)
-        )
-        things.unshift(...audio.map((audio) => createAudio(audio, listener)))
-    }
-    if (window.SETTINGS.texts && chapter.paragraphs) {
-        let maxTextLength = 600
-        function tooLong(text) {
-            return text.length > maxTextLength || text.split("\n").length > 30
+    for (let thing of chapter.content) {
+        if (thing.type == "section") {
+            things.push(generateChapter(thing, level + 1))
         }
-        for (let paragraph of chapter.paragraphs) {
+        if (window.SETTINGS.images && thing.type == "image") {
+            if (thing.url.match(/\.(jpg|jpeg|png|svg)$/i)) {
+                things.push(createPicture(thing))
+            }
+        }
+        if (thing.type == "audio") {
+            if (thing.url.match(/\.(ogg|mp3|wav)$/i)) {
+                things.push(createAudio(audio, listener))
+            }
+        }
+        if (window.SETTINGS.texts && thing.type == "paragraph") {
+            let maxTextLength = 600
+            function tooLong(text) {
+                return (
+                    text.length > maxTextLength || text.split("\n").length > 30
+                )
+            }
             // Make sure the paragraphs don't get too long.
-            if (tooLong(paragraph.text)) {
-                let lines = paragraph.text.split("\n")
+            if (tooLong(thing.text)) {
+                let lines = thing.text.split("\n")
 
                 // If these are still too long, split them inot sentences.
                 lines = lines
                     .map((l) => (tooLong(l) ? l.split(/(?<=\. )/) : l))
                     .flat()
 
-                let currentP = {text: "", links: paragraph.links}
+                let currentP = {text: "", links: thing.links}
                 for (let line of lines) {
                     if (tooLong(currentP.text + line)) {
                         if (currentP.text.length > 0) {
                             things.push(createTextPlane(currentP, 20))
                         }
-                        currentP = {text: line, links: paragraph.links}
+                        currentP = {text: line, links: thing.links}
                     } else {
                         currentP.text += "\n" + line
                     }
@@ -200,7 +188,7 @@ function generateImageData(chapter) {
                     things.push(createTextPlane(currentP, 20))
                 }
             } else {
-                things.push(createTextPlane(paragraph, 20))
+                things.push(createTextPlane(thing, 20))
             }
         }
     }
