@@ -1,5 +1,4 @@
 import {timeStart, timeEnd} from "./utils.js"
-import {marked} from "marked"
 
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1)
@@ -173,7 +172,8 @@ async function parseArticle(title, html) {
     selectors = [".navbox"]
     selectors.forEach((selector) => {
         html.querySelectorAll(selector).forEach((node) => {
-            let titleChildren = node.querySelector(".navbox-title").children
+            let titleDiv = node.querySelector("th")
+            let titleChildren = titleDiv.children
             title = titleChildren[titleChildren.length - 1].textContent.trim()
 
             let header = document.createElement("h3")

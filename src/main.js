@@ -217,7 +217,7 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    location.hash = url
+    history.pushState(null, null, document.location.pathname + "#" + url)
 
     var html = await generateHTMLFromWikipedia(topic, domain)
     console.log(html)
