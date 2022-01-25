@@ -197,14 +197,15 @@ function generateObjectPromises(chapter, level) {
 
 export function animate() {
     const delta = clock.getDelta()
-    if (delta > 0) {
-        fps = lerp(fps, Math.round(1 / delta), 0.01)
-        document.querySelector("#fps").innerHTML = Math.round(fps)
-    }
 
-    if (delta > 0.1) {
-        // Moving with a delta this big would jump too wide. Do nothing.
-        return
+    //if (delta > 0.1) {
+    //    // Moving with a delta this big would jump too wide. Do nothing.
+    //    return
+    //}
+
+    if (delta > 0) {
+        fps = lerp(fps, Math.round(1 / delta), 0.05)
+        document.querySelector("#fps").innerHTML = Math.round(fps)
     }
 
     //xrInput()
@@ -262,21 +263,24 @@ export function animate() {
         }
     }
 
-    if (moveForward || moveBackward)
-        velocity.z -= direction.z * movementSpeed * delta
-    if (moveLeft || moveRight) velocity.x -= direction.x * movementSpeed * delta
-    if (moveUp || moveDown)
-        velocity.y -= direction.y * movementSpeed * 3 * delta
+    if (delta < 0.2) {
+        if (moveForward || moveBackward)
+            velocity.z -= direction.z * movementSpeed * delta
+        if (moveLeft || moveRight)
+            velocity.x -= direction.x * movementSpeed * delta
+        if (moveUp || moveDown)
+            velocity.y -= direction.y * movementSpeed * 3 * delta
 
-    controls.moveRight(-velocity.x * delta)
-    controls.moveForward(-velocity.z * delta)
-    controls.getObject().position.y += velocity.y * delta
+        controls.moveRight(-velocity.x * delta)
+        controls.moveForward(-velocity.z * delta)
+        controls.getObject().position.y += velocity.y * delta
 
-    if (controls.getObject().position.y < 0) {
-        velocity.y = 0
-        controls.getObject().position.y = 0
+        if (controls.getObject().position.y < 0) {
+            velocity.y = 0
+            controls.getObject().position.y = 0
 
-        canJump = true
+            canJump = true
+        }
     }
 
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera)
