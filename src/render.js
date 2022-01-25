@@ -1118,9 +1118,9 @@ export async function updateMultiplayer(states, myId) {
                 const textObject = new Text()
                 textObject.text = values.name
                 textObject.fontSize = 2
-                textObject.font = "/fonts/GoNotoCurrent.ttf"
+                textObject.font = "fonts/GoNotoCurrent.ttf"
                 if (match) {
-                    textObject.font = "/fonts/NotoSansKR-Regular.otf"
+                    textObject.font = "fonts/NotoSansKR-Regular.otf"
                 }
                 textObject.anchorX = "center"
                 textObject.anchorY = "middle"

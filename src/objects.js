@@ -139,9 +139,9 @@ export function createTextPlane(paragraph, width, scale = 1) {
     var textObject = new Text()
     textObject.text = text
     textObject.fontSize = 1 * scale
-    textObject.font = "/fonts/GoNotoCurrent.ttf"
+    textObject.font = "fonts/GoNotoCurrent.ttf"
     if (match) {
-        textObject.font = "/fonts/NotoSansKR-Regular.otf"
+        textObject.font = "fonts/NotoSansKR-Regular.otf"
     }
     textObject.anchorX = "center"
     textObject.anchorY = "middle"
