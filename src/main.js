@@ -10,7 +10,13 @@ import {
 } from "./collect.js"
 import {parseHTML} from "./parse.js"
 import {setup, animate, render} from "./render.js"
-import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
+import {
+    setupMultiplayer,
+    setupGroupConnection,
+    setName,
+    setColor,
+    setFace,
+} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 var domain
@@ -217,6 +223,27 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
+    const urlParams = new URLSearchParams(window.location.search)
+    let groupID =
+        urlParams.get("group") || localStorage.getItem("groupID") || "default"
+
+    document
+        .getElementById("group-button")
+        .addEventListener("click", async (e) => {
+            M.toast({html: "Link copied to clipboard!"})
+            let newGroupID = makeid(30)
+            copyStringToClipboard(
+                document.location.protocol +
+                    "//" +
+                    document.location.host +
+                    "/?group=" +
+                    newGroupID +
+                    "#" +
+                    url
+            )
+            await initializeMultiplayer(url, newGroupID)
+        })
+
     history.pushState(null, null, document.location.pathname + "#" + url)
 
     var html = await generateHTMLFromWikipedia(topic, domain)
@@ -233,15 +260,18 @@ export async function generateExhibition(url) {
     //]}
 
     exhibition.previous = previousTopic
-    await initializeMultiplayer(exhibition.name)
+
+    await initializeMultiplayer(url, groupID)
     await render(exhibition)
     timeEnd(t)
 
     timeDump()
 }
 
-async function initializeMultiplayer(topic) {
-    await setupMultiplayer(topic)
+async function initializeMultiplayer(url, groupID) {
+    localStorage.setItem("groupID", groupID)
+    await setupMultiplayer(url, groupID)
+    await setupGroupConnection(groupID)
 
     // Trigger input events.
     document.getElementById("name").dispatchEvent(new Event("input"))
@@ -402,4 +432,36 @@ window.onload = async function () {
     document.getElementById("face").value = face
 
     animate()
+}
+
+//snacked from https://techoverflow.net/2018/03/30/copying-strings-to-the-clipboard-using-pure-javascript/
+function copyStringToClipboard(str) {
+    // Create new element
+    var el = document.createElement("textarea")
+    // Set value (string to be copied)
+    el.value = str
+    // Set non-editable to avoid focus and move outside of view
+    el.setAttribute("readonly", "")
+    el.style = {position: "absolute", left: "-9999px"}
+    document.body.appendChild(el)
+    // Select text inside element
+    el.select()
+    // Copy text to clipboard
+    document.execCommand("copy")
+    // Remove temporary element
+    document.body.removeChild(el)
+}
+
+//snacked from https://stackoverflow.com/a/1349426
+function makeid(length) {
+    var result = ""
+    var characters =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    var charactersLength = characters.length
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(
+            Math.floor(Math.random() * charactersLength)
+        )
+    }
+    return result
 }
