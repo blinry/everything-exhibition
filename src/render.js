@@ -480,7 +480,9 @@ export function setup() {
     //renderer.outputEncoding = THREE.sRGBEncoding;
     //renderer.toneMapping = THREE.ACESFilmicToneMapping;
     //renderer.toneMappingExposure = 1
-    document.body.appendChild(renderer.domElement)
+    let renderCanvas = renderer.domElement
+    renderCanvas.id = "three-canvas"
+    document.body.appendChild(renderCanvas)
 
     //const xrController = renderer.xr.getController(0)
 

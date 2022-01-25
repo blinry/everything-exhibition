@@ -173,6 +173,7 @@ async function pickCorrectDomainOption(url) {
 
         document.getElementById("language").value = domain
         document.getElementById("topic").value = topic
+        M.updateTextFields()
     }
 }
 
@@ -387,6 +388,9 @@ window.onload = async function () {
         localStorage.setItem("face", e.target.value)
     })
 
+    let selects = document.querySelectorAll("select")
+    M.FormSelect.init(selects, {})
+
     //goodSuggestions()
 
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
@@ -464,4 +468,21 @@ function makeid(length) {
         )
     }
     return result
+}
+
+export function updateNameList(states, ourID) {
+    console.log(states, ourID)
+    let nameList = document.getElementById("name-list")
+    while (nameList.childNodes.length > 2) {
+        nameList.removeChild(nameList.lastChild)
+    }
+    for ([id, user] of states) {
+        if (id != ourID) {
+            let entry = document.createElement("li")
+            entry.classList.add("collection-item")
+            entry.innerHTML = user.name
+            entry.style.backgroundColor = user.color
+            nameList.appendChild(entry)
+        }
+    }
 }
