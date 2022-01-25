@@ -10,7 +10,13 @@ import {
 } from "./collect.js"
 import {parseHTML} from "./parse.js"
 import {setup, animate, render} from "./render.js"
-import {setupMultiplayer, setName, setColor, setFace} from "./multiplayer.js"
+import {
+    setupMultiplayer,
+    setupGroupConnection,
+    setName,
+    setColor,
+    setFace,
+} from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
 var domain
@@ -217,6 +223,11 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
+    const urlParams = new URLSearchParams(window.location.search)
+    let groupID =
+        urlParams.get("group") || localStorage.getItem("groupID") || "default"
+    localStorage.setItem("groupID", groupID)
+
     history.pushState(null, null, document.location.pathname + "#" + url)
 
     var html = await generateHTMLFromWikipedia(topic, domain)
@@ -233,15 +244,17 @@ export async function generateExhibition(url) {
     //]}
 
     exhibition.previous = previousTopic
-    await initializeMultiplayer(exhibition.name)
+
+    await initializeMultiplayer(url, groupID)
     await render(exhibition)
     timeEnd(t)
 
     timeDump()
 }
 
-async function initializeMultiplayer(topic) {
-    await setupMultiplayer(topic)
+async function initializeMultiplayer(url, groupID) {
+    await setupMultiplayer(url, groupID)
+    await setupGroupConnection(groupID)
 
     // Trigger input events.
     document.getElementById("name").dispatchEvent(new Event("input"))
