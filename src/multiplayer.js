@@ -1,6 +1,7 @@
 import * as Y from "yjs"
 import {WebrtcProvider} from "y-webrtc"
 import {updateMultiplayer, updateSketch} from "./render.js"
+import {updateNameList} from "./main.js"
 
 var awareness, provider, sketchArray, groupAwareness, groupProvider
 
@@ -28,9 +29,9 @@ export async function setupGroupConnection(groupID) {
 
     groupAwareness = groupProvider.awareness
 
-    /*groupAwareness.on("change", async () => {
-        await updateMultiplayer(groupAwareness.getStates(), groupAwareness.clientID)
-    })*/
+    groupAwareness.on("change", async () => {
+        updateNameList(groupAwareness.getStates(), groupAwareness.clientID)
+    })
 }
 
 export async function setupMultiplayer(url, groupID) {

@@ -19,20 +19,45 @@
         <script src="src/main.js" type="module"></script>
     </head>
     <body>
-        <h1>The Everything Exhibition</h1>
+        <div class="card-panel white">
+            <h1>The Everything Exhibition</h1>
+            <div class="row">
+                <div class="input-field col s5">
+                    <select id="language"></select>
+                    <label>Materialize Select</label>
+                </div>
+                <div class="input-field col s6">
+                    <label for="topic" class="active test"
+                        >What are you curious about?</label
+                    >
+                    <input
+                        id="topic"
+                        type="text"
+                        list="suggestions"
+                        autocomplete="off"
+                    />
+                </div>
+                <button
+                    class="waves-effect waves-light btn blue-grey col s1"
+                    id="generate-button"
+                >
+                    Generate!
+                </button>
+                <datalist id="suggestions"></datalist>
+            </div>
 
-        <div>
-            <select id="language"></select>
-            <input
-                type="text"
-                list="suggestions"
-                id="topic"
-                autocomplete="off"
-            />
-            <datalist id="suggestions"></datalist>
-            <button id="generate-button">Generate!</button>
-            <button id="random-button">Random!</button>
-            <button id="group-button">New group</button>
+            <button
+                class="waves-effect waves-light btn blue-grey"
+                id="random-button"
+            >
+                Random!
+            </button>
+            <button
+                class="waves-effect waves-light btn blue-grey"
+                id="group-button"
+            >
+                New group
+            </button>
         </div>
         <div id="settings">
             <div><span id="fps">?</span> FPS</div>
@@ -43,18 +68,43 @@
             <input type="checkbox" checked id="images" /> Images<br />
             <input type="checkbox" checked id="texts" /> Texts<br />
         --></div>
-        <div id="avatar">
-            <input
-                type="text"
-                id="face"
-                autocomplete="off"
-                value=""
-                list="face-suggestions"
-            />
-            <datalist id="face-suggestions"></datalist>
-            <input type="text" id="name" autocomplete="off" value="" />
-            <input type="color" id="color" />
-        </div>
+
         <div id="status"></div>
+
+        <div class="card" id="sidebar">
+            <div class="card-content">
+                <ul class="collection" id="name-list">
+                    <li class="collection-item row" id="avatar">
+                        <div class="input-field col s4">
+                            <input
+                                type="text"
+                                id="face"
+                                autocomplete="off"
+                                value=""
+                                list="face-suggestions"
+                            />
+                        </div>
+                        <datalist id="face-suggestions"></datalist>
+                        <div class="input-field col s5">
+                            <input
+                                type="text"
+                                id="name"
+                                autocomplete="off"
+                                value=""
+                            />
+                        </div>
+                        <div class="input-field col s1">
+                            <input type="color" id="color" />
+                        </div>
+                    </li>
+                    <li class="collection-item">Name1</li>
+                    <li class="collection-item">Name2</li>
+                </ul>
+            </div>
+            <div class="card-image">
+                <canvas id="map-canvas"></canvas>
+                <span class="card-title">Card Title</span>
+            </div>
+        </div>
     </body>
 </html>
