@@ -3,7 +3,8 @@ h1 {
     font-family: Lobster, cursive;
 }
 
-#map-canvas {
+#map-canvas,
+#marker-canvas {
     height: max(20em, 20vw);
     width: max(20em, 20vw);
 }
@@ -24,4 +25,14 @@ h1 {
 #avatar input[type="color"] {
     height: 2rem;
     width: 2rem;
+}
+
+#canvas-div {
+    position: relative;
+}
+
+#marker-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }

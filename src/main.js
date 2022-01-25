@@ -471,7 +471,6 @@ function makeid(length) {
 }
 
 export function updateNameList(states, ourID) {
-    console.log(states, ourID)
     let nameList = document.getElementById("name-list")
     while (nameList.childNodes.length > 2) {
         nameList.removeChild(nameList.lastChild)
@@ -483,6 +482,32 @@ export function updateNameList(states, ourID) {
             entry.innerHTML = user.name
             entry.style.backgroundColor = user.color
             nameList.appendChild(entry)
+        }
+    }
+}
+
+export function updateMarkers(states, ourID) {
+    let canvas = document.getElementById("marker-canvas")
+    let ctx = canvas.getContext("2d")
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+
+    let width = ctx.canvas.width
+    let centerX = canvas.dataset.centerX
+    let centerZ = canvas.dataset.centerZ
+    let scale = canvas.dataset.scale
+
+    for ([id, user] of states) {
+        if (user.transformation) {
+            let userX = user.transformation.position.x
+            let userZ = user.transformation.position.z
+
+            let userXpx = width / 2 - (centerX - userX) / scale
+            let userZpx = width / 2 - (centerZ - userZ) / scale
+
+            ctx.beginPath()
+            ctx.arc(userXpx, userZpx, width / 30, 0, 2 * Math.PI)
+            ctx.fillStyle = user.color
+            ctx.fill()
         }
     }
 }

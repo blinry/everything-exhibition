@@ -1,7 +1,7 @@
 import * as Y from "yjs"
 import {WebrtcProvider} from "y-webrtc"
 import {updateMultiplayer, updateSketch} from "./render.js"
-import {updateNameList} from "./main.js"
+import {updateNameList, updateMarkers} from "./main.js"
 
 var awareness, provider, sketchArray, groupAwareness, groupProvider
 
@@ -59,6 +59,7 @@ export async function setupMultiplayer(url, groupID) {
 
     awareness.on("change", async () => {
         await updateMultiplayer(awareness.getStates(), awareness.clientID)
+        await updateMarkers(awareness.getStates(), awareness.clientID)
     })
 
     sketchArray.observe(updateSketch)

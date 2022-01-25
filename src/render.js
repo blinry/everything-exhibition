@@ -41,9 +41,11 @@ let everything
 let scene
 let renderer
 let controls
-let camera, raycaster, mapCamera
+let camera, raycaster
 let clock
 let listener
+
+let mapRenderer, mapCamera
 
 let mouseDown = false
 let selectedObject, cursorLocation, prevCursorLocation
@@ -317,27 +319,12 @@ export function animate() {
     )
 
     //requestAnimationFrame(animate)
-
-    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight)
-    renderer.setScissor(0, 0, window.innerWidth, window.innerHeight)
     //renderer.clear();
 
     renderer.render(scene, camera)
 
     const mapWidth = Math.max(window.innerWidth / 6, 200)
     const mapHeight = mapWidth
-
-    if (showMap) {
-        renderer.setViewport(10, 10, mapWidth, mapHeight)
-        const borderSize = 3
-        renderer.setScissor(
-            10 - borderSize,
-            10 - borderSize,
-            mapWidth + borderSize * 2,
-            mapHeight + borderSize * 2
-        )
-        renderer.render(scene, mapCamera)
-    }
 
     for (let [idx, player] of Object.entries(players)) {
         player.getObjectByName("name")?.lookAt(camera.position)
@@ -454,15 +441,7 @@ export function setup() {
         0.1,
         4000
     )
-    const mapCameraSize = 1
-    mapCamera = new THREE.OrthographicCamera(
-        -mapCameraSize,
-        mapCameraSize,
-        mapCameraSize,
-        -mapCameraSize,
-        0,
-        2000
-    )
+
     listener = new THREE.AudioListener()
 
     raycaster = new THREE.Raycaster()
@@ -483,6 +462,22 @@ export function setup() {
     let renderCanvas = renderer.domElement
     renderCanvas.id = "three-canvas"
     document.body.appendChild(renderCanvas)
+
+    // Set up map renderer.
+    mapRenderer = new THREE.WebGLRenderer({
+        antialias: true,
+        canvas: document.querySelector("#map-canvas"),
+    })
+    mapRenderer.setSize(800, 800, false)
+    const mapCameraSize = 1
+    mapCamera = new THREE.OrthographicCamera(
+        -mapCameraSize,
+        mapCameraSize,
+        mapCameraSize,
+        -mapCameraSize,
+        0,
+        2000
+    )
 
     //const xrController = renderer.xr.getController(0)
 
@@ -739,9 +734,16 @@ function setupScene(everything) {
         mapCamera.bottom = -mapCameraSize
         mapCamera.updateProjectionMatrix()
 
+        let markerCanvas = document.querySelector("#marker-canvas")
+        markerCanvas.dataset.centerX = center.x
+        markerCanvas.dataset.centerZ = center.z
+        markerCanvas.dataset.scale = (2 * mapCameraSize) / 800 // 3D units per pixel
+
         mapCamera.position.copy(center)
         mapCamera.up = new THREE.Vector3(0, 0, -1)
         mapCamera.lookAt(new THREE.Vector3(center.x, 0, center.z))
+
+        mapRenderer.render(scene, mapCamera)
     }
 
     if (window.SETTINGS.lights) {
@@ -769,6 +771,8 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
     renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight)
+    renderer.setScissor(0, 0, window.innerWidth, window.innerHeight)
 }
 
 // The key defines the ratios of the resulting split.
@@ -1047,34 +1051,6 @@ export async function updateMultiplayer(states, myId) {
 
             const player = new THREE.Mesh(geometry, material)
 
-            // Add a big marker for the minimap camera.
-            const markerRadius = 20
-            const circleGeometry = new THREE.CircleGeometry(markerRadius, 16)
-            const circleMaterial = new THREE.MeshBasicMaterial({
-                color: 0xff0000,
-                //side: THREE.DoubleSide
-            })
-            const circle = new THREE.Mesh(circleGeometry, circleMaterial)
-            circle.rotateX(-Math.PI / 2)
-            circle.name = "circle"
-
-            const marker = new THREE.Group()
-            marker.position.y = 500
-
-            // Add a square to the circle to make it pointy!
-            const squareGeometry = new THREE.PlaneGeometry(
-                markerRadius,
-                markerRadius
-            )
-            const square = new THREE.Mesh(squareGeometry, circleMaterial)
-            square.rotateZ(Math.PI / 4)
-            square.position.y = (Math.sqrt(2) * markerRadius) / 2
-            square.name = "square"
-            circle.add(square)
-
-            marker.add(circle)
-            player.add(marker)
-
             players[id] = player
             scene.add(player)
         }
@@ -1136,12 +1112,6 @@ export async function updateMultiplayer(states, myId) {
 
         if (players[id].myColor != values.color) {
             players[id].material.color = new THREE.Color(values.color)
-            if (players[id].getObjectByName("circle")) {
-                players[id].getObjectByName("circle").material.color =
-                    new THREE.Color(values.color)
-                players[id].getObjectByName("square").material.color =
-                    new THREE.Color(values.color)
-            }
             let face = players[id].getObjectByName("face")
             if (face) {
                 face.children[0].material.color = new THREE.Color(values.color)
@@ -1170,13 +1140,6 @@ export async function updateMultiplayer(states, myId) {
             direction.add(values.transformation.position)
             if (players[id].children.length > 0) {
                 players[id].getObjectByName("face")?.lookAt(direction)
-
-                let marker = players[id].getObjectByName("circle")
-                // This is horrible. I'm sorry.
-                direction.y = marker.parent.position.y
-                marker.lookAt(direction)
-                marker.rotateX(-Math.PI / 2)
-                marker.rotateZ(Math.PI)
             }
         }
 
