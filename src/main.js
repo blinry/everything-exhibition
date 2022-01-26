@@ -16,6 +16,7 @@ import {
     setName,
     setColor,
     setFace,
+    setURL,
 } from "./multiplayer.js"
 import {timeStart, timeEnd, timeReset, timeDump} from "./utils.js"
 
@@ -108,7 +109,6 @@ async function startGeneration() {
 
     let topic = topicDiv.value
 
-    console.log(domain)
     let prefix = await prefixOfDomain(domain)
     let url = `${domain}/${prefix}${topic}`
     localStorage.setItem("url", url)
@@ -224,10 +224,6 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    const urlParams = new URLSearchParams(window.location.search)
-    let groupID =
-        urlParams.get("group") || localStorage.getItem("groupID") || "default"
-
     document
         .getElementById("group-button")
         .addEventListener("click", async (e) => {
@@ -242,10 +238,12 @@ export async function generateExhibition(url) {
                     "#" +
                     url
             )
+            await initializeGroup(newGroupID)
             await initializeMultiplayer(url, newGroupID)
         })
 
     history.pushState(null, null, document.location.pathname + "#" + url)
+    setURL(url)
 
     var html = await generateHTMLFromWikipedia(topic, domain)
     console.log(html)
@@ -262,6 +260,9 @@ export async function generateExhibition(url) {
 
     exhibition.previous = previousTopic
 
+    const urlParams = new URLSearchParams(window.location.search)
+    let groupID =
+        urlParams.get("group") || localStorage.getItem("groupID") || "default"
     await initializeMultiplayer(url, groupID)
     await render(exhibition)
     timeEnd(t)
@@ -270,14 +271,16 @@ export async function generateExhibition(url) {
 }
 
 async function initializeMultiplayer(url, groupID) {
-    localStorage.setItem("groupID", groupID)
     await setupMultiplayer(url, groupID)
-    await setupGroupConnection(groupID)
 
     // Trigger input events.
     document.getElementById("name").dispatchEvent(new Event("input"))
     document.getElementById("face").dispatchEvent(new Event("input"))
     document.getElementById("color").dispatchEvent(new Event("input"))
+}
+
+async function initializeGroup(groupID) {
+    await setupGroupConnection(groupID)
 }
 
 async function runQuery(query) {
@@ -421,6 +424,11 @@ window.onload = async function () {
         await startRandom()
     }
 
+    const urlParams = new URLSearchParams(window.location.search)
+    let groupID =
+        urlParams.get("group") || localStorage.getItem("groupID") || "default"
+    await initializeGroup(groupID)
+
     window.addEventListener("hashchange", async function () {
         if (location.hash) {
             let url = decodeURIComponent(location.hash.substr(1))
@@ -470,7 +478,7 @@ function makeid(length) {
     return result
 }
 
-export function updateNameList(states, ourID) {
+export async function updateNameList(states, ourID) {
     let nameList = document.getElementById("name-list")
     while (nameList.childNodes.length > 2) {
         nameList.removeChild(nameList.lastChild)
@@ -481,6 +489,16 @@ export function updateNameList(states, ourID) {
             entry.classList.add("collection-item")
             entry.innerHTML = user.name
             entry.style.backgroundColor = user.color
+
+            if (user.url) {
+                let link = document.createElement("a")
+                link.classList.add("secondary-content")
+                link.href = "#" + user.url
+                let parsedURL = await parseURL(user.url)
+                link.innerHTML = parsedURL.topic
+                entry.appendChild(link)
+            }
+
             nameList.appendChild(entry)
         }
     }

@@ -30,7 +30,10 @@ export async function setupGroupConnection(groupID) {
     groupAwareness = groupProvider.awareness
 
     groupAwareness.on("change", async () => {
-        updateNameList(groupAwareness.getStates(), groupAwareness.clientID)
+        await updateNameList(
+            groupAwareness.getStates(),
+            groupAwareness.clientID
+        )
     })
 }
 
