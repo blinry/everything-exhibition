@@ -522,9 +522,34 @@ export function updateMarkers(states, ourID) {
             let userXpx = width / 2 - (centerX - userX) / scale
             let userZpx = width / 2 - (centerZ - userZ) / scale
 
-            ctx.beginPath()
-            ctx.arc(userXpx, userZpx, width / 30, 0, 2 * Math.PI)
+            let markerRadius = id == ourID ? width / 30 : width / 40
+
+            // Set colors.
             ctx.fillStyle = user.color
+            //ctx.strokeStyle = "white"
+            //ctx.lineWidth = markerRadius / 8
+
+            // Draw a rotated square.
+            let direction = user.transformation.rotation
+            let angle = -Math.atan2(direction.x, direction.z)
+
+            ctx.save()
+            ctx.translate(userXpx, userZpx)
+            ctx.rotate(angle)
+            ctx.translate(0, markerRadius / Math.sqrt(2))
+            ctx.rotate(Math.PI / 4)
+            ctx.fillStyle = user.color
+            ctx.fillRect(
+                -markerRadius / 2,
+                -markerRadius / 2,
+                markerRadius,
+                markerRadius
+            )
+            ctx.restore()
+
+            // Draw circle.
+            ctx.beginPath()
+            ctx.arc(userXpx, userZpx, markerRadius, 0, 2 * Math.PI)
             ctx.fill()
         }
     }
