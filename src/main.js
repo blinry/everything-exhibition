@@ -391,10 +391,22 @@ window.onload = async function () {
         localStorage.setItem("face", e.target.value)
     })
 
+    // Initialize Materialize things.
     let selects = document.querySelectorAll("select")
     M.FormSelect.init(selects, {})
 
-    //goodSuggestions()
+    var elems = document.querySelectorAll(".modal")
+    M.Modal.init(elems, {
+        onOpenStart: function () {
+            console.log(window.location)
+        },
+    })
+    document.getElementById("help-button").addEventListener("click", (e) => {
+        console.log("click")
+        M.Modal.getInstance(document.getElementById("help-modal")).open()
+        //e.preventDefault()
+        e.stopPropagation()
+    })
 
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
 
