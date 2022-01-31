@@ -1,5 +1,5 @@
 h1 {
-    font-size: 3.5rem;
+    font-size: 2rem !important;
     font-family: Lobster, cursive;
 }
 
@@ -35,4 +35,11 @@ h1 {
     position: absolute;
     top: 0;
     left: 0;
+}
+
+#language-card,
+#topic-card {
+    width: 30rem;
+    height: 3rem;
+    margin-right: 1rem;
 }

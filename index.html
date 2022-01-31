@@ -19,46 +19,51 @@
         <script src="src/main.js" type="module"></script>
     </head>
     <body>
-        <div class="card-panel white">
-            <h1>The Everything Exhibition</h1>
-            <div class="row">
-                <div class="input-field col s5">
-                    <select id="language"></select>
-                    <label>Data source</label>
-                </div>
-                <div class="input-field col s6">
-                    <label for="topic" class="active test"
-                        >What are you curious about?</label
-                    >
-                    <input
-                        id="topic"
-                        type="text"
-                        list="suggestions"
-                        autocomplete="off"
-                    />
-                </div>
-                <button
-                    class="waves-effect waves-light btn blue-grey col s1"
-                    id="generate-button"
-                >
-                    Generate!
-                </button>
-                <datalist id="suggestions"></datalist>
+        <nav>
+            <div class="nav-wrapper">
+                <div class="brand-logo">EE</div>
+                <ul class="right">
+                    <li>
+                        <div class="card" id="language-card">
+                            <div class="input-field">
+                                <select id="language"></select>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="card" id="topic-card">
+                            <form>
+                                <div class="input-field">
+                                    <input
+                                        id="topic"
+                                        type="text"
+                                        list="suggestions"
+                                        autocomplete="off"
+                                    />
+                                </div>
+                            </form>
+                        </div>
+                    </li>
+                    <li>
+                        <a
+                            class="waves-effect waves-light btn"
+                            id="generate-button"
+                        >
+                            Generate!
+                        </a>
+                        <datalist id="suggestions"></datalist>
+                    </li>
+                    <li>
+                        <a
+                            class="waves-effect waves-light btn"
+                            id="random-button"
+                        >
+                            Random!
+                        </a>
+                    </li>
+                </ul>
             </div>
-
-            <button
-                class="waves-effect waves-light btn blue-grey"
-                id="random-button"
-            >
-                Random!
-            </button>
-            <button
-                class="waves-effect waves-light btn blue-grey"
-                id="group-button"
-            >
-                New group
-            </button>
-        </div>
+        </nav>
         <div id="settings">
             <div><span id="fps">?</span> FPS</div>
             <!--
@@ -103,6 +108,12 @@
                 <canvas id="map-canvas"></canvas>
                 <canvas id="marker-canvas" width="800" height="800"></canvas>
             </div>
+            <button
+                class="waves-effect waves-light btn blue-grey"
+                id="group-button"
+            >
+                New group
+            </button>
         </div>
     </body>
 </html>
