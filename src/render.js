@@ -803,9 +803,19 @@ function loadModel(name, goalsize) {
 }
 
 function decorateRoom(width, depth, group) {
-    let bench = models.bench.clone()
-    bench.position.z = -depth / 2
-    group.add(bench)
+    let largeEnough = width > 100 && depth > 100
+    let notTooBig = width < 400 && depth < 400
+    if (largeEnough && notTooBig) {
+        let bench = models.bench.clone()
+
+        bench.position.z = -depth / 2
+
+        if (depth > width) {
+            bench.rotateY(Math.PI / 2)
+        }
+
+        group.add(bench)
+    }
 }
 
 function onWindowResize() {
