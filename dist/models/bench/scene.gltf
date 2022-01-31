@@ -1,0 +1,372 @@
+{
+    "accessors": [
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [
+                0.65000009536743164, 0.27482721209526062, 0.44982722401618958
+            ],
+            "min": [-0.65000009536743164, -0.27482721209526062, 0],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 14808,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [1, 0.87491911649703979, 1],
+            "min": [-1, -0.87491917610168457, -0.91437703371047974],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [1, 0.9999956488609314, 1, 1],
+            "min": [-1, -0.9328877329826355, -0.96653068065643311, -1],
+            "type": "VEC4"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [1.1986145973205566, 1.1986144781112671],
+            "min": [-0.19861459732055664, -0.19861456751823425],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 9872,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [1.1986145973205566, 1.1986144781112671],
+            "min": [-0.19861459732055664, -0.19861456751823425],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 19744,
+            "componentType": 5126,
+            "count": 1234,
+            "max": [1.1986145973205566, 1.1986144781112671],
+            "min": [-0.19861459732055664, -0.19861456751823425],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 0,
+            "componentType": 5125,
+            "count": 4206,
+            "max": [1233],
+            "min": [0],
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 29616,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [
+                0.63534587621688843, 0.27935886383056641, 0.45420676469802856
+            ],
+            "min": [
+                -0.63534587621688843, -0.27935886383056641, 0.30518940091133118
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 44736,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [0.99749153852462769, 1, 1],
+            "min": [-0.99749153852462769, -1, -1],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "byteOffset": 19744,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [0.45147979259490967, 0.99943363666534424, 1, 1],
+            "min": [-0.45147979259490967, -1, -1, 1],
+            "type": "VEC4"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 29616,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [0.96526330709457397, 0.96905195713043213],
+            "min": [0.026343584060668945, 0.026253066956996918],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 39696,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [0.96526330709457397, 0.96905195713043213],
+            "min": [0.026343584060668945, 0.026253066956996918],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 49776,
+            "componentType": 5126,
+            "count": 1260,
+            "max": [0.96526330709457397, 0.96905195713043213],
+            "min": [0.026343584060668945, 0.026253066956996918],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 0,
+            "byteOffset": 16824,
+            "componentType": 5125,
+            "count": 1728,
+            "max": [1259],
+            "min": [0],
+            "type": "SCALAR"
+        }
+    ],
+    "asset": {
+        "extras": {
+            "author": "Luca 3D (https://sketchfab.com/luca3d)",
+            "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+            "source": "https://sketchfab.com/3d-models/modern-bench-1-caa4515e36444e4c8c100296463e83c1",
+            "title": "Modern Bench 1"
+        },
+        "generator": "Sketchfab-7.0.0",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 23736,
+            "byteOffset": 0,
+            "name": "floatBufferViews",
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 59856,
+            "byteOffset": 23736,
+            "byteStride": 8,
+            "name": "floatBufferViews",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 59856,
+            "byteOffset": 83592,
+            "byteStride": 12,
+            "name": "floatBufferViews",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 39904,
+            "byteOffset": 143448,
+            "byteStride": 16,
+            "name": "floatBufferViews",
+            "target": 34962
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 183352,
+            "uri": "scene.bin"
+        }
+    ],
+    "extensionsRequired": ["KHR_materials_pbrSpecularGlossiness"],
+    "extensionsUsed": ["KHR_materials_pbrSpecularGlossiness"],
+    "images": [
+        {
+            "uri": "textures/Stainless_Steel_diffuse.jpeg"
+        },
+        {
+            "uri": "textures/Stainless_Steel_specularGlossiness.png"
+        },
+        {
+            "uri": "textures/Stainless_Steel_normal.jpeg"
+        },
+        {
+            "uri": "textures/Wood_diffuse.jpeg"
+        },
+        {
+            "uri": "textures/Wood_specularGlossiness.png"
+        },
+        {
+            "uri": "textures/Wood_normal.jpeg"
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "extensions": {
+                "KHR_materials_pbrSpecularGlossiness": {
+                    "diffuseFactor": [1, 1, 1, 1],
+                    "diffuseTexture": {
+                        "index": 0,
+                        "texCoord": 0
+                    },
+                    "glossinessFactor": 1,
+                    "specularFactor": [1, 1, 1],
+                    "specularGlossinessTexture": {
+                        "index": 1,
+                        "texCoord": 0
+                    }
+                }
+            },
+            "name": "Stainless_Steel",
+            "normalTexture": {
+                "index": 2,
+                "scale": 1,
+                "texCoord": 0
+            }
+        },
+        {
+            "doubleSided": true,
+            "emissiveFactor": [0, 0, 0],
+            "extensions": {
+                "KHR_materials_pbrSpecularGlossiness": {
+                    "diffuseFactor": [1, 1, 1, 1],
+                    "diffuseTexture": {
+                        "index": 3,
+                        "texCoord": 0
+                    },
+                    "glossinessFactor": 1,
+                    "specularFactor": [
+                        0.28000000000000003, 0.28000000000000003,
+                        0.28000000000000003
+                    ],
+                    "specularGlossinessTexture": {
+                        "index": 4,
+                        "texCoord": 0
+                    }
+                }
+            },
+            "name": "Wood",
+            "normalTexture": {
+                "index": 5,
+                "scale": 0.5,
+                "texCoord": 0
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Modern Bench 1_Stainless Steel_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 1,
+                        "POSITION": 0,
+                        "TANGENT": 2,
+                        "TEXCOORD_0": 3,
+                        "TEXCOORD_1": 4,
+                        "TEXCOORD_2": 5
+                    },
+                    "indices": 6,
+                    "material": 0,
+                    "mode": 4
+                }
+            ]
+        },
+        {
+            "name": "Modern Bench 1_Wood_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 8,
+                        "POSITION": 7,
+                        "TANGENT": 9,
+                        "TEXCOORD_0": 10,
+                        "TEXCOORD_1": 11,
+                        "TEXCOORD_2": 12
+                    },
+                    "indices": 13,
+                    "material": 1,
+                    "mode": 4
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "children": [1],
+            "name": "RootNode (gltf orientation matrix)",
+            "rotation": [-0.70710678118654746, -0, -0, 0.70710678118654757]
+        },
+        {
+            "children": [2],
+            "name": "RootNode (model correction matrix)"
+        },
+        {
+            "children": [3],
+            "matrix": [1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1],
+            "name": "Modern Bench 1.fbx"
+        },
+        {
+            "children": [4],
+            "name": "RootNode"
+        },
+        {
+            "children": [5, 6],
+            "matrix": [
+                100, 0, 0, 0, 0, -1.6292067939183141e-5, -99.999999999998678, 0,
+                0, 99.999999999998678, -1.6292067939183141e-5, 0, 0, 0, 0, 1
+            ],
+            "name": "Modern Bench 1"
+        },
+        {
+            "mesh": 0,
+            "name": "Modern Bench 1_Stainless Steel_0"
+        },
+        {
+            "mesh": 1,
+            "name": "Modern Bench 1_Wood_0"
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "OSG_Scene",
+            "nodes": [0]
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0
+        },
+        {
+            "sampler": 0,
+            "source": 1
+        },
+        {
+            "sampler": 0,
+            "source": 2
+        },
+        {
+            "sampler": 0,
+            "source": 3
+        },
+        {
+            "sampler": 0,
+            "source": 4
+        },
+        {
+            "sampler": 0,
+            "source": 5
+        }
+    ]
+}

@@ -410,7 +410,7 @@ window.onload = async function () {
 
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
 
-    setup()
+    await setup()
 
     // Pick random color.
     let color =

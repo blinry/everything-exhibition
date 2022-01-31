@@ -16,6 +16,7 @@ import {
 } from "./objects.js"
 
 import {PointerLockControls} from "three/examples/jsm/controls/PointerLockControls"
+import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader"
 //import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
 //import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
 import {Sky} from "three/examples/jsm/objects/Sky"
@@ -68,6 +69,7 @@ let movementSpeed = defaultMovementSpeed
 const prevGamePads = new Map()
 
 let players = {}
+let models = {}
 let sketch = new THREE.Group()
 
 let fps = 0
@@ -427,7 +429,7 @@ function xrInput() {
     }
 }
 
-export function setup() {
+export async function setup() {
     clock = new THREE.Clock()
 
     scene = new THREE.Scene()
@@ -617,7 +619,7 @@ export function setup() {
     document.addEventListener("keydown", onKeyDown)
     document.addEventListener("keyup", onKeyUp)
 
-    setupSceneOnce()
+    await setupSceneOnce()
 
     onWindowResize()
     window.addEventListener("resize", onWindowResize)
@@ -651,7 +653,7 @@ export function loadMaterial(path, scaling, fallbackColor) {
     })
 }
 
-function setupSceneOnce() {
+async function setupSceneOnce() {
     var sky = new Sky()
     sky.scale.setScalar(300000)
     sky.material.uniforms.turbidity.value = 2
@@ -701,6 +703,8 @@ function setupSceneOnce() {
     light.shadow.mapSize.height = 4 * 512
     light.shadow.bias = -0.0001
     scene.add(light)
+
+    await loadModel("bench", 50 / 5)
 }
 
 function setupScene(everything) {
@@ -765,6 +769,43 @@ function setupScene(everything) {
     //const model1 = controllerModelFactory.createControllerModel(controllerGrip1)
     //controllerGrip1.add(model1)
     //scene.add(controllerGrip1)
+}
+
+function loadModel(name, goalsize) {
+    return new Promise(function (resolve) {
+        // Instantiate a loader
+        const loader = new GLTFLoader()
+
+        // Load a glTF resource
+        loader.load(
+            // resource URL
+            `models/${name}/scene.gltf`,
+            // called when the resource is loaded
+            function (gltf) {
+                let sizebox = new THREE.Box3().setFromObject(gltf.scene)
+                let h = sizebox.max.y - sizebox.min.y
+                gltf.scene.scale.set(goalsize / h, goalsize / h, goalsize / h)
+                gltf.scene.position.y = -25 - sizebox.min.y
+                models[name] = gltf.scene
+                resolve()
+                //scene.add( gltf.scene );
+            },
+            // called while loading is progressing
+            function (xhr) {
+                console.log((xhr.loaded / xhr.total) * 100 + "% loaded")
+            },
+            // called when loading has errors
+            function (error) {
+                console.log("An error happened", error)
+            }
+        )
+    })
+}
+
+function decorateRoom(width, depth, group) {
+    let bench = models.bench.clone()
+    bench.position.z = -depth / 2
+    group.add(bench)
 }
 
 function onWindowResize() {
@@ -1036,6 +1077,7 @@ function distributeObjects(objects, level) {
     floor.position.z = -depth / 2
     floor.position.y = -25
     group.add(floor)
+    decorateRoom(width, depth, group)
 
     return group
 }
