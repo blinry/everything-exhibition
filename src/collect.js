@@ -35,7 +35,7 @@ export async function apiURL(domain) {
     }
 
     // Still here? Fail horribly.
-    console.log("Failed to find API URL for domain", domain)
+    throw new Error(`Failed to find API URL for domain ${domain}`)
 }
 
 let domainPrefixes = {

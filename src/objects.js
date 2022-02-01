@@ -6,7 +6,7 @@ import {loadMaterial} from "./render.js"
 export const WALL_THICKNESS = 2
 export const DOOR_WIDTH = 20
 
-const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.5, 0xcccccc)
+const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.2, 0xcccccc)
 var FLOOR_TEXTURE = loadMaterial("plywood", 0.5, 0x665d48)
 var GROUND_TEXTURE = loadMaterial("beach", 0.5, 0x665d48)
 
