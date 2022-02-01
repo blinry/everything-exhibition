@@ -443,6 +443,8 @@ export async function setup() {
         0.1,
         4000
     )
+    // Make this camera see the players.
+    camera.layers.enable(2)
 
     listener = new THREE.AudioListener()
 
@@ -1107,6 +1109,7 @@ export async function updateMultiplayer(states, myId) {
             })
 
             const player = new THREE.Mesh(geometry, material)
+            player.layers.set(2)
 
             players[id] = player
             scene.add(player)
