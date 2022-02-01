@@ -51,9 +51,13 @@ export function createAudio(audio, listener) {
     return textPlane
 }
 
-export function createPicture(img) {
+export function createPicture(img, link) {
     var plane = createImagePlane(img.url, 30, null, img.width, img.height)
     if (img.description) {
+        if (link) {
+            img.description.links = [{page: link, text: "View Source"}]
+            img.description.text += " View Source"
+        }
         var textPlane = createTextPlane(img.description, 10, 0.5)
         textPlane.position.z = 1
         textPlane.position.y = -5

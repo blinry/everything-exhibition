@@ -153,7 +153,14 @@ function generateObjectPromises(chapter, level) {
         }
         if (window.SETTINGS.images && thing.type == "image") {
             if (thing.url.match(/\.(jpg|jpeg|png|svg)$/i)) {
-                things.push(createPicture(thing))
+                let link
+                if (thing.description?.links) {
+                    link = thing.description.links[0].page
+                    if (!(link.endsWith("webm") || link.endsWith("mp4"))) {
+                        link = undefined
+                    }
+                }
+                things.push(createPicture(thing, link))
             }
         }
         if (thing.type == "audio") {

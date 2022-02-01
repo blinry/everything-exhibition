@@ -176,7 +176,7 @@ export async function generateExhibition(url) {
 
     let api = await apiURL(parsedURL.domain)
 
-    if (!api) {
+    if (!api || url.endsWith("webm") || url.endsWith("mp4")) {
         window.open(url, "_blank")
         return
     }
