@@ -458,10 +458,13 @@ export async function setup() {
     raycaster = new THREE.Raycaster()
     raycaster.layers.set(1)
 
-    renderer = new THREE.WebGLRenderer({antialias: true})
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        canvas: document.getElementById("three"),
+    })
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
+    //renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT)
     renderer.xr.enabled = true
     renderer.setClearColor(0xff0000, 1)
     renderer.setScissorTest(true)
@@ -470,9 +473,9 @@ export async function setup() {
     //renderer.outputEncoding = THREE.sRGBEncoding;
     //renderer.toneMapping = THREE.ACESFilmicToneMapping;
     //renderer.toneMappingExposure = 1
-    let renderCanvas = renderer.domElement
-    renderCanvas.id = "three-canvas"
-    document.body.appendChild(renderCanvas)
+    //let renderCanvas = renderer.domElement
+    //renderCanvas.id = "three-canvas"
+    //document.body.appendChild(renderCanvas)
 
     // Set up map renderer.
     mapRenderer = new THREE.WebGLRenderer({
@@ -504,6 +507,7 @@ export async function setup() {
     controls = new PointerLockControls(camera, document.body)
 
     renderer.domElement.addEventListener("click", function () {
+        console.log("click!")
         controls.lock()
     })
     document.addEventListener("pointerlockerror", function () {
@@ -833,11 +837,18 @@ function decorateRoom(width, depth, group) {
 }
 
 function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight
+    let div = document.querySelector("#three-div")
+
+    let width = div.getBoundingClientRect().width
+    let height = div.getBoundingClientRect().height
+
+    console.log(width, height)
+
+    camera.aspect = width / height
     camera.updateProjectionMatrix()
-    renderer.setSize(window.innerWidth, window.innerHeight)
-    renderer.setViewport(0, 0, window.innerWidth, window.innerHeight)
-    renderer.setScissor(0, 0, window.innerWidth, window.innerHeight)
+    renderer.setSize(width, height, false)
+    renderer.setViewport(0, 0, width, height)
+    renderer.setScissor(0, 0, width, height)
 }
 
 // The key defines the ratios of the resulting split.
