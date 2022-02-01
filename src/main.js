@@ -111,7 +111,6 @@ async function startGeneration() {
 
     let prefix = await prefixOfDomain(domain)
     let url = `${domain}/${prefix}${topic}`
-    localStorage.setItem("url", url)
     generateExhibition(url)
 }
 
@@ -244,6 +243,7 @@ export async function generateExhibition(url) {
 
     history.pushState(null, null, document.location.pathname + "#" + url)
     setURL(url)
+    localStorage.setItem("url", url)
 
     try {
         var html = await generateHTMLFromWikipedia(topic, domain)
@@ -409,11 +409,13 @@ window.onload = async function () {
         },
     })
     document.getElementById("help-button").addEventListener("click", (e) => {
-        console.log("click")
         M.Modal.getInstance(document.getElementById("help-modal")).open()
         //e.preventDefault()
         e.stopPropagation()
     })
+    if (!localStorage.getItem("url")) {
+        M.Modal.getInstance(document.getElementById("help-modal")).open()
+    }
 
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
 
