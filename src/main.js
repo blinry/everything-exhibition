@@ -458,7 +458,7 @@ window.onload = async function () {
         }
     })
 
-    let name = localStorage.getItem("name") || "squirrel"
+    let name = localStorage.getItem("name") || "anonymous"
     document.getElementById("name").value = name
 
     let face = localStorage.getItem("face") || "^_^"
