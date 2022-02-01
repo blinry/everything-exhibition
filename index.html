@@ -24,10 +24,17 @@
                 <div class="brand-logo">EE</div>
                 <ul class="right">
                     <li>
-                        <div class="card" id="language-card">
-                            <div class="input-field">
-                                <select id="language"></select>
-                            </div>
+                        <div class="card" id="domain-card">
+                            <form>
+                                <div class="input-field">
+                                    <input
+                                        id="domain"
+                                        type="text"
+                                        list="domain-suggestions"
+                                        autocomplete="off"
+                                    />
+                                </div>
+                            </form>
                         </div>
                     </li>
                     <li>
@@ -51,6 +58,7 @@
                         >
                             Generate!
                         </a>
+                        <datalist id="domain-suggestions"></datalist>
                         <datalist id="suggestions"></datalist>
                     </li>
                     <li>

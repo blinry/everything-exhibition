@@ -88,6 +88,14 @@ function addOption(label) {
     datalist.appendChild(option)
 }
 
+function addDomainOption(label) {
+    let datalist = document.getElementById("domain-suggestions")
+    let option = document.createElement("option")
+
+    option.value = `${label}`
+    datalist.appendChild(option)
+}
+
 function addFaceOption(label) {
     let datalist = document.getElementById("face-suggestions")
     let option = document.createElement("option")
@@ -101,7 +109,7 @@ export function updateStatus(text) {
 }
 
 async function startGeneration() {
-    let domainDiv = document.getElementById("language")
+    let domainDiv = document.getElementById("domain")
     domain = domainDiv.value
 
     let topicDiv = document.getElementById("topic")
@@ -153,24 +161,7 @@ async function pickCorrectDomainOption(url) {
 
     if (parsedURL.topic) {
         let topic = parsedURL.topic
-        // Scan through available options and check whether domain is one of them.
-        let languageSelect = document.getElementById("language")
-        languageSelect.selectedIndex = -1
-        for (let i = 0; i < languageSelect.children.length; i++) {
-            if (languageSelect.children[i].value === domain) {
-                languageSelect.selectedIndex = i
-                break
-            }
-        }
-        if (languageSelect.selectedIndex === -1) {
-            let option = document.createElement("option")
-            option.innerHTML = domain
-            option.value = domain
-            languageSelect.appendChild(option)
-            languageSelect.value = domain
-        }
-
-        document.getElementById("language").value = domain
+        document.getElementById("domain").value = domain
         document.getElementById("topic").value = topic
         M.updateTextFields()
     }
@@ -265,7 +256,7 @@ export async function generateExhibition(url) {
         let groupID =
             urlParams.get("group") ||
             localStorage.getItem("groupID") ||
-            "default"
+            makeid(30)
         await initializeMultiplayer(url, groupID)
         await render(exhibition)
         timeEnd(t)
@@ -314,13 +305,13 @@ function populateFaceOptions() {
     addFaceOption("UwU")
 }
 
-async function populateLanguageOptions() {
+async function populateDomainOptions() {
     let select = document.querySelector("select")
 
-    let option = document.createElement("option")
-    option.innerHTML = "Wikimedia Commons"
-    option.value = "https://commons.wikimedia.org"
-    select.appendChild(option)
+    //let option = document.createElement("option")
+    //option.innerHTML = "Wikimedia Commons"
+    //option.value = "https://commons.wikimedia.org"
+    //select.appendChild(option)
 
     const langQuery = `
 SELECT ?languageCode ?languageLabel ?records (GROUP_CONCAT(?nativeLabel; SEPARATOR = "/") AS ?nativeLabels) WHERE {
@@ -336,23 +327,18 @@ GROUP BY ?languageCode ?languageLabel ?records ORDER BY DESC(?records)
     `
     let results = await runQuery(langQuery)
 
-    for (let line of results) {
-        let option = document.createElement("option")
-        option.innerHTML =
-            `${line.languageLabel.value} (${line.languageCode.value}) – ${line.nativeLabels.value}`.trunc(
-                40
-            )
-        option.value = `https://${line.languageCode.value}.wikipedia.org`
-        select.appendChild(option)
-    }
+    var datalist = document.getElementById("domain-suggestions")
+    datalist.innerHTML = ""
 
-    document.querySelector("#language").value = domain
+    for (let line of results) {
+        addDomainOption(`https://${line.languageCode.value}.wikipedia.org`)
+    }
 }
 
 window.onload = async function () {
-    await populateLanguageOptions()
+    await populateDomainOptions()
     populateFaceOptions()
-    document.getElementById("language").addEventListener("change", function () {
+    document.getElementById("domain").addEventListener("change", function () {
         domain = this.value
     })
 
