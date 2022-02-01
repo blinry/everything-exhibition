@@ -439,7 +439,7 @@ window.onload = async function () {
 
     if (url) {
         await pickCorrectDomainOption(url)
-        generateExhibition(url) // TODO also put in localstorage
+        generateExhibition(url)
     } else {
         domain = "https://en.wikipedia.org"
         await startRandom()
@@ -447,14 +447,14 @@ window.onload = async function () {
 
     const urlParams = new URLSearchParams(window.location.search)
     let groupID =
-        urlParams.get("group") || localStorage.getItem("groupID") || "default"
+        urlParams.get("group") || localStorage.getItem("groupID") || makeid(30)
     await initializeGroup(groupID)
 
     window.addEventListener("hashchange", async function () {
         if (location.hash) {
             let url = decodeURIComponent(location.hash.substr(1))
             await pickCorrectDomainOption(url)
-            generateExhibition(url) // TODO also put in localstorage
+            generateExhibition(url)
         }
     })
 
