@@ -90,8 +90,7 @@ export async function generateHTMLFromWikipedia(topic, domain) {
     console.log(json)
     let parser = new DOMParser()
     if (json?.parse?.text?.["*"] == undefined) {
-        console.log("Article not found: ", topic)
-        return
+        throw new Error(`Topic "${topic}" not found at ${domain}`)
     }
     let content = parser
         .parseFromString(json.parse.text["*"], "text/html")

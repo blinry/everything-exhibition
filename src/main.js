@@ -245,27 +245,34 @@ export async function generateExhibition(url) {
     history.pushState(null, null, document.location.pathname + "#" + url)
     setURL(url)
 
-    var html = await generateHTMLFromWikipedia(topic, domain)
-    console.log(html)
-    var exhibition = parseHTML(html, topic)
-    console.log(exhibition)
+    try {
+        var html = await generateHTMLFromWikipedia(topic, domain)
+        console.log(html)
+        var exhibition = parseHTML(html, topic)
+        console.log(exhibition)
 
-    //var exhibition = {name: "Test", paragraphs: [{text: "!"}], sections: [
-    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "fu"}]},
-    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
-    //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
-    //    {name: "B", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
-    //    {name: "C", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
-    //]}
+        //var exhibition = {name: "Test", paragraphs: [{text: "!"}], sections: [
+        //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "fu"}]},
+        //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+        //    {name: "A", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+        //    {name: "B", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+        //    {name: "C", paragraphs: [{text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}, {text: "Lorem ipsum dolor sit amet idipisci blubber bla!"}]},
+        //]}
 
-    exhibition.previous = previousTopic
+        exhibition.previous = previousTopic
 
-    const urlParams = new URLSearchParams(window.location.search)
-    let groupID =
-        urlParams.get("group") || localStorage.getItem("groupID") || "default"
-    await initializeMultiplayer(url, groupID)
-    await render(exhibition)
-    timeEnd(t)
+        const urlParams = new URLSearchParams(window.location.search)
+        let groupID =
+            urlParams.get("group") ||
+            localStorage.getItem("groupID") ||
+            "default"
+        await initializeMultiplayer(url, groupID)
+        await render(exhibition)
+        timeEnd(t)
+    } catch (e) {
+        console.log(e)
+        updateStatus("Error: " + e.message)
+    }
 
     timeDump()
 }
