@@ -497,6 +497,11 @@ export async function setup() {
     renderer.domElement.addEventListener("click", function () {
         controls.lock()
     })
+    document.addEventListener("pointerlockerror", function () {
+        setTimeout(function () {
+            renderer.domElement.click()
+        }, 100)
+    })
 
     document.addEventListener("mousedown", () => {
         if (controls.isLocked) {
