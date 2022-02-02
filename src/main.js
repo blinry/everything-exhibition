@@ -222,7 +222,7 @@ export async function generateExhibition(url) {
     document
         .getElementById("group-button")
         .addEventListener("click", async (e) => {
-            M.toast({html: "Link copied to clipboard!"})
+            M.toast({html: "Group link copied to clipboard!"})
             let newGroupID = makeid(30)
             copyStringToClipboard(
                 document.location.protocol +
@@ -235,6 +235,22 @@ export async function generateExhibition(url) {
             )
             await initializeGroup(newGroupID)
             await initializeMultiplayer(url, newGroupID)
+        })
+
+    document
+        .getElementById("invite-button")
+        .addEventListener("click", async (e) => {
+            M.toast({html: "Invite link copied to clipboard!"})
+            let groupID = localStorage.getItem("groupID")
+            copyStringToClipboard(
+                document.location.protocol +
+                    "//" +
+                    document.location.host +
+                    "/?group=" +
+                    groupID +
+                    "#" +
+                    url
+            )
         })
 
     history.pushState(null, null, document.location.pathname + "#" + url)

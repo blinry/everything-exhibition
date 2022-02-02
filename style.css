@@ -22,6 +22,10 @@ h1 {
     width: max(20em, 20vw);
 }
 
+#name-list a {
+    color: white;
+}
+
 #avatar input[type="color"] {
     height: 2rem;
     width: 2rem;
