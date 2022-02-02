@@ -115,6 +115,11 @@ async function startGeneration() {
     let topicDiv = document.getElementById("topic")
     topicDiv.blur()
 
+    let firstSuggestion = document.getElementById("suggestions").firstChild
+    if (firstSuggestion) {
+        topicDiv.value = firstSuggestion.value
+    }
+
     let topic = topicDiv.value
 
     let prefix = await prefixOfDomain(domain)
