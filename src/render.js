@@ -842,8 +842,6 @@ function onWindowResize() {
     let width = div.getBoundingClientRect().width
     let height = div.getBoundingClientRect().height
 
-    console.log(width, height)
-
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height, false)

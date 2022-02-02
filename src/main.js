@@ -257,11 +257,7 @@ export async function generateExhibition(url) {
 
         exhibition.previous = previousTopic
 
-        const urlParams = new URLSearchParams(window.location.search)
-        let groupID =
-            urlParams.get("group") ||
-            localStorage.getItem("groupID") ||
-            makeid(30)
+        let groupID = localStorage.getItem("groupID")
         await initializeMultiplayer(url, groupID)
         await render(exhibition)
         timeEnd(t)
@@ -283,6 +279,7 @@ async function initializeMultiplayer(url, groupID) {
 }
 
 async function initializeGroup(groupID) {
+    localStorage.setItem("groupID", groupID)
     await setupGroupConnection(groupID)
 }
 
@@ -496,9 +493,7 @@ function makeid(length) {
 
 export async function updateNameList(states, ourID) {
     let nameList = document.getElementById("name-list")
-    while (nameList.childNodes.length > 2) {
-        nameList.removeChild(nameList.lastChild)
-    }
+    nameList.innerHTML = ""
     for ([id, user] of states) {
         if (id != ourID) {
             let entry = document.createElement("li")
