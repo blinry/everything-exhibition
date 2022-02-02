@@ -403,6 +403,10 @@ window.onload = async function () {
         M.Modal.getInstance(document.getElementById("help-modal")).open()
     }
 
+    document.getElementById("domain").addEventListener("click", (e) => {
+        e.target.value = ""
+    })
+
     topicStack = JSON.parse(localStorage.getItem("topicStack") || "[]")
 
     await setup()
