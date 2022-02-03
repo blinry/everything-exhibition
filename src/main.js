@@ -541,7 +541,7 @@ export function updateMarkers(states, ourID) {
     let centerZ = canvas.dataset.centerZ
     let scale = canvas.dataset.scale
 
-    for ([id, user] of states) {
+    for (let [id, user] of states) {
         if (user.transformation) {
             let userX = user.transformation.position.x
             let userZ = user.transformation.position.z

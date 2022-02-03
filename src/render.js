@@ -507,7 +507,6 @@ export async function setup() {
     controls = new PointerLockControls(camera, document.body)
 
     renderer.domElement.addEventListener("click", function () {
-        console.log("click!")
         controls.lock()
     })
     document.addEventListener("pointerlockerror", function () {
