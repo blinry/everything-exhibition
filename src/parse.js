@@ -86,6 +86,25 @@ function parseList(node) {
     return paragraph
 }
 
+function parseTable(node) {
+    console.log(node)
+    let paragraph = {type: "paragraph", text: "", links: []}
+    let rows = [...node.querySelectorAll("tr")]
+    rows.map((row) => {
+        let cells = [...row.querySelectorAll("th, td")]
+        let rowtext = cells
+            .map((cell) => {
+                for (const a of cell.querySelectorAll("a")) {
+                    paragraph.links.push(resolveLink(a))
+                }
+                return cell.textContent
+            })
+            .join(" | ")
+        paragraph.text += rowtext + "\n"
+    })
+    return paragraph
+}
+
 export function parseHTML(html, title) {
     let exhibition = {
         type: "section",
@@ -112,12 +131,13 @@ export function parseHTML(html, title) {
             stack.splice(stack.length - removeHowMany, removeHowMany)
             stack[stack.length - 1].content.push(section)
             stack.push(section)
-        } else if (
-            ["P", "BLOCKQUOTE", "DL", "DIV", "TABLE"].includes(node.nodeName)
-        ) {
+        } else if (["P", "BLOCKQUOTE", "DL", "DIV"].includes(node.nodeName)) {
             if (node.textContent.trim() !== "") {
                 currentSection.content.push(parseParagraph(node))
             }
+        } else if (node.nodeName == "TABLE") {
+            let paragraph = parseTable(node)
+            currentSection.content.push(paragraph)
         } else if (node.nodeName == "FIGURE") {
             let images = parseImages(node)
             currentSection.content.push(images)
