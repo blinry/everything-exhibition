@@ -510,7 +510,7 @@ function makeid(length) {
 export async function updateNameList(states, ourID) {
     let nameList = document.getElementById("name-list")
     nameList.innerHTML = ""
-    for ([id, user] of states) {
+    for (let [id, user] of states) {
         if (id != ourID) {
             let entry = document.createElement("li")
             entry.classList.add("collection-item")
