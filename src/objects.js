@@ -156,6 +156,7 @@ export function createTextPlane(paragraph, width, scale = 1) {
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.5)
     let textMaterial = new THREE.MeshStandardMaterial({color: "#eee"})
     var plane = new THREE.Mesh(planeGeometry, textMaterial)
+    plane.editLink = "https://test.com"
     plane.layers.enable(1)
     group.add(plane)
 

@@ -173,14 +173,21 @@ async function pickCorrectDomainOption(url) {
     }
 }
 
+export function openLink(url) {
+    window.open(url, "_blank")
+}
+
 export async function generateExhibition(url) {
     if (url.startsWith("/")) {
         url = `${domain}${url}`
     }
 
-    // These filetypes should always be opened externally.
-    if (url.endsWith("webm") || url.endsWith("mp4")) {
-        window.open(url, "_blank")
+    let parsedURL = await parseURL(url)
+
+    let api = await apiURL(parsedURL.domain)
+
+    if (!api || url.endsWith("webm") || url.endsWith("mp4")) {
+        openLink(url)
         return
     }
 

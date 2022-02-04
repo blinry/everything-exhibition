@@ -1,6 +1,6 @@
 import * as THREE from "three"
 
-import {updateStatus, generateExhibition} from "./main.js"
+import {updateStatus, generateExhibition, openLink} from "./main.js"
 import {setPosition, addSketch, clearSketch} from "./multiplayer.js"
 import {timeStart, timeEnd, lerp} from "./utils.js"
 import {
@@ -577,10 +577,17 @@ export async function setup() {
 
     document.addEventListener("mousedown", () => {
         if (controls.isLocked) {
-            mouseDown = true
-            if (selectedObject?.myLink) {
-                console.log("clicked ", selectedObject.myLink)
-                generateExhibition(selectedObject.myLink)
+            if (event.button == 0) {
+                mouseDown = true
+                if (selectedObject.myLink) {
+                    console.log("clicked ", selectedObject.myLink)
+                    generateExhibition(selectedObject.myLink)
+                }
+            } else if (event.button == 2) {
+                console.log(selectedObject)
+                if (selectedObject.editLink) {
+                    openLink(selectedObject.editLink)
+                }
             }
         }
     })
