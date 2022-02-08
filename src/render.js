@@ -654,9 +654,9 @@ export function loadMaterial(path, scaling, fallbackColor) {
     let materialData = {
         map: new THREE.TextureLoader().load(`textures/${path}_diff.png`),
         normal: new THREE.TextureLoader().load(`textures/${path}_nor_gl.png`),
-        /*rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
-        arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
-        ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),*/
+        //rough: new THREE.TextureLoader().load(`textures/${path}_rough.png`),
+        //arm: new THREE.TextureLoader().load(`textures/${path}_arm.png`),
+        //ao: new THREE.TextureLoader().load(`textures/${path}_ao.png`),
     }
 
     for (const [_, value] of Object.entries(materialData)) {
@@ -668,9 +668,9 @@ export function loadMaterial(path, scaling, fallbackColor) {
     return new THREE.MeshStandardMaterial({
         map: materialData.map,
         normalMap: materialData.normal,
-        /**roughnessMap: materialData.rough,
-        aoMap: materialData.ao,
-        side: THREE.DoubleSide,*/
+        //roughnessMap: materialData.rough,
+        //aoMap: materialData.ao,
+        //side: THREE.DoubleSide,
     })
 }
 
@@ -1155,7 +1155,7 @@ export async function updateMultiplayer(states, myId) {
                     )
 
                     let col = new THREE.Color()
-                    textPlane.material.color.getHSL(col)
+                    textPlane.material?.color?.getHSL(col)
                     if (col.l < 0.5) {
                         textPlane.children[2].color = 0xffffff
                     } else {
