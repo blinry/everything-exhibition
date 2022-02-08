@@ -22,6 +22,10 @@ h1 {
     width: max(20em, 20vw);
 }
 
+#name-list {
+    display: grid;
+}
+
 #name-list a {
     color: white;
 }
