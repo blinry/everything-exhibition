@@ -176,6 +176,8 @@ function generateObjectPromises(chapter, level) {
                 )
             }
 
+            thing.text = thing.text.replaceAll(/\n+/g, "\n")
+
             // In Japanese, single lines have no whitespace and could still be too long.
             // Split words that are longer than 20 characters.
             thing.text = thing.text.replaceAll(/[^\s]+/g, (s) =>
@@ -194,23 +196,26 @@ function generateObjectPromises(chapter, level) {
                 let currentP = {text: "", links: thing.links}
                 for (let line of lines) {
                     if (tooLong(currentP.text + line)) {
-                        if (currentP.text.length > 0) {
-                            things.push(createTextPlane(currentP, 20))
-                        }
+                        appendTextPlane(things, currentP)
                         currentP = {text: line, links: thing.links}
                     } else {
                         currentP.text += "\n" + line
                     }
                 }
-                if (currentP.text.length > 0) {
-                    things.push(createTextPlane(currentP, 20))
-                }
+                appendTextPlane(things, currentP)
             } else {
-                things.push(createTextPlane(thing, 20))
+                appendTextPlane(things, thing)
             }
         }
     }
     return things
+}
+
+function appendTextPlane(things, thing) {
+    thing.text = thing.text.trim()
+    if (thing.text.length > 0) {
+        things.push(createTextPlane(thing, 20))
+    }
 }
 
 export function animate() {
