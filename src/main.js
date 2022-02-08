@@ -194,7 +194,7 @@ export async function generateExhibition(url) {
         return
     }
 
-    url = url.replaceAll(/_/g, "%20")
+    url = url.replaceAll(/[_ ]/g, "%20")
     parsedURL = await parseURL(url)
 
     domain = parsedURL.domain
