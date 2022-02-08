@@ -60,7 +60,7 @@ export function createPicture(img, link) {
         }
         var textPlane = createTextPlane(img.description, 10, 0.5)
         textPlane.position.z = 1
-        textPlane.position.y = -5
+        textPlane.position.y = -18
         plane.add(textPlane)
     }
     return plane
@@ -105,6 +105,28 @@ export function createImagePlane(
     )
     var invisibleBox = new THREE.Mesh(invisibleBoxGeometry, INVISIBLE_TEXTURE)
     plane.add(invisibleBox)
+
+    let BORDER_SIZE = 1
+    var borderBottom = new THREE.BoxGeometry(
+        width + BORDER_SIZE * 2,
+        BORDER_SIZE,
+        BORDER_SIZE
+    )
+    var borderSide = new THREE.BoxGeometry(BORDER_SIZE, height, BORDER_SIZE)
+
+    var borderBottomMesh = new THREE.Mesh(borderBottom, FLOOR_TEXTURE)
+    borderBottomMesh.position.y -= height / 2 + BORDER_SIZE / 2
+    plane.add(borderBottomMesh)
+    var borderTopMesh = new THREE.Mesh(borderBottom, FLOOR_TEXTURE)
+    borderTopMesh.position.y += height / 2 + BORDER_SIZE / 2
+    plane.add(borderTopMesh)
+
+    var borderLeftMesh = new THREE.Mesh(borderSide, FLOOR_TEXTURE)
+    borderLeftMesh.position.x -= width / 2 + BORDER_SIZE / 2
+    plane.add(borderLeftMesh)
+    var borderRightMesh = new THREE.Mesh(borderSide, FLOOR_TEXTURE)
+    borderRightMesh.position.x += width / 2 + BORDER_SIZE / 2
+    plane.add(borderRightMesh)
 
     if (window.SETTINGS.shadows) {
         plane.receiveShadow = true
