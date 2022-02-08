@@ -149,6 +149,7 @@ async function parseURL(url) {
     let domain = "https://" + parts[2]
     let remaining = parts.slice(3).join("/")
     let topic = remaining.replace(/^(index\.php|wiki)\//, "")
+    topic = decodeURIComponent(topic)
 
     if (topic == null || topic == "") {
         topic = await mainArticle(domain)
@@ -192,6 +193,9 @@ export async function generateExhibition(url) {
         window.open(url, "_blank")
         return
     }
+
+    url = url.replaceAll(/_/g, "%20")
+    parsedURL = await parseURL(url)
 
     domain = parsedURL.domain
 
