@@ -237,7 +237,8 @@ export async function generateExhibition(url) {
             document.location.protocol +
                 "//" +
                 document.location.host +
-                "/?group=" +
+                document.location.pathname +
+                "?group=" +
                 newGroupID +
                 "#" +
                 url
@@ -253,7 +254,8 @@ export async function generateExhibition(url) {
             document.location.protocol +
                 "//" +
                 document.location.host +
-                "/?group=" +
+                document.location.pathname +
+                "?group=" +
                 groupID +
                 "#" +
                 url
