@@ -177,11 +177,18 @@ export async function generateExhibition(url) {
         url = `${domain}${url}`
     }
 
+    // These filetypes should always be opened externally.
+    if (url.endsWith("webm") || url.endsWith("mp4")) {
+        window.open(url, "_blank")
+        return
+    }
+
     let parsedURL = await parseURL(url)
 
-    let api = await apiURL(parsedURL.domain)
-
-    if (!api || url.endsWith("webm") || url.endsWith("mp4")) {
+    // Is this a MediaWiki page?
+    try {
+        await apiURL(parsedURL.domain)
+    } catch (e) {
         window.open(url, "_blank")
         return
     }
