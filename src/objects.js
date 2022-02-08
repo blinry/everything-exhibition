@@ -145,8 +145,9 @@ export function createTextPlane(paragraph, width, scale = 1) {
 
     var height = width / 10
 
-    var planeGeometry = new THREE.BoxGeometry(width, height, 0.1)
-    var plane = new THREE.Mesh(planeGeometry)
+    var planeGeometry = new THREE.BoxGeometry(width, height, 0.5)
+    let textMaterial = new THREE.MeshStandardMaterial({color: "#eee"})
+    var plane = new THREE.Mesh(planeGeometry, textMaterial)
     group.add(plane)
 
     var invisibleBoxGeometry = new THREE.BoxGeometry(
@@ -175,7 +176,7 @@ export function createTextPlane(paragraph, width, scale = 1) {
 
     textObject.maxWidth = width - 2 * padding
 
-    textObject.position.z = 0.2
+    textObject.position.z = 0.27
 
     group.add(textObject)
     textObject.sync(() => {
@@ -217,7 +218,7 @@ export function createTextPlane(paragraph, width, scale = 1) {
             }
         }
 
-        linkGroup.position.z = 0.1
+        linkGroup.position.z = 0.26
         group.add(linkGroup)
 
         if (boxWidth > 0) {
