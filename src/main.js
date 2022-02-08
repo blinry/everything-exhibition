@@ -230,39 +230,35 @@ export async function generateExhibition(url) {
     var t = timeStart("entire generation")
     updateStatus("Generating...")
 
-    document
-        .getElementById("group-button")
-        .addEventListener("click", async (e) => {
-            M.toast({html: "Group link copied to clipboard!"})
-            let newGroupID = makeid(30)
-            copyStringToClipboard(
-                document.location.protocol +
-                    "//" +
-                    document.location.host +
-                    "/?group=" +
-                    newGroupID +
-                    "#" +
-                    url
-            )
-            await initializeGroup(newGroupID)
-            await initializeMultiplayer(url, newGroupID)
-        })
+    document.getElementById("group-button").onclick = async (e) => {
+        M.toast({html: "Group link copied to clipboard!"})
+        let newGroupID = makeid(30)
+        copyStringToClipboard(
+            document.location.protocol +
+                "//" +
+                document.location.host +
+                "/?group=" +
+                newGroupID +
+                "#" +
+                url
+        )
+        await initializeGroup(newGroupID)
+        await initializeMultiplayer(url, newGroupID)
+    }
 
-    document
-        .getElementById("invite-button")
-        .addEventListener("click", async (e) => {
-            M.toast({html: "Invite link copied to clipboard!"})
-            let groupID = localStorage.getItem("groupID")
-            copyStringToClipboard(
-                document.location.protocol +
-                    "//" +
-                    document.location.host +
-                    "/?group=" +
-                    groupID +
-                    "#" +
-                    url
-            )
-        })
+    document.getElementById("invite-button").onclick = async (e) => {
+        M.toast({html: "Invite link copied to clipboard!"})
+        let groupID = localStorage.getItem("groupID")
+        copyStringToClipboard(
+            document.location.protocol +
+                "//" +
+                document.location.host +
+                "/?group=" +
+                groupID +
+                "#" +
+                url
+        )
+    }
 
     history.pushState(null, null, document.location.pathname + "#" + url)
     setURL(url)
