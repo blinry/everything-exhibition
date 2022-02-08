@@ -175,11 +175,18 @@ function generateObjectPromises(chapter, level) {
                     text.length > maxTextLength || text.split("\n").length > 30
                 )
             }
+
+            // In Japanese, single lines have no whitespace and could still be too long.
+            // Split words that are longer than 20 characters.
+            thing.text = thing.text.replaceAll(/[^\s]+/g, (s) =>
+                s.match(/.{1,20}/).join("​")
+            )
+
             // Make sure the paragraphs don't get too long.
             if (tooLong(thing.text)) {
                 let lines = thing.text.split("\n")
 
-                // If these are still too long, split them inot sentences.
+                // If these are still too long, split them into sentences.
                 lines = lines
                     .map((l) => (tooLong(l) ? l.split(/(?<=\. )/) : l))
                     .flat()
@@ -571,14 +578,6 @@ export async function setup() {
             case "Space":
                 //if (canJump === true) velocity.y += 350
                 //canJump = false
-                addSketch([
-                    {
-                        x: camera.position.x,
-                        y: camera.position.y,
-                        z: camera.position.z,
-                    },
-                ])
-
                 break
 
             case "KeyC":
