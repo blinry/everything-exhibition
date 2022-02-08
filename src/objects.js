@@ -148,6 +148,7 @@ export function createTextPlane(paragraph, width, scale = 1) {
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.5)
     let textMaterial = new THREE.MeshStandardMaterial({color: "#eee"})
     var plane = new THREE.Mesh(planeGeometry, textMaterial)
+    plane.layers.enable(1)
     group.add(plane)
 
     var invisibleBoxGeometry = new THREE.BoxGeometry(
@@ -298,6 +299,7 @@ export function createFloor(width, depth) {
     let floorGeometry = new THREE.BoxGeometry(width, 0.1, depth)
     fixUVs(floorGeometry)
     let floor = new THREE.Mesh(floorGeometry, FLOOR_TEXTURE)
+    floor.layers.enable(1)
     return floor
 }
 
