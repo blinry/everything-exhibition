@@ -9,6 +9,7 @@ let apiLocations = {
     "/w/api.php": ["wikipedia.org", "wikimedia.org"],
     "/api.php": ["fandom.com"],
     "/mediawiki/api.php": [],
+    "/wiki/api.php": [],
 }
 
 export async function apiURL(domain) {
