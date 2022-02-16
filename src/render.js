@@ -9,6 +9,7 @@ import {
     createTextPlane,
     createDoorWall,
     createWall,
+    createWindow,
     createFloor,
     createGround,
     WALL_THICKNESS,
@@ -156,6 +157,11 @@ async function generateChapter(chapter, level, stack = false) {
 
     let objectPromises = generateObjectPromises(chapter, level)
     var objects = await Promise.all(objectPromises)
+
+    if (objects.length % 2 == 0 && objects.length >= 2) {
+        let middleIndex = Math.floor(objects.length / 2)
+        objects.splice(middleIndex, 0, createWindow())
+    }
 
     // Distribute the objects into a new room.
     var td = timeStart("distribute")
@@ -1103,7 +1109,7 @@ function distributeObjects(objects, level) {
                     .addScaledVector(side.dir, runningWidth + o.widthL)
             )
 
-            if (!o.isChapter) {
+            if (!(o.isChapter || o.isWindow)) {
                 // This is an image thing, offset it a bit.
                 let normal = side.dir
                     .clone()
@@ -1118,7 +1124,7 @@ function distributeObjects(objects, level) {
             let thisWallEnd = side.start
                 .clone()
                 .addScaledVector(side.dir, runningWidth)
-            if (o.isChapter) {
+            if (o.isChapter || o.isWindow) {
                 // Build walls at both sides of the chapter.
                 let diffL = side.dir.clone().multiplyScalar(o.widthL)
                 let diffR = side.dir.clone().multiplyScalar(o.widthR)

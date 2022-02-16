@@ -264,6 +264,50 @@ export function createDoorWall(wallCenters, wallDirections, roomWidth, group) {
     )
 }
 
+export function createWindow() {
+    let group = new THREE.Group()
+
+    var height = 30
+    var width = 10
+    var windowWallHeight = (50 - height) / 2
+
+    var windowWallGeometry = new THREE.BoxGeometry(
+        width,
+        windowWallHeight,
+        WALL_THICKNESS
+    )
+    fixUVs(windowWallGeometry)
+
+    var topHalf = new THREE.Mesh(windowWallGeometry, WALL_TEXTURE)
+    var bottomHalf = new THREE.Mesh(windowWallGeometry, WALL_TEXTURE)
+
+    topHalf.position.y = 25 - windowWallHeight / 2
+    bottomHalf.position.y = -25 + windowWallHeight / 2
+
+    group.add(topHalf)
+    group.add(bottomHalf)
+
+    let windowSideWallGeometry = new THREE.BoxGeometry(
+        width / 2,
+        50,
+        WALL_THICKNESS
+    )
+    fixUVs(windowSideWallGeometry)
+
+    let leftSide = new THREE.Mesh(windowSideWallGeometry, WALL_TEXTURE)
+    let rightSide = new THREE.Mesh(windowSideWallGeometry, WALL_TEXTURE)
+
+    leftSide.position.x = -width / 2 - width / 4
+    rightSide.position.x = width / 2 + width / 4
+
+    group.add(leftSide)
+    group.add(rightSide)
+
+    group.isWindow = true
+
+    return group
+}
+
 function fixUVs(bufferGeometry) {
     // Iterate through faces and scale the UV coordinates according to their position.
     for (var i = 0; i < bufferGeometry.attributes.uv.count; i++) {
