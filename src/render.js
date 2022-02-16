@@ -756,6 +756,7 @@ async function setupSceneOnce() {
     scene.add(light)
 
     await loadModel("bench", 50 / 5)
+    await loadModel("palm-tree", 100)
 }
 
 function setupScene(everything) {
@@ -790,6 +791,23 @@ function setupScene(everything) {
         mapCamera.updateProjectionMatrix()
 
         scene.add(createGround(mapCameraSize * Math.sqrt(2), center))
+
+        // Some palm trees.
+        for (let i = 0; i < 7; i++) {
+            let tree = models["palm-tree"].clone()
+            let angle = Math.random() * Math.PI * 2
+            let distance = (maxSize / 2 + 20) * Math.sqrt(2)
+            let position = new THREE.Vector3(
+                Math.cos(angle) * distance,
+                0,
+                Math.sin(angle) * distance
+            )
+            tree.rotateY(Math.random() * Math.PI * 2)
+            tree.position.x = position.x + center.x
+            tree.position.y = -25
+            tree.position.z = position.z + center.z
+            everything.add(tree)
+        }
 
         let markerCanvas = document.querySelector("#marker-canvas")
         markerCanvas.dataset.centerX = center.x
