@@ -8,7 +8,7 @@ export const DOOR_WIDTH = 20
 
 const WALL_TEXTURE = loadMaterial("beige_wall_001", 0.2, 0xcccccc)
 var FLOOR_TEXTURE = loadMaterial("plywood", 0.5, 0x665d48)
-var GROUND_TEXTURE = loadMaterial("beach", 0.5, 0x665d48)
+var GROUND_TEXTURE = loadMaterial("beach", 10, 0x665d48)
 
 var LINK_TEXTURE = new THREE.MeshBasicMaterial({
     color: 0xcce0ff,
@@ -19,11 +19,19 @@ var INVISIBLE_TEXTURE = new THREE.MeshBasicMaterial({
     opacity: 0,
 })
 
-export function createGround() {
-    const geometry = new THREE.BoxGeometry(10000, 0.1, 10000)
+export function createGround(radius, center) {
+    /*const geometry = new THREE.BoxGeometry(10000, 0.1, 10000)
     fixUVs(geometry)
     const ground = new THREE.Mesh(geometry, GROUND_TEXTURE)
     ground.position.y = -30
+    */
+
+    const geometry = new THREE.CylinderGeometry(radius, radius, 0.1, 64)
+    //fixUVs(geometry)
+    const ground = new THREE.Mesh(geometry, GROUND_TEXTURE)
+    ground.position.x = center.x
+    ground.position.z = center.z
+    ground.position.y = -25.5
 
     return ground
 }
@@ -289,6 +297,8 @@ function fixUVs(bufferGeometry) {
         } else if (normalX === 0 && normalY === 0 && normalZ === -1) {
             u *= -positionX / uvScale
             v *= -positionY / uvScale
+        } else {
+            console.log("UV", normalX, normalY, normalZ, u, v)
         }
 
         bufferGeometry.attributes.uv.setXY(i, u, v)

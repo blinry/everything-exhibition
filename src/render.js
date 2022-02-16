@@ -20,6 +20,7 @@ import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader"
 //import {VRButton} from "three/examples/jsm/webxr/VRButton.js"
 //import {XRControllerModelFactory} from "three/examples/jsm/webxr/XRControllerModelFactory.js"
 import {Sky} from "three/examples/jsm/objects/Sky"
+import {Water} from "three/examples/jsm/objects/Water"
 import {Text, preloadFont, getSelectionRects} from "troika-three-text"
 
 Array.prototype.sum = function () {
@@ -64,6 +65,7 @@ const velocity = new THREE.Vector3()
 const direction = new THREE.Vector3()
 const defaultMovementSpeed = 800
 let movementSpeed = defaultMovementSpeed
+let water
 
 // a variable to store the values from the last polling of the gamepads
 const prevGamePads = new Map()
@@ -98,6 +100,31 @@ function clearObjects(obj) {
         })
         obj.material.dispose()
     }
+}
+
+function createWater() {
+    const waterGeometry = new THREE.PlaneGeometry(10000, 10000)
+
+    water = new Water(waterGeometry, {
+        textureWidth: 512,
+        textureHeight: 512,
+        waterNormals: new THREE.TextureLoader().load(
+            "textures/waternormals.jpg",
+            function (texture) {
+                texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+            }
+        ),
+        sunDirection: new THREE.Vector3(),
+        sunColor: 0xffffff,
+        waterColor: 0x001e0f,
+        distortionScale: 3.7,
+        fog: scene.fog !== undefined,
+    })
+
+    water.rotation.x = -Math.PI / 2
+    water.position.y = -31
+
+    scene.add(water)
 }
 
 export async function render(exhibition) {
@@ -341,6 +368,8 @@ export function animate() {
 
     //requestAnimationFrame(animate)
     //renderer.clear();
+
+    water.material.uniforms["time"].value += delta
 
     renderer.render(scene, camera)
 
@@ -694,7 +723,8 @@ async function setupSceneOnce() {
     }
     scene.add(ambient)
 
-    scene.add(createGround())
+    createWater()
+
     //if (window.SETTINGS.shadows) {
     //    ground.receiveShadow = true
     //}
@@ -758,6 +788,8 @@ function setupScene(everything) {
         mapCamera.top = mapCameraSize
         mapCamera.bottom = -mapCameraSize
         mapCamera.updateProjectionMatrix()
+
+        scene.add(createGround(mapCameraSize * Math.sqrt(2), center))
 
         let markerCanvas = document.querySelector("#marker-canvas")
         markerCanvas.dataset.centerX = center.x
