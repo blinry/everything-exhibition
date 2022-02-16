@@ -1,0 +1,196 @@
+{
+    "accessors": [
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 4344,
+            "max": [0.44472700357437134, -0.0618739016354084, 1.0],
+            "min": [-0.44472700357437134, -0.4709340035915375, -1.0],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 52128,
+            "componentType": 5126,
+            "count": 4344,
+            "max": [1.0, 1.0, 1.0],
+            "min": [-1.0, -1.0, -1.0],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "componentType": 5126,
+            "count": 4344,
+            "max": [1.0, 1.0, 1.0, 1.0],
+            "min": [-0.9999721050262451, -1.0, -1.0, -1.0],
+            "type": "VEC4"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 4344,
+            "max": [0.9969670176506042, 0.9815880060195923],
+            "min": [0.0030328601133078337, 0.0030328601133078337],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 0,
+            "componentType": 5125,
+            "count": 21732,
+            "type": "SCALAR"
+        }
+    ],
+    "asset": {
+        "extras": {
+            "author": "Pabooklas (https://sketchfab.com/Pabooklas)",
+            "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+            "source": "https://sketchfab.com/3d-models/fishing-boat-f4b38ccf5ffb46018aa7931c0e106654",
+            "title": "Fishing boat"
+        },
+        "generator": "Sketchfab-11.60.0",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 86928,
+            "name": "floatBufferViews",
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 34752,
+            "byteOffset": 86928,
+            "byteStride": 8,
+            "name": "floatBufferViews",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 104256,
+            "byteOffset": 121680,
+            "byteStride": 12,
+            "name": "floatBufferViews",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 69504,
+            "byteOffset": 225936,
+            "byteStride": 16,
+            "name": "floatBufferViews",
+            "target": 34962
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 295440,
+            "uri": "scene.bin"
+        }
+    ],
+    "images": [
+        {
+            "uri": "textures/DefaultMaterial_baseColor.jpeg"
+        },
+        {
+            "uri": "textures/DefaultMaterial_metallicRoughness.png"
+        },
+        {
+            "uri": "textures/DefaultMaterial_normal.png"
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "name": "DefaultMaterial",
+            "normalTexture": {
+                "index": 2
+            },
+            "occlusionTexture": {
+                "index": 1
+            },
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "index": 0
+                },
+                "metallicRoughnessTexture": {
+                    "index": 1
+                }
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "defaultMaterial",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 1,
+                        "POSITION": 0,
+                        "TANGENT": 2,
+                        "TEXCOORD_0": 3
+                    },
+                    "indices": 4,
+                    "material": 0,
+                    "mode": 4
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "children": [1],
+            "matrix": [
+                1.0, 0.0, 0.0, 0.0, 0.0, 2.220446049250313e-16, -1.0, 0.0, 0.0,
+                1.0, 2.220446049250313e-16, 0.0, 0.0, 0.0, 0.0, 1.0
+            ],
+            "name": "Sketchfab_model"
+        },
+        {
+            "children": [2],
+            "matrix": [
+                1.0, 0.0, 0.0, 0.0, 0.0, -4.371139006309477e-8,
+                0.999999999999999, 0.0, 0.0, -0.999999999999999,
+                -4.371139006309477e-8, 0.0, 0.0, 0.0, 0.0, 1.0
+            ],
+            "name": "Collada visual scene group"
+        },
+        {
+            "children": [3],
+            "name": "BoatLow"
+        },
+        {
+            "mesh": 0,
+            "name": "defaultMaterial"
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "Sketchfab_Scene",
+            "nodes": [0]
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0
+        },
+        {
+            "sampler": 0,
+            "source": 1
+        },
+        {
+            "sampler": 0,
+            "source": 2
+        }
+    ]
+}
