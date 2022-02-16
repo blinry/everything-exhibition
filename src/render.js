@@ -756,6 +756,7 @@ async function setupSceneOnce() {
     scene.add(light)
 
     await loadModel("bench", 50 / 5)
+    await loadModel("boat", 13)
 }
 
 function setupScene(everything) {
@@ -789,7 +790,12 @@ function setupScene(everything) {
         mapCamera.bottom = -mapCameraSize
         mapCamera.updateProjectionMatrix()
 
-        scene.add(createGround(mapCameraSize * Math.sqrt(2), center))
+        everything.add(createGround(mapCameraSize * Math.sqrt(2), center))
+        let boat = models.boat.clone()
+        boat.position.y = -17
+        boat.position.z = center.z + mapCameraSize * Math.sqrt(2) - 5
+        boat.setRotationFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
+        everything.add(boat)
 
         let markerCanvas = document.querySelector("#marker-canvas")
         markerCanvas.dataset.centerX = center.x
