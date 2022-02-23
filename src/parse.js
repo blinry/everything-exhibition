@@ -23,6 +23,12 @@ function parseImages(node) {
                 console.log("Image has no size: ", node)
             }
 
+            let maxHeight = 1000
+
+            let ratio = height / width
+            height = Math.min(height, maxHeight)
+            width = Math.floor(height / ratio)
+
             let src = img.src
 
             // For fandom.com:
