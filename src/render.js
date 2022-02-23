@@ -1,6 +1,6 @@
 import * as THREE from "three"
 
-import {updateStatus, generateExhibition} from "./main.js"
+import {updateStatus, generateExhibition, openLink} from "./main.js"
 import {setPosition, addSketch, clearSketch} from "./multiplayer.js"
 import {timeStart, timeEnd, lerp} from "./utils.js"
 import {
@@ -193,7 +193,9 @@ function generateObjectPromises(chapter, level) {
                         link = undefined
                     }
                 }
-                things.push(createPicture(thing, link))
+                let pic = createPicture(thing, link)
+                pic.editLink = chapter.editURL
+                things.push(pic)
             }
         }
         if (thing.type == "audio") {
@@ -229,25 +231,27 @@ function generateObjectPromises(chapter, level) {
                 let currentP = {text: "", links: thing.links}
                 for (let line of lines) {
                     if (tooLong(currentP.text + line)) {
-                        appendTextPlane(things, currentP)
+                        appendTextPlane(things, currentP, chapter.editURL)
                         currentP = {text: line, links: thing.links}
                     } else {
                         currentP.text += "\n" + line
                     }
                 }
-                appendTextPlane(things, currentP)
+                appendTextPlane(things, currentP, chapter.editURL)
             } else {
-                appendTextPlane(things, thing)
+                appendTextPlane(things, thing, chapter.editURL)
             }
         }
     }
     return things
 }
 
-function appendTextPlane(things, thing) {
+function appendTextPlane(things, thing, editURL) {
     thing.text = thing.text.trim()
     if (thing.text.length > 0) {
-        things.push(createTextPlane(thing, 20))
+        let planeGroup = createTextPlane(thing, 20)
+        planeGroup.getObjectByName("plane").editLink = editURL
+        things.push(planeGroup)
     }
 }
 
@@ -577,10 +581,16 @@ export async function setup() {
 
     document.addEventListener("mousedown", () => {
         if (controls.isLocked) {
-            mouseDown = true
-            if (selectedObject?.myLink) {
-                console.log("clicked ", selectedObject.myLink)
-                generateExhibition(selectedObject.myLink)
+            if (event.button == 0) {
+                mouseDown = true
+                if (selectedObject.myLink) {
+                    console.log("clicked ", selectedObject.myLink)
+                    generateExhibition(selectedObject.myLink)
+                }
+            } else if (event.button == 2) {
+                if (selectedObject.editLink) {
+                    openLink(selectedObject.editLink)
+                }
             }
         }
     })

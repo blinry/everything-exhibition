@@ -111,7 +111,7 @@ function parseTable(node) {
     return paragraph
 }
 
-export function parseHTML(html, title) {
+export function parseHTML(html, title, domain) {
     let exhibition = {
         type: "section",
         name: title,
@@ -119,6 +119,7 @@ export function parseHTML(html, title) {
     }
 
     var stack = [exhibition]
+    let sectionCounter = 0
 
     html.childNodes.forEach((node) => {
         var currentSection = stack[stack.length - 1]
@@ -128,7 +129,9 @@ export function parseHTML(html, title) {
                 type: "section",
                 name: node.textContent,
                 content: [],
+                editURL: `${domain}/wiki/${title}?action=edit&section=${sectionCounter++}`,
             }
+            console.log(section.editURL)
             const depthIncrease = level - (stack.length - 2)
             let removeHowMany = -depthIncrease + 1
             if (removeHowMany > stack.length - 1) {

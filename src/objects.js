@@ -104,6 +104,7 @@ export function createImagePlane(
     })
 
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    plane.layers.enable(1)
     // Store the width in the Mesh object. This is a bit of a hack.
 
     var invisibleBoxGeometry = new THREE.BoxGeometry(
@@ -156,7 +157,9 @@ export function createTextPlane(paragraph, width, scale = 1) {
     var planeGeometry = new THREE.BoxGeometry(width, height, 0.5)
     let textMaterial = new THREE.MeshStandardMaterial({color: "#eee"})
     var plane = new THREE.Mesh(planeGeometry, textMaterial)
+    //plane.editLink = ""
     plane.layers.enable(1)
+    plane.name = "plane"
     group.add(plane)
 
     var invisibleBoxGeometry = new THREE.BoxGeometry(
