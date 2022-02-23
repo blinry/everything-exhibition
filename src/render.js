@@ -1014,7 +1014,8 @@ function distributeObjects(objects, level) {
     if (
         objects.length > 2 ||
         (objects.length == 2 &&
-            (isFullRoom(objects[0]) || isFullRoom(objects[1])))
+            (isFullRoom(objects[0]) || isFullRoom(objects[1]))) ||
+        (objects.length == 1 && isFullRoom(objects[0]))
     ) {
         parts = splitIntoKey(objects, [2, 1, 2], calculateObjectWidth)
     } else {

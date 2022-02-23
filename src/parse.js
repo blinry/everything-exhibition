@@ -165,5 +165,21 @@ export function parseHTML(html, title, domain) {
             console.log(node)
         }
     })
+
+    mergeEmptyChapters(exhibition)
     return exhibition
+}
+
+function mergeEmptyChapters(section) {
+    if (section.content) {
+        section.content.forEach((c) => mergeEmptyChapters(c))
+
+        if (
+            section.content.length == 1 &&
+            section.content[0].type == "section"
+        ) {
+            section.name = `${section.name}: ${section.content[0].name}`
+            section.content = section.content[0].content
+        }
+    }
 }
