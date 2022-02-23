@@ -288,9 +288,15 @@ export function animate() {
         }
     }
 
-    velocity.x -= velocity.x * 10.0 * delta
-    velocity.z -= velocity.z * 10.0 * delta
-    velocity.y -= velocity.y * 10.0 * delta
+    if (delta > 0.1) {
+        velocity.x = 0
+        velocity.y = 0
+        velocity.z = 0
+    } else {
+        velocity.x -= velocity.x * 10.0 * delta
+        velocity.z -= velocity.z * 10.0 * delta
+        velocity.y -= velocity.y * 10.0 * delta
+    }
 
     //velocity.y -= 9.8 * 100.0 * delta
 
@@ -319,24 +325,31 @@ export function animate() {
         }
     }
 
-    if (delta < 0.2) {
-        if (moveForward || moveBackward)
-            velocity.z -= direction.z * movementSpeed * delta
-        if (moveLeft || moveRight)
-            velocity.x -= direction.x * movementSpeed * delta
-        if (moveUp || moveDown)
-            velocity.y -= direction.y * movementSpeed * 3 * delta
+    if (moveForward || moveBackward)
+        velocity.z -= direction.z * movementSpeed * delta
+    if (moveLeft || moveRight) velocity.x -= direction.x * movementSpeed * delta
+    if (moveUp || moveDown)
+        velocity.y -= direction.y * movementSpeed * 3 * delta
 
-        controls.moveRight(-velocity.x * delta)
-        controls.moveForward(-velocity.z * delta)
-        controls.getObject().position.y += velocity.y * delta
+    const maxMovement = 100
 
-        if (controls.getObject().position.y < 0) {
-            velocity.y = 0
-            controls.getObject().position.y = 0
+    controls.moveRight(
+        THREE.MathUtils.clamp(-velocity.x * delta, -maxMovement, maxMovement)
+    )
+    controls.moveForward(
+        THREE.MathUtils.clamp(-velocity.z * delta, -maxMovement, maxMovement)
+    )
+    controls.getObject().position.y += THREE.MathUtils.clamp(
+        velocity.y * delta,
+        -maxMovement,
+        maxMovement
+    )
 
-            canJump = true
-        }
+    if (controls.getObject().position.y < 0) {
+        velocity.y = 0
+        controls.getObject().position.y = 0
+
+        canJump = true
     }
 
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera)
