@@ -191,8 +191,6 @@ export async function generateExhibition(url) {
         return
     }
 
-    let parsedURL = await parseURL(url)
-
     // Is this a MediaWiki page?
     try {
         await apiURL(parsedURL.domain)
@@ -276,7 +274,7 @@ export async function generateExhibition(url) {
     try {
         var html = await generateHTMLFromWikipedia(topic, domain)
         console.log(html)
-        var exhibition = parseHTML(html, topic)
+        var exhibition = parseHTML(html, topic, domain)
         console.log(exhibition)
 
         //var exhibition = {name: "Test", paragraphs: [{text: "!"}], sections: [
