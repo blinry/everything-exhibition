@@ -1,5 +1,7 @@
 /node_modules/
 /dist/index.*
+/dist/*.svg
+/dist/*.ico
 /.parcel-cache/
 *.kdev4
 

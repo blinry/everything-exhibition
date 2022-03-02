@@ -130,3 +130,29 @@ input {
     margin: 1rem;
     text-align: center;
 }
+
+#help-modal {
+    max-width: 60rem !important;
+    max-height: 75% !important;
+}
+
+#help-modal img {
+    display: block;
+    width: 80%;
+    margin: 0 auto;
+    margin-bottom: 2rem;
+    margin-top: 1rem;
+}
+
+#help-modal li {
+    list-style-type: disc !important;
+    margin-left: 1.2rem;
+}
+
+#help-modal .example {
+    background: #3a9c57;
+    border-radius: 0.2rem;
+    color: white;
+    padding: 0.3rem;
+    white-space: nowrap;
+}
