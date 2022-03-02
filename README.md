@@ -16,7 +16,9 @@ Features:
 
 ## Report bugs!
 
-If something doesn't work or looks broken, please let us know! You can describe the issue you're having [in our issue tracker](https://github.com/blinry/everything-exhibition/issues).
+Something does not work as expected? Please search in the [issue tracker](https://github.com/blinry/everything-exhibition/issues) if someone else has had the same problem. Maybe there is already a solution :)
+
+If not, create your own issue with a detailed description what went wrong.
 
 ## Contribute code!
 
