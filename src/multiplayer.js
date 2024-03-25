@@ -17,11 +17,7 @@ export async function setupGroupConnection(groupID) {
         `everything-exhibition-group-${groupID}`,
         ydoc,
         {
-            signaling: [
-                "wss://signaling.yjs.dev",
-                "wss://y-webrtc-signaling-eu.herokuapp.com",
-                "wss://y-webrtc-signaling-us.herokuapp.com",
-            ],
+            signaling: ["wss://demos.yjs.dev/ws"],
         }
     )
 
@@ -49,11 +45,7 @@ export async function setupMultiplayer(url, groupID) {
         `everything-exhibition-room-${url}-${groupID}`,
         ydoc,
         {
-            signaling: [
-                "wss://signaling.yjs.dev",
-                "wss://y-webrtc-signaling-eu.herokuapp.com",
-                "wss://y-webrtc-signaling-us.herokuapp.com",
-            ],
+            signaling: ["wss://demos.yjs.dev/ws"],
         }
     )
     console.log("roomname", `everything-exhibition-room-${url}-${groupID}`)

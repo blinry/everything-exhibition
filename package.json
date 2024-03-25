@@ -3,7 +3,8 @@
     "version": "0.1.0",
     "description": "Generates virtual 3D exhibitions from open data",
     "scripts": {
-        "dev": "npx parcel serve index.html --host 0.0.0.0"
+        "dev": "npx parcel serve index.html --host 0.0.0.0",
+        "build": "npx parcel build index.html"
     },
     "repository": {
         "type": "git",
@@ -23,7 +24,9 @@
         "yjs": "^13.5.16"
     },
     "devDependencies": {
+        "buffer": "^6.0.3",
         "parcel": "^2.0.0-rc.0",
-        "prettier": "^2.4.0"
+        "prettier": "^2.4.0",
+        "process": "^0.11.10"
     }
 }
